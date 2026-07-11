@@ -1,0 +1,66 @@
+-- OreX Database Schema
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    balance REAL NOT NULL DEFAULT 10000,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_login TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ores (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    icon_filename TEXT,
+    current_price REAL NOT NULL,
+    base_price REAL NOT NULL,
+    price_floor REAL NOT NULL,
+    price_ceiling REAL NOT NULL,
+    volatility REAL NOT NULL,
+    price_change_range TEXT NOT NULL,
+    base_probabilities TEXT NOT NULL,
+    trend_log TEXT NOT NULL DEFAULT '["hold","hold","hold","hold","hold"]'
+);
+
+CREATE TABLE IF NOT EXISTS holdings (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    ore_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    avg_purchase_price REAL NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (ore_id) REFERENCES ores(id)
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    ore_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    price_at_trade REAL NOT NULL,
+    total_value REAL NOT NULL,
+    archived INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (ore_id) REFERENCES ores(id)
+);
+
+CREATE TABLE IF NOT EXISTS price_history (
+    id INTEGER PRIMARY KEY,
+    ore_id INTEGER NOT NULL,
+    price REAL NOT NULL,
+    movement TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (ore_id) REFERENCES ores(id)
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_holdings_user ON holdings(user_id);
+CREATE INDEX IF NOT EXISTS idx_holdings_ore ON holdings(ore_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_ore ON transactions(ore_id);
+CREATE INDEX IF NOT EXISTS idx_price_history_ore ON price_history(ore_id);
+CREATE INDEX IF NOT EXISTS idx_price_history_created ON price_history(created_at);

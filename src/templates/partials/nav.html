@@ -1,0 +1,46 @@
+<nav class="main-nav">
+    <div class="nav__container">
+        <a href="{{ url_for('pages.landing') }}" class="nav__brand">
+            {% if current_user.is_authenticated %}
+                <img src="{{ url_for('static', filename='images/logo-expanded.png') }}" alt="OreX" class="nav__logo">
+            {% else %}
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="OreX" class="nav__logo">
+            {% endif %}
+        </a>
+
+        <ul class="nav__links">
+            {% if current_user.is_authenticated %}
+                {% set active = request.endpoint %}
+                <li class="nav__tab">
+                    <a href="{{ url_for('dashboard.overview') }}" class="nav__tab-link {% if active and active.startswith('dashboard') %}nav__tab-link--active{% endif %}">Dashboard</a>
+                </li>
+                <li class="nav__tab">
+                    <a href="{{ url_for('market.overview') }}" class="nav__tab-link {% if active and active.startswith('market') %}nav__tab-link--active{% endif %}">Market</a>
+                </li>
+                <li class="nav__tab">
+                    <a href="{{ url_for('leaderboard.overview') }}" class="nav__tab-link {% if active and active.startswith('leaderboard') %}nav__tab-link--active{% endif %}">Leaderboard</a>
+                </li>
+
+                <li class="nav__profile-group">
+                    <div class="nav__profile-pill">
+                        <span id="nav-balance" class="nav__balance">${{ "%.2f" | format(current_user.balance) }}</span>
+                        <button class="nav__avatar" id="nav-avatar-btn" aria-expanded="false" aria-haspopup="true"
+                                data-username="{{ current_user.username }}">
+                            {{ current_user.username[:2] | upper }}
+                        </button>
+                    </div>
+                    <div class="nav__dropdown" id="nav-dropdown" aria-label="User menu">
+                        <a href="{{ url_for('portfolio.overview') }}" class="nav__dropdown-item">Portfolio</a>
+                        <a href="{{ url_for('history.overview') }}" class="nav__dropdown-item">History</a>
+                        <a href="{{ url_for('settings.overview') }}" class="nav__dropdown-item">Settings</a>
+                        <hr class="nav__dropdown-divider">
+                        <a href="{{ url_for('auth.logout') }}" class="nav__dropdown-item nav__dropdown-item--danger">Logout</a>
+                    </div>
+                </li>
+            {% else %}
+                <li><a href="{{ url_for('auth.login') }}" class="btn btn--secondary btn--small">Login</a></li>
+                <li><a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--small">Register</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>

@@ -1,0 +1,29 @@
+<div class="stat-card">
+    <span class="stat-card__label">Price</span>
+    <span class="stat-card__value">${{ "%.2f" | format(ore['current_price']) }}</span>
+</div>
+<div class="stat-card">
+    <span class="stat-card__label">Base</span>
+    <span class="stat-card__value">${{ "%.2f" | format(ore['base_price']) }}</span>
+</div>
+<div class="stat-card">
+    <span class="stat-card__label">Volatility</span>
+    <span class="stat-card__value">{{ ore['volatility'] }}</span>
+</div>
+<div class="stat-card">
+    <span class="stat-card__label">Trend</span>
+    <span class="stat-card__value stat-card__value--{{ last_movement }}">
+        {% if last_movement == 'rise' %}&#9650;
+        {% elif last_movement == 'fall' %}&#9660;
+        {% else %}&#9654;
+        {% endif %}
+    </span>
+</div>
+<div class="stat-card">
+    <span class="stat-card__label">Floor</span>
+    <span class="stat-card__value">${{ "%.2f" | format(ore['price_floor']) }}</span>
+</div>
+<div class="stat-card">
+    <span class="stat-card__label">Ceiling</span>
+    <span class="stat-card__value">${{ "%.2f" | format(ore['price_ceiling']) }}</span>
+</div>

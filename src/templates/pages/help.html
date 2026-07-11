@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Help - OreX{% endblock %}
+
+{% block content %}
+<div class="static-page">
+    <h1>Help &amp; FAQ</h1>
+
+    <section class="static-section">
+        <h2>Frequently Asked Questions</h2>
+
+        <div class="faq-list">
+            <details class="faq-item">
+                <summary class="faq-item__question">How do I buy ores?</summary>
+                <div class="faq-item__answer">
+                    <p>There are two ways to buy:</p>
+                    <ul>
+                        <li><strong>Quick trade</strong> — Enter a quantity directly on the market card and click "Buy".</li>
+                        <li><strong>Detail page</strong> — Click any ore to open its detail page, enter a quantity in the Buy form, and confirm the trade.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary class="faq-item__question">How do I sell ores?</summary>
+                <div class="faq-item__answer">
+                    <p>Same two options:</p>
+                    <ul>
+                        <li><strong>Quick trade</strong> — Enter a quantity on the market card and click "Sell".</li>
+                        <li><strong>Detail page</strong> — Open the ore's detail page and use the Sell form. The page shows how many you currently hold.</li>
+                    </ul>
+                    <p>You can only sell ores you currently hold.</p>
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary class="faq-item__question">How often do prices change?</summary>
+                <div class="faq-item__answer">
+                    <p>Prices update every <strong>20 seconds</strong> automatically. Each update considers trends, gravity toward base price, bot activity, player trades, and random events.</p>
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary class="faq-item__question">What is volatility?</summary>
+                <div class="faq-item__answer">
+                    <p>Volatility is a multiplier that affects how much an ore's price can change per tick. Higher volatility means bigger price swings in both directions. Coal (0.5) is the most stable, while Netherite (1.4) is the most volatile.</p>
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary class="faq-item__question">What are the trend indicators?</summary>
+                <div class="faq-item__answer">
+                    <p>The coloured arrows on the market page show the last price movement:</p>
+                    <ul>
+                        <li><span class="text--success">▲</span> Green = price rose on the last tick</li>
+                        <li><span class="text--danger">▼</span> Red = price fell on the last tick</li>
+                        <li>▶ Grey = price held steady</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary class="faq-item__question">What is the price floor and ceiling?</summary>
+                <div class="faq-item__answer">
+                    <p>Each ore has a minimum (floor) and maximum (ceiling) price. Prices cannot go below the floor or above the ceiling. When a price approaches these bounds, the algorithm nudges it back toward the centre.</p>
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary class="faq-item__question">Do my trades affect the market?</summary>
+                <div class="faq-item__answer">
+                    <p>Yes! Your trades have a small influence on the next price tick. Buying an ore makes it slightly more likely to rise, and selling makes it slightly more likely to fall. The effect is proportional to the quantity traded.</p>
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary class="faq-item__question">What are market events?</summary>
+                <div class="faq-item__answer">
+                    <p>Each tick, there's a 0.5% chance per ore of a market event occurring. When an event triggers, the price change for that tick is multiplied by 3×, causing a sudden spike or crash.</p>
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary class="faq-item__question">How do I reset my account?</summary>
+                <div class="faq-item__answer">
+                    <p>Click your user icon in the navigation bar, then select <strong>Settings</strong> from the dropdown. Scroll to "Reset Account" and click it. You'll need to type your username to confirm. This restores your balance to $10,000, clears all holdings, and archives your transaction history.</p>
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary class="faq-item__question">What is the leaderboard based on?</summary>
+                <div class="faq-item__answer">
+                    <p>The leaderboard ranks users by <strong>total portfolio value</strong>, which is your cash balance plus the current market value of all your ore holdings. It updates in real-time as prices change.</p>
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary class="faq-item__question">What is the average purchase price?</summary>
+                <div class="faq-item__answer">
+                    <p>When you buy the same ore multiple times at different prices, your average purchase price is calculated as a weighted average. This is used to calculate your profit/loss on the portfolio page.</p>
+                </div>
+            </details>
+        </div>
+    </section>
+
+    <section class="static-section">
+        <h2>Need More Help?</h2>
+        <p>Check the <a href="{{ url_for('pages.about') }}">About page</a> for detailed information about how the market works, ore characteristics, and trading tips.</p>
+    </section>
+</div>
+{% endblock %}

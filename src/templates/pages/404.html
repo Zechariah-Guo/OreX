@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Page Not Found - OreX{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <h1 class="error-page__code">404</h1>
+    <p class="error-page__message">Page not found</p>
+    <p class="error-page__description">The page you're looking for doesn't exist or has been moved.</p>
+    <div class="error-page__actions">
+        <a href="{{ url_for('pages.landing') }}" class="btn btn--primary">Go Home</a>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('market.overview') }}" class="btn btn--secondary">Browse Market</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

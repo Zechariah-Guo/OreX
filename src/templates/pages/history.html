@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Transaction History - OreX{% endblock %}
+
+{% block content %}
+<div class="history-page">
+    <div class="page-header">
+        <h1>Transaction History</h1>
+        <p class="page-header__subtitle">{{ total_count }} total transactions</p>
+    </div>
+
+    <!-- Archive filter -->
+    <div class="history-filter">
+        {% if show_archived %}
+        <a href="{{ url_for('history.overview', page=1) }}" class="btn btn--small btn--secondary">Hide Archived</a>
+        {% else %}
+        <a href="{{ url_for('history.overview', page=1, archived='1') }}" class="btn btn--small btn--secondary">Show Archived</a>
+        {% endif %}
+    </div>
+
+    {% if transactions %}
+    <div class="history-table-wrapper">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Ore</th>
+                    <th>Type</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr class="{% if t['archived'] %}history-table__row--archived{% endif %}">
+                    <td>{{ t['created_at'][:16] | replace('T', ' ') }}</td>
+                    <td>{{ t['ore_name'] }}</td>
+                    <td>
+                        <span class="trade-badge trade-badge--{{ t['type'] }}">
+                            {{ t['type'] | upper }}
+                        </span>
+                    </td>
+                    <td>{{ t['quantity'] }}</td>
+                    <td>${{ "%.2f" | format(t['price_at_trade']) }}</td>
+                    <td>${{ "%.2f" | format(t['total_value']) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('history.overview', page=page-1, archived='1' if show_archived else '0') }}" class="btn btn--small btn--secondary">&larr; Previous</a>
+        {% endif %}
+
+        <span class="pagination__info">Page {{ page }} of {{ total_pages }}</span>
+
+        {% if page < total_pages %}
+        <a href="{{ url_for('history.overview', page=page+1, archived='1' if show_archived else '0') }}" class="btn btn--small btn--secondary">Next &rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <p>No transactions yet. <a href="{{ url_for('market.overview') }}">Visit the market</a> to start trading.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

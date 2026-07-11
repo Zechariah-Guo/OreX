@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Register - OreX{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1 class="auth-card__title">Create Account</h1>
+        <p class="auth-card__subtitle">Join OreX and start trading ores.</p>
+
+        <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" id="username" name="username"
+                       class="form-input" required
+                       minlength="3" maxlength="20"
+                       pattern="[a-zA-Z0-9_]+"
+                       value="{{ username | default('', true) }}"
+                       placeholder="3-20 characters, letters, numbers, underscores">
+                {% if username_error %}
+                <p class="form-error" role="alert">{{ username_error }}</p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password"
+                       class="form-input" required
+                       minlength="8"
+                       placeholder="Minimum 8 characters">
+                {% if password_error %}
+                <p class="form-error" role="alert">{{ password_error }}</p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password" class="form-label">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password"
+                       class="form-input" required
+                       minlength="8"
+                       placeholder="Re-enter your password">
+                {% if confirm_error %}
+                <p class="form-error" role="alert">{{ confirm_error }}</p>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn--primary btn--full">Create Account</button>
+        </form>
+
+        <p class="auth-card__footer">
+            Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

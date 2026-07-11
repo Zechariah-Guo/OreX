@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Portfolio - OreX{% endblock %}
+
+{% block content %}
+<div class="portfolio-page">
+    <div class="page-header">
+        <h1>Portfolio</h1>
+        <span id="portfolio-indicator" class="htmx-indicator">Updating...</span>
+    </div>
+
+    <div id="portfolio-live"
+         hx-get="{{ url_for('portfolio.overview') }}"
+         hx-trigger="every 20s"
+         hx-swap="innerHTML"
+         hx-indicator="#portfolio-indicator">
+        {% include 'partials/portfolio_live.html' %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('submit', function(e) {
+    const form = e.target;
+    if (!form.classList.contains('qt-form')) return;
+    const card = form.closest('.ore-card__quick-trade');
+    const input = card.querySelector('.quick-trade-input');
+    if (!input.value || parseInt(input.value) < 1) {
+        e.preventDefault();
+        input.focus();
+        return;
+    }
+    form.querySelector('.qt-hidden-qty').value = input.value;
+});
+</script>
+{% endblock %}

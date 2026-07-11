@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Settings - OreX{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/theme-manager.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+    <div class="page-header">
+        <h1>Account Settings</h1>
+    </div>
+
+    <!-- Account Info -->
+    <div class="settings-card">
+        <h2>Account Information</h2>
+        <div class="settings-info">
+            <div class="settings-info__row">
+                <span class="settings-info__label">Username</span>
+                <span class="settings-info__value">{{ user.username }}</span>
+            </div>
+            <div class="settings-info__row">
+                <span class="settings-info__label">Balance</span>
+                <span class="settings-info__value">${{ "%.2f" | format(user.balance) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password -->
+    <div class="settings-card">
+        <h2>Change Password</h2>
+        <form method="POST" action="{{ url_for('settings.change_password') }}" class="settings-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="current_password" class="form-label">Current Password</label>
+                <input type="password" id="current_password" name="current_password"
+                       class="form-input" required>
+                {% if current_password_error %}
+                <p class="form-error" role="alert">{{ current_password_error }}</p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="new_password" class="form-label">New Password</label>
+                <input type="password" id="new_password" name="new_password"
+                       class="form-input" required minlength="8"
+                       placeholder="Minimum 8 characters">
+                {% if password_error %}
+                <p class="form-error" role="alert">{{ password_error }}</p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                <input type="password" id="confirm_password" name="confirm_password"
+                       class="form-input" required minlength="8">
+                {% if confirm_error %}
+                <p class="form-error" role="alert">{{ confirm_error }}</p>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn--primary">Update Password</button>
+        </form>
+    </div>
+
+    <!-- Appearance -->
+    <div class="settings-card">
+        <h2>Appearance</h2>
+        <p class="settings-card__description">Choose your preferred colour theme.</p>
+        <div class="theme-switcher" role="radiogroup" aria-label="Theme selection">
+            <button class="theme-switcher__btn" data-theme="light" role="radio" aria-checked="false">
+                ☀️ Light
+            </button>
+            <button class="theme-switcher__btn" data-theme="dark" role="radio" aria-checked="false">
+                🌙 Dark
+            </button>
+            <button class="theme-switcher__btn" data-theme="system" role="radio" aria-checked="false">
+                💻 System
+            </button>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="settings-divider">
+        <h2 class="settings-divider__title">Danger Zone</h2>
+    </div>
+
+    <!-- Reset Account -->
+    <div class="settings-card settings-card--danger">
+        <h2>Reset Account</h2>
+        <p class="settings-card__warning">
+            This will reset your balance to $10,000, delete all holdings, and archive all transactions.
+            This action cannot be undone.
+        </p>
+        <a href="{{ url_for('settings.reset') }}" class="btn btn--danger">Reset Account</a>
+    </div>
+
+    <!-- Delete Account -->
+    <div class="settings-card settings-card--danger">
+        <h2>Delete Account</h2>
+        <p class="settings-card__warning">
+            This will permanently delete your account, all holdings, and all transaction history.
+            This action cannot be undone.
+        </p>
+        <a href="{{ url_for('settings.delete') }}" class="btn btn--danger">Delete Account</a>
+    </div>
+</div>
+{% endblock %}

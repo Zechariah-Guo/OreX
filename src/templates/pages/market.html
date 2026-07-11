@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Market - OreX{% endblock %}
+
+{% block content %}
+<div class="market-page">
+    <div class="page-header">
+        <h1>Market</h1>
+        <div class="page-header__row">
+            <p class="page-header__subtitle">
+                Browse and trade ores. Prices update every 20 seconds.
+                <span id="market-indicator" class="htmx-indicator">Updating...</span>
+            </p>
+            <div class="sort-control" id="sort-control">
+                <button class="sort-control__btn" aria-haspopup="listbox" aria-expanded="false"
+                        aria-label="Sort ore cards">
+                    <span class="sort-control__label" id="sort-control-label">Default</span>
+                    <svg class="sort-control__icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M3 6h18"/>
+                        <path d="M6 12h12"/>
+                        <path d="M9 18h6"/>
+                    </svg>
+                </button>
+                <ul class="sort-control__menu" role="listbox" aria-label="Sort options">
+                    <li role="option" data-sort="default">Default</li>
+                    <li role="option" data-sort="rising">Rising ↑</li>
+                    <li role="option" data-sort="falling">Falling ↓</li>
+                    <li role="option" data-sort="custom">Custom</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="ore-grid"
+         id="ore-price-grid"
+         hx-get="{{ url_for('market.overview') }}"
+         hx-trigger="every 20s"
+         hx-swap="innerHTML"
+         hx-indicator="#market-indicator">
+        {% include 'partials/ore_price_grid.html' %}
+    </div>
+
+    <p class="ore-grid__tip" id="sort-tip">Tip: Click and drag cards to reorder</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/sort-manager.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cards.js') }}"></script>
+<script>
+// Copy shared qty input into hidden form fields on submit
+document.addEventListener('submit', function(e) {
+    const form = e.target;
+    if (!form.classList.contains('qt-form')) return;
+    const card = form.closest('.ore-card__quick-trade');
+    const input = card.querySelector('.quick-trade-input');
+    const value = input.value.trim();
+
+    // Validate: must be a positive integer
+    if (!value || isNaN(value) || !Number.isInteger(Number(value)) || Number(value) < 1) {
+        e.preventDefault();
+        if (!value || isNaN(value) || !Number.isInteger(Number(value))) {
+            input.setCustomValidity('Please enter a valid whole number.');
+        } else {
+            input.setCustomValidity('Value must be greater than or equal to 1.');
+        }
+        input.reportValidity();
+        return;
+    }
+
+    input.setCustomValidity('');
+    form.querySelector('.qt-hidden-qty').value = value;
+});
+
+// Clear custom validity on input change so it doesn't persist
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('quick-trade-input')) {
+        e.target.setCustomValidity('');
+    }
+});
+
+// Re-initialise expandable cards after HTMX swap
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target.id === 'ore-price-grid') {
+        const cards = event.detail.target.querySelectorAll('.ore-card--expandable');
+        cards.forEach(function(card) {
+            const toggle = card.querySelector('.ore-card__toggle');
+            if (!toggle) return;
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                card.classList.toggle('ore-card--expanded');
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

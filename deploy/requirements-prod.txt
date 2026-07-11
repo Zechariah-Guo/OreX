@@ -1,0 +1,2 @@
+# Production-only dependencies (in addition to requirements.txt)
+gunicorn==23.0.0

@@ -1,0 +1,39 @@
+{% for ore in ores %}
+<div class="ore-card ore-card--expandable" id="ore-card-{{ ore['id'] }}">
+    <a href="{{ url_for('market.ore_detail', ore_id=ore['id']) }}" class="ore-card__link">
+        <div class="ore-card__header">
+            <div class="ore-card__icon">
+                <img src="{{ url_for('static', filename='images/ores/' + ore['icon_filename']) }}"
+                     alt="{{ ore['name'] }}">
+            </div>
+            <div class="ore-card__info">
+                <h3 class="ore-card__name">{{ ore['name'] }}</h3>
+                <span class="ore-card__price">${{ "%.2f" | format(ore['current_price']) }}</span>
+            </div>
+            <span class="ore-card__vol">Vol: {{ ore['volatility'] }}</span>
+            <div class="ore-card__trend ore-card__trend--{{ ore['last_movement'] }}">
+                {% if ore['last_movement'] == 'rise' %}&#9650;
+                {% elif ore['last_movement'] == 'fall' %}&#9660;
+                {% else %}&#9654;
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    <div class="ore-card__footer">
+        <span class="ore-card__base">Base: ${{ "%.2f" | format(ore['base_price']) }}</span>
+        <div class="ore-card__quick-trade" id="qt-{{ ore['id'] }}">
+            <input type="number" min="1" step="1" placeholder="Qty" class="quick-trade-input" hx-preserve="true" id="qty-{{ ore['id'] }}">
+            <form method="POST" action="{{ url_for('trade.buy', ore_id=ore['id']) }}" class="qt-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="quantity" class="qt-hidden-qty">
+                <button type="submit" class="btn btn--xs btn--primary">Buy</button>
+            </form>
+            <form method="POST" action="{{ url_for('trade.sell', ore_id=ore['id']) }}" class="qt-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="quantity" class="qt-hidden-qty">
+                <button type="submit" class="btn btn--xs btn--danger">Sell</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}

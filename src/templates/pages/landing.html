@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}OreX - Minecraft Stock Market{% endblock %}
+
+{% block extra_css %}
+<style>
+.falling-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.falling-img {
+    position: absolute;
+    top: -80px;
+    opacity: 0.2;
+    image-rendering: pixelated;
+    animation: fall linear forwards;
+}
+
+@keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(calc(100vh + 100px)) rotate(360deg); }
+}
+
+.landing {
+    position: relative;
+}
+
+.landing__hero {
+    position: relative;
+    z-index: 1;
+    min-height: calc(100vh - 70px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.landing__sections {
+    position: relative;
+    z-index: 1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="falling-container" id="falling-container"></div>
+
+<div class="landing">
+    <div class="landing__hero">
+        <img src="{{ url_for('static', filename='images/logo-expanded.png') }}" alt="OreX" class="landing__logo">
+        <p class="landing__subtitle">The <span class="landing__best"><span class="landing__best-b">B</span><span class="landing__best-e">E</span><span class="landing__best-s">S</span><span class="landing__best-t">T</span></span> way to Trade</p>
+        <p class="landing__description">
+            Trade ores like stocks. Buy low, sell high, and build your fortune
+            in this Minecraft-themed market simulation. Prices fluctuate every
+            20 seconds based on supply, demand, and market events.
+        </p>
+        <div class="landing__actions">
+            <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Create Account</a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn--secondary">Login</a>
+        </div>
+    </div>
+
+    <div class="landing__sections">
+        <div class="landing__section">
+            <div class="landing__section-text">
+                <h2>9 Tradeable Ores</h2>
+                <p>From stable Coal to volatile Netherite, each ore behaves like a real stock with its own risk profile. Diversify your holdings or go all-in on a single gem.</p>
+            </div>
+            <div class="landing__section-img">
+                <img src="{{ url_for('static', filename='images/ores/Diamond.webp') }}" alt="Diamond ore">
+            </div>
+        </div>
+
+        <div class="landing__section landing__section--reverse">
+            <div class="landing__section-text">
+                <h2>Live Market</h2>
+                <p>Prices tick every 20 seconds driven by supply, demand, random events, and other traders. Watch trends form in real time and strike when the moment is right.</p>
+            </div>
+            <div class="landing__section-img">
+                <img src="{{ url_for('static', filename='images/ores/Emerald.webp') }}" alt="Emerald ore">
+            </div>
+        </div>
+
+        <div class="landing__section">
+            <div class="landing__section-text">
+                <h2>Track Your Portfolio</h2>
+                <p>Monitor holdings, profit/loss, and total portfolio value at a glance. See your trade history and compete on the leaderboard against other miners.</p>
+            </div>
+            <div class="landing__section-img">
+                <img src="{{ url_for('static', filename='images/ores/Gold_Ingot.webp') }}" alt="Gold ingot">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+
+    const ORE_IMAGES = [
+        '{{ url_for("static", filename="images/ores/Coal.webp") }}',
+        '{{ url_for("static", filename="images/ores/Copper_Ingot.webp") }}',
+        '{{ url_for("static", filename="images/ores/Diamond.webp") }}',
+        '{{ url_for("static", filename="images/ores/Emerald.webp") }}',
+        '{{ url_for("static", filename="images/ores/Gold_Ingot.webp") }}',
+        '{{ url_for("static", filename="images/ores/Iron_Ingot.webp") }}',
+        '{{ url_for("static", filename="images/ores/Lapis_Lazuli.webp") }}',
+        '{{ url_for("static", filename="images/ores/Netherite_Ingot.webp") }}',
+        '{{ url_for("static", filename="images/ores/Redstone_Dust.webp") }}'
+    ];
+
+    const container = document.getElementById('falling-container');
+
+    function createFallingOre() {
+        const img = document.createElement('img');
+        const randomOre = ORE_IMAGES[Math.floor(Math.random() * ORE_IMAGES.length)];
+        img.src = randomOre;
+        img.classList.add('falling-img');
+
+        // Random horizontal position
+        img.style.left = Math.random() * 90 + 2 + '%';
+
+        // Random size between 30px and 55px
+        const size = Math.random() * 25 + 30;
+        img.style.width = size + 'px';
+        img.style.height = size + 'px';
+
+        // Random fall duration (8 to 14 seconds)
+        const duration = Math.random() * 6 + 8;
+        img.style.animationDuration = duration + 's';
+
+        container.appendChild(img);
+
+        // Remove after animation completes to save memory
+        setTimeout(function() {
+            img.remove();
+        }, duration * 1000 + 500);
+    }
+
+    // Create a new falling ore every 500ms
+    setInterval(createFallingOre, 500);
+
+    // Seed a few on load
+    for (let i = 0; i < 5; i++) {
+        setTimeout(createFallingOre, i * 200);
+    }
+})();
+</script>
+{% endblock %}

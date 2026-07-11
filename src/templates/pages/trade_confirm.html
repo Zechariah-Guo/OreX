@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Confirm {{ trade_type | capitalize }} - OreX{% endblock %}
+
+{% block content %}
+<div class="trade-confirm-page">
+    <div class="confirm-card">
+        <h1>Confirm {{ trade_type | capitalize }}</h1>
+
+        <div class="confirm-card__details">
+            <div class="confirm-row">
+                <span class="confirm-row__label">Ore</span>
+                <span class="confirm-row__value">{{ ore['name'] }}</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Quantity</span>
+                <span class="confirm-row__value">{{ quantity }}</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Price per unit</span>
+                <span class="confirm-row__value">${{ "%.2f" | format(price) }}</span>
+            </div>
+            <div class="confirm-row confirm-row--total">
+                <span class="confirm-row__label">Total {{ 'cost' if trade_type == 'buy' else 'proceeds' }}</span>
+                <span class="confirm-row__value">${{ "%.2f" | format(total) }}</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Balance after trade</span>
+                <span class="confirm-row__value">${{ "%.2f" | format(balance_after) }}</span>
+            </div>
+        </div>
+
+        <div class="confirm-card__actions">
+            <form method="POST" action="{{ url_for('trade.' + trade_type, ore_id=ore['id']) }}" class="confirm-card__form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="quantity" value="{{ quantity }}">
+                <input type="hidden" name="confirmed" value="1">
+                <button type="submit" class="btn btn--primary btn--full">Confirm {{ trade_type | capitalize }}</button>
+            </form>
+            <a href="{{ url_for('market.ore_detail', ore_id=ore['id']) }}" class="btn btn--secondary btn--full">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

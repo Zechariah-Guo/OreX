@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Reset Account - OreX{% endblock %}
+
+{% block content %}
+<div class="trade-confirm-page">
+    <div class="confirm-card">
+        <h1>Reset Account</h1>
+
+        <div class="reset-warning">
+            <p><strong>Warning:</strong> This will permanently:</p>
+            <ul>
+                <li>Reset your balance to $10,000</li>
+                <li>Delete all your ore holdings</li>
+                <li>Archive all your transaction history</li>
+            </ul>
+            <p>This action cannot be undone.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('settings.reset') }}" class="settings-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="confirmation" class="form-label">
+                    Type your username (<strong>{{ current_user.username }}</strong>) to confirm:
+                </label>
+                <input type="text" id="confirmation" name="confirmation"
+                       class="form-input" required
+                       placeholder="Enter your username"
+                       autocomplete="off">
+            </div>
+
+            <div class="confirm-card__actions">
+                <button type="submit" class="btn btn--danger">Confirm Reset</button>
+                <a href="{{ url_for('settings.overview') }}" class="btn btn--secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

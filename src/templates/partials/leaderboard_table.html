@@ -1,0 +1,33 @@
+<table class="leaderboard-table">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Username</th>
+            <th>Balance</th>
+            <th>Holdings</th>
+            <th>Total Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in rankings %}
+        <tr class="{% if user['id'] == current_user_id %}leaderboard-table__row--current{% endif %}">
+            <td class="leaderboard-table__rank">
+                {% if loop.index == 1 %}🥇
+                {% elif loop.index == 2 %}🥈
+                {% elif loop.index == 3 %}🥉
+                {% else %}{{ loop.index }}
+                {% endif %}
+            </td>
+            <td class="leaderboard-table__username">
+                {{ user['username'] }}
+                {% if user['id'] == current_user_id %}<span class="leaderboard-you">(you)</span>
+                {% elif 'Bot' in user['username'] or 'Trader' in user['username'] or 'Investor' in user['username'] or 'Miner' in user['username'] or 'Broker' in user['username'] or 'Dealer' in user['username'] or 'Merchant' in user['username'] %}<span class="leaderboard-bot">🤖</span>
+                {% endif %}
+            </td>
+            <td>${{ "%.2f" | format(user['balance']) }}</td>
+            <td>${{ "%.2f" | format(user['holdings_value']) }}</td>
+            <td class="leaderboard-table__total">${{ "%.2f" | format(user['total_value']) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

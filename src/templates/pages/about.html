@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}About - OreX{% endblock %}
+
+{% block content %}
+<div class="static-page">
+    <h1>About OreX</h1>
+
+    <section class="static-section">
+        <h2>What is OreX?</h2>
+        <p>
+            OreX is a Minecraft-themed stock market simulation where you trade ores like stocks.
+            Each ore has unique market characteristics — from stable Coal to volatile Netherite.
+            Prices fluctuate every 20 seconds based on an algorithm that considers trends,
+            supply and demand, bot traders, and random market events.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>How It Works</h2>
+        <ol class="static-list static-list--numbered">
+            <li><strong>Create an account</strong> — You start with $10,000 in virtual currency.</li>
+            <li><strong>Browse the market</strong> — View all 9 ores with their current prices and trends.</li>
+            <li><strong>Buy ores</strong> — Purchase ores you think will increase in value.</li>
+            <li><strong>Watch the market</strong> — Prices update every 20 seconds automatically.</li>
+            <li><strong>Sell for profit</strong> — Sell your ores when the price is right.</li>
+            <li><strong>Climb the leaderboard</strong> — Compete with other traders for the highest portfolio value.</li>
+        </ol>
+    </section>
+
+    <section class="static-section">
+        <h2>The 9 Ores</h2>
+        <div class="ore-info-grid">
+            <div class="ore-info-card">
+                <img src="{{ url_for('static', filename='images/ores/Coal.webp') }}" alt="Coal" class="ore-info-card__img">
+                <div class="ore-info-card__content">
+                    <h3>Coal</h3>
+                    <span class="ore-info-card__volatility">Volatility: 0.5</span>
+                    <p>Stable and low value. A reliable fuel source found abundantly throughout the world. Low risk, low reward.</p>
+                </div>
+            </div>
+            <div class="ore-info-card">
+                <img src="{{ url_for('static', filename='images/ores/Iron_Ingot.webp') }}" alt="Iron" class="ore-info-card__img">
+                <div class="ore-info-card__content">
+                    <h3>Iron</h3>
+                    <span class="ore-info-card__volatility">Volatility: 0.6</span>
+                    <p>Reliable and moderate. The backbone of any toolkit, always in demand. A solid mid-range investment.</p>
+                </div>
+            </div>
+            <div class="ore-info-card">
+                <img src="{{ url_for('static', filename='images/ores/Copper_Ingot.webp') }}" alt="Copper" class="ore-info-card__img">
+                <div class="ore-info-card__content">
+                    <h3>Copper</h3>
+                    <span class="ore-info-card__volatility">Volatility: 0.8</span>
+                    <p>Slightly volatile. A versatile metal with unpredictable market swings.</p>
+                </div>
+            </div>
+            <div class="ore-info-card">
+                <img src="{{ url_for('static', filename='images/ores/Gold_Ingot.webp') }}" alt="Gold" class="ore-info-card__img">
+                <div class="ore-info-card__content">
+                    <h3>Gold</h3>
+                    <span class="ore-info-card__volatility">Volatility: 0.9</span>
+                    <p>Mid-tier and balanced. Prized for its lustre and consistent trading value.</p>
+                </div>
+            </div>
+            <div class="ore-info-card">
+                <img src="{{ url_for('static', filename='images/ores/Lapis_Lazuli.webp') }}" alt="Lapis Lazuli" class="ore-info-card__img">
+                <div class="ore-info-card__content">
+                    <h3>Lapis Lazuli</h3>
+                    <span class="ore-info-card__volatility">Volatility: 1.0</span>
+                    <p>Unpredictable. A mystical gem whose value shifts with the winds of fortune.</p>
+                </div>
+            </div>
+            <div class="ore-info-card">
+                <img src="{{ url_for('static', filename='images/ores/Redstone_Dust.webp') }}" alt="Redstone" class="ore-info-card__img">
+                <div class="ore-info-card__content">
+                    <h3>Redstone</h3>
+                    <span class="ore-info-card__volatility">Volatility: 1.2</span>
+                    <p>High risk. Powers complex machinery but its market is notoriously unstable.</p>
+                </div>
+            </div>
+            <div class="ore-info-card">
+                <img src="{{ url_for('static', filename='images/ores/Emerald.webp') }}" alt="Emerald" class="ore-info-card__img">
+                <div class="ore-info-card__content">
+                    <h3>Emerald</h3>
+                    <span class="ore-info-card__volatility">Volatility: 0.9</span>
+                    <p>Premium with moderate volatility. The currency of villagers, valued for its rarity.</p>
+                </div>
+            </div>
+            <div class="ore-info-card">
+                <img src="{{ url_for('static', filename='images/ores/Diamond.webp') }}" alt="Diamond" class="ore-info-card__img">
+                <div class="ore-info-card__content">
+                    <h3>Diamond</h3>
+                    <span class="ore-info-card__volatility">Volatility: 0.7</span>
+                    <p>High value, relatively stable. The pinnacle of mining, coveted by all.</p>
+                </div>
+            </div>
+            <div class="ore-info-card">
+                <img src="{{ url_for('static', filename='images/ores/Netherite_Ingot.webp') }}" alt="Netherite" class="ore-info-card__img">
+                <div class="ore-info-card__content">
+                    <h3>Netherite</h3>
+                    <span class="ore-info-card__volatility">Volatility: 1.4</span>
+                    <p>Highest value, very volatile. Forged in the depths of the Nether, extremely rare. High risk, high reward.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="static-section">
+        <h2>Market Mechanics</h2>
+        <p>The market engine uses several factors to determine price movements:</p>
+        <ul class="static-list">
+            <li><strong>Trend effect</strong> — If a price has been rising, it becomes more likely to fall (mean reversion), and vice versa.</li>
+            <li><strong>Gravity effect</strong> — Prices that drift far from their base price are pulled back over time.</li>
+            <li><strong>Bot traders</strong> — 9 simulated traders make decisions each tick, creating market activity.</li>
+            <li><strong>Player influence</strong> — Your trades have a small effect on the next price movement.</li>
+            <li><strong>Market events</strong> — Rare events (0.5% chance per tick) cause sudden 3× price movements.</li>
+            <li><strong>Volatility</strong> — Each ore has a volatility rating that scales price changes.</li>
+        </ul>
+    </section>
+
+    <section class="static-section">
+        <h2>Trading Tips</h2>
+        <ul class="static-list">
+            <li>Diversify your portfolio across multiple ores to reduce risk.</li>
+            <li>Watch the trend indicators — a long streak in one direction often reverses.</li>
+            <li>High-volatility ores (Redstone, Netherite) offer bigger gains but also bigger losses.</li>
+            <li>Low-volatility ores (Coal, Diamond) are safer but grow more slowly.</li>
+            <li>Check the price floor and ceiling — prices cannot go beyond these bounds.</li>
+            <li>Use the price chart on ore detail pages to spot trends before trading.</li>
+        </ul>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages" aria-live="polite" aria-atomic="true" data-toast-container>
+        {% for category, message in messages|reverse %}
+        <div class="flash flash--{{ category }} flash--toast" role="alert" data-toast data-duration="3000">
+            <div class="flash__message">{{ message }}</div>
+            <div class="flash__progress" aria-hidden="true">
+                <span class="flash__progress-fill" data-toast-progress></span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endwith %}

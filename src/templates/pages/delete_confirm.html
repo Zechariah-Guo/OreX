@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Delete Account - OreX{% endblock %}
+
+{% block content %}
+<div class="trade-confirm-page">
+    <div class="confirm-card">
+        <h1>Delete Account</h1>
+
+        <div class="reset-warning">
+            <p><strong>Warning:</strong> This will permanently:</p>
+            <ul>
+                <li>Delete your account and login credentials</li>
+                <li>Delete all your ore holdings</li>
+                <li>Delete all your transaction history</li>
+            </ul>
+            <p>This action cannot be undone. You will not be able to recover this account.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('settings.delete') }}" class="settings-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="confirmation" class="form-label">
+                    Type your username (<strong>{{ current_user.username }}</strong>) to confirm:
+                </label>
+                <input type="text" id="confirmation" name="confirmation"
+                       class="form-input" required
+                       placeholder="Enter your username"
+                       autocomplete="off">
+            </div>
+
+            <div class="confirm-card__actions">
+                <button type="submit" class="btn btn--danger">Confirm Deletion</button>
+                <a href="{{ url_for('settings.overview') }}" class="btn btn--secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

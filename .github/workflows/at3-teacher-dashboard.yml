@@ -1,0 +1,139 @@
+name: AT3 Teacher Dashboard
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dashboard:
+    if: github.repository_owner == 'detnsw-sydtech'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout template repo
+        uses: actions/checkout@v4
+
+      - name: Install GitHub CLI + jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh jq
+
+      - name: Generate AT3 Dashboard
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+
+          ORG="detnsw-sydtech"
+          PREFIX="2026-12se-at3"
+          OUTPUT="at3-dashboard.csv"
+
+          echo "repo,student_username,missing_count,submitted_count,screenshots_count,last_commit,missing_items,last_run" > $OUTPUT
+
+          REPOS=$(gh repo list $ORG --limit 200 --json name | jq -r '.[].name' | grep "$PREFIX")
+
+          for repo in $REPOS; do
+            echo "Checking $repo..."
+
+            # -------------------------------
+            # Student username
+            # -------------------------------
+            student_username=$(echo "$repo" | sed "s/$PREFIX-//")
+
+            # -------------------------------
+            # Last workflow run
+            # -------------------------------
+            LAST_RUN=$(gh api repos/$ORG/$repo/actions/runs --jq '.workflow_runs[0].conclusion' 2>/dev/null)
+            if [ -z "$LAST_RUN" ] || [ "$LAST_RUN" = "null" ]; then
+              LAST_RUN="none"
+            fi
+
+            # -------------------------------
+            # Default branch
+            # -------------------------------
+            DEFAULT_BRANCH=$(gh api repos/$ORG/$repo --jq '.default_branch' 2>/dev/null)
+            if [ -z "$DEFAULT_BRANCH" ] || [ "$DEFAULT_BRANCH" = "null" ]; then
+              DEFAULT_BRANCH="main"
+            fi
+
+            # -------------------------------
+            # Last commit date
+            # -------------------------------
+            last_commit=$(gh api repos/$ORG/$repo/commits/$DEFAULT_BRANCH --jq '.commit.committer.date' 2>/dev/null)
+            if [ -z "$last_commit" ]; then
+              last_commit="none"
+            fi
+
+            # -------------------------------
+            # Full tree (recursive)
+            # -------------------------------
+            TREE=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              repos/$ORG/$repo/git/trees/$DEFAULT_BRANCH \
+              --raw-field recursive=1 \
+              --jq '.tree[].path' 2>/dev/null)
+
+            if [ -z "$TREE" ]; then
+              TREE=""
+            fi
+
+            # -------------------------------
+            # Required deliverables
+            # -------------------------------
+            REQUIRED=(
+              "deliverables/modelling/ClassDiagram"
+              "deliverables/modelling/UseCaseDiagram"
+              "deliverables/modelling/SystemFlow"
+              "deliverables/modelling/DataDictionary"
+              "deliverables/modelling/DecisionTree"
+              "deliverables/modelling/ContextDiagram"
+              "deliverables/modelling/DFDLevel1"
+              "deliverables/modelling/StructureChart"
+              "deliverables/modelling/Storyboard"
+              "deliverables/documentation/ProjectProposal"
+              "deliverables/documentation/UserStories"
+              "deliverables/documentation/Requirements"
+              "deliverables/documentation/TestingLog"
+              "deliverables/documentation/Reflection"
+              "deliverables/documentation/Bibliography"
+              "deliverables/documentation/FinalDocumentation"
+              "deliverables/implementation/README.md"
+              "deliverables/implementation/Screenshots"
+              "deliverables/presentation/PresentationSlides.pdf"
+            )
+
+            MISSING=()
+            submitted_count=0
+
+            for item in "${REQUIRED[@]}"; do
+              if echo "$TREE" | grep -q "$item"; then
+                submitted_count=$((submitted_count+1))
+              else
+                MISSING+=("$item")
+              fi
+            done
+
+            missing_count=${#MISSING[@]}
+            missing_joined=$(printf "%s;" "${MISSING[@]}")
+
+            # -------------------------------
+            # Count screenshots
+            # -------------------------------
+            screenshots_count=0
+            if echo "$TREE" | grep -q "deliverables/implementation/Screenshots"; then
+              screenshots_count=$(echo "$TREE" | grep "deliverables/implementation/Screenshots/" | wc -l)
+            fi
+
+            # -------------------------------
+            # Write CSV row
+            # -------------------------------
+            echo "$repo,$student_username,$missing_count,$submitted_count,$screenshots_count,$last_commit,$missing_joined,$LAST_RUN" >> $OUTPUT
+
+          done
+
+          echo "Dashboard generated: $OUTPUT"
+
+      - name: Upload dashboard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: at3-dashboard
+          path: at3-dashboard.csv

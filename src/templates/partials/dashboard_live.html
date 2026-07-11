@@ -1,0 +1,66 @@
+<!-- Dashboard Summary -->
+<div class="dashboard-summary">
+    <div class="stat-card">
+        <span class="stat-card__label">Cash Balance</span>
+        <span class="stat-card__value">${{ "%.2f" | format(user.balance) }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-card__label">Holdings Value</span>
+        <span class="stat-card__value">${{ "%.2f" | format(portfolio_value) }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-card__label">Total Value</span>
+        <span class="stat-card__value">${{ "%.2f" | format(total_value) }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-card__label">Profit / Loss</span>
+        <span class="stat-card__value {% if profit_loss >= 0 %}stat-card__value--rise{% else %}stat-card__value--fall{% endif %}">
+            {% if profit_loss >= 0 %}+{% endif %}${{ "%.2f" | format(profit_loss) }}
+        </span>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Top Movers -->
+    <div class="dashboard-card">
+        <h2 class="dashboard-card__title">Top Movers</h2>
+        {% if top_movers %}
+        <div class="movers-list">
+            {% for ore in top_movers %}
+            <a href="{{ url_for('market.ore_detail', ore_id=ore['id']) }}" class="mover-item">
+                <img src="{{ url_for('static', filename='images/ores/' + ore['icon_filename']) }}" alt="{{ ore['name'] }}" class="mover-item__icon">
+                <span class="mover-item__name">{{ ore['name'] }}</span>
+                <span class="mover-item__price">${{ "%.2f" | format(ore['current_price']) }}</span>
+                <span class="mover-item__change {% if ore['change_pct'] >= 0 %}text--success{% else %}text--danger{% endif %}">
+                    {% if ore['change_pct'] >= 0 %}+{% endif %}{{ "%.1f" | format(ore['change_pct']) }}%
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="dashboard-card__empty">No market data yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="dashboard-card">
+        <h2 class="dashboard-card__title">Recent Activity</h2>
+        {% if recent_transactions %}
+        <div class="activity-list">
+            {% for t in recent_transactions %}
+            <div class="activity-item">
+                <span class="activity-item__type activity-item__type--{{ t['type'] }}">
+                    {{ t['type'] | upper }}
+                </span>
+                <span class="activity-item__detail">
+                    {{ t['quantity'] }} {{ t['ore_name'] }}
+                </span>
+                <span class="activity-item__value">${{ "%.2f" | format(t['total_value']) }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="dashboard-card__empty">No trades yet.</p>
+        {% endif %}
+    </div>
+</div>

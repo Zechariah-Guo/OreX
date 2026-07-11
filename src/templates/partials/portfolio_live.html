@@ -1,0 +1,83 @@
+<!-- Portfolio Summary -->
+<div class="portfolio-summary">
+    <div class="stat-card">
+        <span class="stat-card__label">Cash Balance</span>
+        <span class="stat-card__value">${{ "%.2f" | format(user.balance) }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-card__label">Holdings Value</span>
+        <span class="stat-card__value">${{ "%.2f" | format(total_current_value) }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-card__label">Total Portfolio</span>
+        <span class="stat-card__value">${{ "%.2f" | format(total_portfolio_value) }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-card__label">Profit / Loss</span>
+        <span class="stat-card__value {% if total_profit_loss >= 0 %}stat-card__value--rise{% else %}stat-card__value--fall{% endif %}">
+            {% if total_profit_loss >= 0 %}+{% endif %}${{ "%.2f" | format(total_profit_loss) }}
+        </span>
+    </div>
+</div>
+
+{% if holdings %}
+<div class="holdings-table-wrapper">
+    <table class="holdings-table">
+        <thead>
+            <tr>
+                <th>Ore</th>
+                <th>Quantity</th>
+                <th>Avg. Price</th>
+                <th>Current Price</th>
+                <th>Value</th>
+                <th>Profit / Loss</th>
+                <th>Trade</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for h in holdings %}
+            <tr>
+                <td class="holdings-table__ore">
+                    <a href="{{ url_for('market.ore_detail', ore_id=h['ore_id']) }}">{{ h['name'] }}</a>
+                </td>
+                <td>{{ h['quantity'] }}</td>
+                <td>${{ "%.2f" | format(h['avg_purchase_price']) }}</td>
+                <td>${{ "%.2f" | format(h['current_price']) }}
+                    <span class="ore-card__trend--{{ h['last_movement'] }}">
+                        {% if h['last_movement'] == 'rise' %}&#9650;
+                        {% elif h['last_movement'] == 'fall' %}&#9660;
+                        {% else %}&#9654;
+                        {% endif %}
+                    </span>
+                </td>
+                <td>${{ "%.2f" | format(h['current_value']) }}</td>
+                <td class="{% if h['profit_loss'] >= 0 %}text--success{% else %}text--danger{% endif %}">
+                    {% if h['profit_loss'] >= 0 %}+{% endif %}${{ "%.2f" | format(h['profit_loss']) }}
+                    ({{ "%.1f" | format(h['profit_loss_pct']) }}%)
+                </td>
+                <td class="holdings-table__trade">
+                    <div class="ore-card__quick-trade">
+                        <input type="number" min="1" step="1" placeholder="Qty" class="quick-trade-input" hx-preserve="true" id="pqty-{{ h['ore_id'] }}">
+                        <form method="POST" action="{{ url_for('trade.buy', ore_id=h['ore_id']) }}" class="qt-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="quantity" class="qt-hidden-qty">
+                            <button type="submit" class="btn btn--xs btn--primary">Buy</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('trade.sell', ore_id=h['ore_id']) }}" class="qt-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="quantity" class="qt-hidden-qty">
+                            <button type="submit" class="btn btn--xs btn--danger">Sell</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <p>You don't own any ores yet.</p>
+    <a href="{{ url_for('market.overview') }}" class="btn btn--primary">Browse the Market</a>
+</div>
+{% endif %}
