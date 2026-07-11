@@ -13,17 +13,6 @@ __pycache__/
 .cache/
 
 ###############################################
-# SQLITE TEMP FILES
-# (Allow real .db files for marking)
-###############################################
-*.sqlite-wal
-*.sqlite-shm
-*.sqlite-journal
-*.db-wal
-*.db-shm
-*.db-journal
-
-###############################################
 # OS + EDITOR NOISE
 ###############################################
 .DS_Store
