@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     balance REAL NOT NULL DEFAULT 10000,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    last_login TEXT
+    last_login TEXT,
+    totp_enabled INTEGER NOT NULL DEFAULT 0,
+    totp_secret_encrypted TEXT
 );
 
 CREATE TABLE IF NOT EXISTS ores (
@@ -57,6 +59,15 @@ CREATE TABLE IF NOT EXISTS price_history (
     FOREIGN KEY (ore_id) REFERENCES ores(id)
 );
 
+CREATE TABLE IF NOT EXISTS backup_codes (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    code_hash TEXT NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_holdings_user ON holdings(user_id);
 CREATE INDEX IF NOT EXISTS idx_holdings_ore ON holdings(ore_id);
@@ -64,3 +75,4 @@ CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_ore ON transactions(ore_id);
 CREATE INDEX IF NOT EXISTS idx_price_history_ore ON price_history(ore_id);
 CREATE INDEX IF NOT EXISTS idx_price_history_created ON price_history(created_at);
+CREATE INDEX IF NOT EXISTS idx_backup_codes_user ON backup_codes(user_id);

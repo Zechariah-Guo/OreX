@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Two-Factor Authentication - OreX{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1 class="auth-card__title">Two-Factor Authentication</h1>
+
+        {% if login_error %}
+        <p class="form-error" role="alert">{{ login_error }}</p>
+        {% endif %}
+
+        {# TOTP code entry (default mode unless show_backup is set) #}
+        <div id="totp-panel"{% if show_backup %} hidden{% endif %}>
+            <p class="auth-card__subtitle">
+                Enter the 6-digit code from your authenticator app.
+            </p>
+
+            <form method="POST" action="{{ url_for('two_factor.verify') }}" class="auth-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-group">
+                    <label for="code" class="form-label">Authentication code</label>
+                    <input type="text" id="code" name="code"
+                           class="form-input" required
+                           inputmode="numeric" pattern="[0-9]*"
+                           maxlength="6" autocomplete="one-time-code"
+                           autofocus
+                           placeholder="123456">
+                </div>
+
+                <button type="submit" class="btn btn--primary btn--full">Verify</button>
+            </form>
+
+            <p class="auth-card__footer">
+                Lost access to your authenticator app?
+                <a href="#" id="show-backup-link" role="button">Use a backup code</a>
+            </p>
+        </div>
+
+        {# Backup code entry #}
+        <div id="backup-panel"{% if not show_backup %} hidden{% endif %}>
+            <p class="auth-card__subtitle">
+                Enter one of your single-use backup recovery codes.
+            </p>
+
+            <form method="POST" action="{{ url_for('two_factor.verify_backup') }}" class="auth-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-group">
+                    <label for="backup_code" class="form-label">Backup code</label>
+                    <input type="text" id="backup_code" name="backup_code"
+                           class="form-input" required
+                           maxlength="8" autocomplete="off"
+                           spellcheck="false"
+                           placeholder="ABCD1234">
+                </div>
+
+                <button type="submit" class="btn btn--primary btn--full">Verify backup code</button>
+            </form>
+
+            <p class="auth-card__footer">
+                Have your authenticator app?
+                <a href="#" id="show-totp-link" role="button">Use an authenticator code</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        var totpPanel = document.getElementById('totp-panel');
+        var backupPanel = document.getElementById('backup-panel');
+        var showBackupLink = document.getElementById('show-backup-link');
+        var showTotpLink = document.getElementById('show-totp-link');
+
+        function show(panelToShow, panelToHide, fieldId) {
+            panelToHide.hidden = true;
+            panelToShow.hidden = false;
+            var field = document.getElementById(fieldId);
+            if (field) { field.focus(); }
+        }
+
+        if (showBackupLink) {
+            showBackupLink.addEventListener('click', function (e) {
+                e.preventDefault();
+                show(backupPanel, totpPanel, 'backup_code');
+            });
+        }
+
+        if (showTotpLink) {
+            showTotpLink.addEventListener('click', function (e) {
+                e.preventDefault();
+                show(totpPanel, backupPanel, 'code');
+            });
+        }
+    })();
+</script>
+{% endblock %}

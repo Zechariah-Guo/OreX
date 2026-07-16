@@ -122,9 +122,9 @@ class TestTrading:
 
         Validates: Requirements 4.2
         """
-        ore_id = 1  # Coal, current_price = 10.00
-        # User has 10000.00, buying 1001 at 10.00 = 10010.00 > balance
-        quantity = 1001
+        ore_id = 9  # Netherite, current_price = 150.00
+        # User has 10000.00, buying 100 at 150.00 = 15000.00 > balance
+        quantity = 100
 
         conn = sqlite3.connect(app.config['DATABASE_PATH'])
         conn.row_factory = sqlite3.Row

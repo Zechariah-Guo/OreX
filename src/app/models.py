@@ -310,8 +310,59 @@ def delete_account(user_id):
 
     db.execute("DELETE FROM transactions WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM holdings WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM users WHERE id = ?", (user_id,))
     db.commit()
+
+
+# --- 2FA Model ---
+
+def get_2fa_status(user_id):
+    """Return the 2FA status for a user: {enabled: bool, encrypted_secret: str|None}."""
+    db = get_db()
+    row = db.execute(
+        "SELECT totp_enabled, totp_secret_encrypted FROM users WHERE id = ?",
+        (user_id,)
+    ).fetchone()
+    if row is None:
+        return {'enabled': False, 'encrypted_secret': None}
+    return {
+        'enabled': bool(row['totp_enabled']),
+        'encrypted_secret': row['totp_secret_encrypted']
+    }
+
+
+def enable_2fa(user_id, encrypted_secret):
+    """Enable 2FA for a user by setting totp_enabled=1 and storing the encrypted secret."""
+    db = get_db()
+    db.execute(
+        "UPDATE users SET totp_enabled = 1, totp_secret_encrypted = ? WHERE id = ?",
+        (encrypted_secret, user_id)
+    )
+    db.commit()
+
+
+def disable_2fa(user_id):
+    """Disable 2FA for a user: clear secret, disable flag, and delete all backup codes."""
+    db = get_db()
+    db.execute(
+        "UPDATE users SET totp_enabled = 0, totp_secret_encrypted = NULL WHERE id = ?",
+        (user_id,)
+    )
+    db.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
+    db.commit()
+
+
+def get_encrypted_totp_secret(user_id):
+    """Fetch the encrypted TOTP secret for a user. Returns str or None."""
+    db = get_db()
+    row = db.execute(
+        "SELECT totp_secret_encrypted FROM users WHERE id = ?",
+        (user_id,)
+    ).fetchone()
+    if row is None:
+        return None
+    return row['totp_secret_encrypted']
 
 
 # --- Leaderboard Model ---
@@ -330,3 +381,50 @@ def get_leaderboard():
            GROUP BY u.id
            ORDER BY total_value DESC"""
     ).fetchall()
+
+
+# --- Backup Codes Model ---
+
+def store_backup_codes(user_id, hashed_codes):
+    """Insert hashed backup codes into backup_codes table."""
+    db = get_db()
+    for code_hash in hashed_codes:
+        db.execute(
+            "INSERT INTO backup_codes (user_id, code_hash, used) VALUES (?, ?, 0)",
+            (user_id, code_hash)
+        )
+    db.commit()
+
+
+def get_backup_codes(user_id):
+    """Fetch all backup code rows for a user (id, code_hash, used)."""
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, code_hash, used FROM backup_codes WHERE user_id = ?",
+        (user_id,)
+    ).fetchall()
+    return [{"id": row["id"], "code_hash": row["code_hash"], "used": row["used"]} for row in rows]
+
+
+def mark_backup_code_used(code_id):
+    """Mark a specific backup code as used."""
+    db = get_db()
+    db.execute("UPDATE backup_codes SET used = 1 WHERE id = ?", (code_id,))
+    db.commit()
+
+
+def delete_backup_codes(user_id):
+    """Remove all backup codes for a user."""
+    db = get_db()
+    db.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
+    db.commit()
+
+
+def get_remaining_backup_code_count(user_id):
+    """Count unused backup codes for a user."""
+    db = get_db()
+    row = db.execute(
+        "SELECT COUNT(*) as cnt FROM backup_codes WHERE user_id = ? AND used = 0",
+        (user_id,)
+    ).fetchone()
+    return row["cnt"]

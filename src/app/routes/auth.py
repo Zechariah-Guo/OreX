@@ -3,12 +3,12 @@
 import time
 from math import ceil
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
 
 from app.models import (
     User, create_user, get_user_by_username,
-    verify_password, update_last_login
+    verify_password, update_last_login, get_2fa_status
 )
 from app.utils.validation import validate_username, validate_password
 
@@ -158,6 +158,13 @@ def login():
                 username=username,
                 login_error='Invalid username or password.',
             )
+
+        # Check if 2FA is enabled for this user
+        tfa_status = get_2fa_status(row['id'])
+        if tfa_status['enabled']:
+            session['pending_2fa_user_id'] = row['id']
+            session['pending_2fa_time'] = time.time()
+            return redirect(url_for('two_factor.challenge'))
 
         # Login successful
         user = User(row['id'], row['username'], row['balance'])

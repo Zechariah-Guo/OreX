@@ -1,6 +1,6 @@
 """Trade routes: buy and sell ores."""
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_required, current_user
 
 from app.database import get_db
@@ -15,6 +15,17 @@ from app.utils.validation import validate_quantity
 trade_bp = Blueprint('trade', __name__)
 
 
+def _get_buy_cap():
+    """Get the buy quantity cap for standard mode players.
+
+    Returns the max quantity cap or None if uncapped (Advanced Mode).
+    TODO: When Advanced Mode is implemented, check if the user has it active
+    and return None to remove the cap.
+    """
+    # For now, all users are in standard mode
+    return current_app.config.get('MAX_BUY_QUANTITY', 500)
+
+
 @trade_bp.route('/trade/buy/<int:ore_id>', methods=['GET', 'POST'])
 @login_required
 def buy(ore_id):
@@ -27,11 +38,12 @@ def buy(ore_id):
     if request.method == 'POST':
         # Check if this is the confirmation step
         confirmed = request.form.get('confirmed')
+        buy_cap = _get_buy_cap()
 
         if confirmed:
             # Execute the trade
             quantity_str = request.form.get('quantity')
-            quantity, error = validate_quantity(quantity_str)
+            quantity, error = validate_quantity(quantity_str, max_quantity=buy_cap)
             if error:
                 flash(error, 'error')
                 return redirect(url_for('market.ore_detail', ore_id=ore_id))
@@ -84,7 +96,7 @@ def buy(ore_id):
         else:
             # Show confirmation page
             quantity_str = request.form.get('quantity')
-            quantity, error = validate_quantity(quantity_str)
+            quantity, error = validate_quantity(quantity_str, max_quantity=buy_cap)
             if error:
                 flash(error, 'error')
                 return redirect(url_for('market.ore_detail', ore_id=ore_id))

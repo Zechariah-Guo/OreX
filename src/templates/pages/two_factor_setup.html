@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Set Up Two-Factor Authentication - OreX{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        {% if backup_codes %}
+        {# ---------- Success state: 2FA enabled, show backup codes once ---------- #}
+        <h1 class="auth-card__title">Two-Factor Authentication Enabled</h1>
+        <p class="auth-card__subtitle">
+            Your account is now protected with two-factor authentication.
+        </p>
+
+        <div class="reset-warning" role="alert">
+            <p><strong>Save your backup codes now.</strong></p>
+            <p>
+                These 8 single-use recovery codes let you log in if you lose access to
+                your authenticator app. Store them somewhere safe.
+                <strong>They will not be shown again.</strong>
+            </p>
+        </div>
+
+        <ul class="backup-codes">
+            {% for code in backup_codes %}
+            <li class="backup-codes__item"><code>{{ code }}</code></li>
+            {% endfor %}
+        </ul>
+
+        <a href="{{ url_for('settings.overview') }}" class="btn btn--primary btn--full">
+            Done
+        </a>
+
+        {% else %}
+        {# ---------- Setup state: show QR code, manual key, confirmation form ---------- #}
+        <h1 class="auth-card__title">Set Up Two-Factor Authentication</h1>
+        <p class="auth-card__subtitle">
+            Scan the QR code with your authenticator app, then enter the 6-digit code
+            it generates to confirm setup.
+        </p>
+
+        <div class="totp-setup__qr">
+            <img src="data:image/png;base64,{{ qr_code_b64 }}"
+                 alt="QR code for two-factor authentication setup"
+                 width="200" height="200">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="manual-key">
+                Can't scan? Enter this key manually:
+            </label>
+            <input type="text" id="manual-key" class="form-input"
+                   value="{{ manual_key }}" readonly
+                   onclick="this.select()"
+                   aria-label="Manual setup key">
+        </div>
+
+        <form method="POST" action="{{ url_for('two_factor.confirm') }}" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="code" class="form-label">6-Digit Confirmation Code</label>
+                <input type="text" id="code" name="code"
+                       class="form-input" required
+                       inputmode="numeric" pattern="[0-9]*"
+                       maxlength="6" autocomplete="one-time-code"
+                       placeholder="000000" autofocus>
+                {% if setup_error %}
+                <p class="form-error" role="alert">{{ setup_error }}</p>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn--primary btn--full">
+                Confirm &amp; Enable
+            </button>
+        </form>
+
+        <p class="auth-card__footer">
+            <a href="{{ url_for('settings.overview') }}">Cancel</a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

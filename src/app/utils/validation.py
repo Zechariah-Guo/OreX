@@ -68,8 +68,8 @@ def validate_password(password):
     return True, None
 
 
-def validate_quantity(quantity_str):
-    """Validate trade quantity: must be a positive integer.
+def validate_quantity(quantity_str, max_quantity=None):
+    """Validate trade quantity: must be a positive integer, optionally capped.
     Returns (quantity_int, error_message).
     """
     if not quantity_str:
@@ -80,4 +80,6 @@ def validate_quantity(quantity_str):
         return None, 'Quantity must be a whole number.'
     if quantity <= 0:
         return None, 'Quantity must be greater than zero.'
+    if max_quantity is not None and quantity > max_quantity:
+        return None, f'Maximum buy quantity is {max_quantity:,} in standard mode. Unlock Advanced Mode for unlimited trading.'
     return quantity, None

@@ -5,7 +5,7 @@ from flask_login import login_required, logout_user, current_user
 
 from app.models import (
     get_user_by_id, get_user_by_username, verify_password,
-    update_password, reset_account, delete_account
+    update_password, reset_account, delete_account, get_2fa_status
 )
 from app.utils.validation import validate_password
 
@@ -17,7 +17,10 @@ settings_bp = Blueprint('settings', __name__)
 def overview():
     """Account settings page."""
     user = get_user_by_id(current_user.id)
-    return render_template('pages/settings.html', user=user)
+    two_factor_enabled = get_2fa_status(current_user.id)['enabled']
+    return render_template(
+        'pages/settings.html', user=user, two_factor_enabled=two_factor_enabled
+    )
 
 
 @settings_bp.route('/settings/password', methods=['POST'])
@@ -35,6 +38,7 @@ def change_password():
         return render_template(
             'pages/settings.html',
             user=user,
+            two_factor_enabled=get_2fa_status(current_user.id)['enabled'],
             current_password_error='Current password is incorrect.',
         )
 
@@ -44,6 +48,7 @@ def change_password():
         return render_template(
             'pages/settings.html',
             user=user,
+            two_factor_enabled=get_2fa_status(current_user.id)['enabled'],
             password_error='New password cannot match old password',
         )
 
@@ -54,6 +59,7 @@ def change_password():
         return render_template(
             'pages/settings.html',
             user=user,
+            two_factor_enabled=get_2fa_status(current_user.id)['enabled'],
             password_error=error,
         )
 
@@ -62,6 +68,7 @@ def change_password():
         return render_template(
             'pages/settings.html',
             user=user,
+            two_factor_enabled=get_2fa_status(current_user.id)['enabled'],
             confirm_error='New passwords do not match.',
         )
 

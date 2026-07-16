@@ -64,6 +64,47 @@
         </form>
     </div>
 
+    <!-- Two-Factor Authentication -->
+    <div class="settings-card">
+        <h2>Two-Factor Authentication</h2>
+        <div class="settings-info">
+            <div class="settings-info__row">
+                <span class="settings-info__label">Status</span>
+                <span class="settings-info__value">
+                    {% if two_factor_enabled %}Enabled{% else %}Disabled{% endif %}
+                </span>
+            </div>
+        </div>
+
+        {% if two_factor_enabled %}
+        <p class="settings-card__description">
+            Two-factor authentication is active on your account. To disable it, confirm
+            your identity with a code from your authenticator app or a backup code.
+        </p>
+        <form method="POST" action="{{ url_for('two_factor.disable') }}" class="settings-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="disable_2fa_code" class="form-label">Authentication Code</label>
+                <input type="text" id="disable_2fa_code" name="code"
+                       class="form-input" required autocomplete="one-time-code"
+                       inputmode="text" placeholder="6-digit code or backup code">
+            </div>
+
+            <button type="submit" class="btn btn--danger">Disable 2FA</button>
+        </form>
+        {% else %}
+        <p class="settings-card__description">
+            Add an extra layer of security to your account by requiring a time-based
+            code from an authenticator app when you log in.
+        </p>
+        <form method="POST" action="{{ url_for('two_factor.setup') }}" class="settings-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn--primary">Enable 2FA</button>
+        </form>
+        {% endif %}
+    </div>
+
     <!-- Appearance -->
     <div class="settings-card">
         <h2>Appearance</h2>

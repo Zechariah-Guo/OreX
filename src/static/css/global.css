@@ -875,6 +875,13 @@ input::-webkit-inner-spin-button {
 .trade-form__balance {
     color: var(--colour-text-muted);
     font-size: 0.875rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.trade-form__cap {
+    color: #b8860b;
+    font-size: 0.75rem;
+    margin-top: 0;
     margin-bottom: var(--spacing-md);
 }
 
