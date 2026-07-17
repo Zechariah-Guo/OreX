@@ -31,6 +31,9 @@
                 <th>Current Price</th>
                 <th>Value</th>
                 <th>Profit / Loss</th>
+                {% if is_advanced_active %}
+                <th>SL / TP</th>
+                {% endif %}
                 <th>Trade</th>
             </tr>
         </thead>
@@ -55,6 +58,22 @@
                     {% if h['profit_loss'] >= 0 %}+{% endif %}${{ "%.2f" | format(h['profit_loss']) }}
                     ({{ "%.1f" | format(h['profit_loss_pct']) }}%)
                 </td>
+                {% if is_advanced_active %}
+                <td class="holdings-table__sltp">
+                    <form method="POST" action="{{ url_for('trade.modify_sltp', holding_id=h['id']) }}" class="sltp-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="sltp-form__fields">
+                            <input type="number" name="stop_loss" class="form-input form-input--sm" step="0.01" min="0"
+                                   placeholder="SL"
+                                   value="{{ '%.2f' | format(h['sltp']['stop_loss']) if h['sltp'] and h['sltp']['stop_loss'] else '' }}">
+                            <input type="number" name="take_profit" class="form-input form-input--sm" step="0.01" min="0"
+                                   placeholder="TP"
+                                   value="{{ '%.2f' | format(h['sltp']['take_profit']) if h['sltp'] and h['sltp']['take_profit'] else '' }}">
+                        </div>
+                        <button type="submit" class="btn btn--xs btn--secondary">Set</button>
+                    </form>
+                </td>
+                {% endif %}
                 <td class="holdings-table__trade">
                     <div class="ore-card__quick-trade">
                         <input type="number" min="1" step="1" placeholder="Qty" class="quick-trade-input" hx-preserve="true" id="pqty-{{ h['ore_id'] }}">

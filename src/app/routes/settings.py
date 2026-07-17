@@ -8,6 +8,7 @@ from app.models import (
     update_password, reset_account, delete_account, get_2fa_status
 )
 from app.utils.validation import validate_password
+from app.advanced import purchase_advanced_mode, toggle_advanced_mode
 
 settings_bp = Blueprint('settings', __name__)
 
@@ -113,3 +114,21 @@ def delete():
         return redirect(url_for('pages.landing'))
 
     return render_template('pages/delete_confirm.html')
+
+
+@settings_bp.route('/settings/advanced/purchase', methods=['POST'])
+@login_required
+def purchase_advanced():
+    """Purchase Advanced Mode for the current user."""
+    success, message = purchase_advanced_mode(current_user.id)
+    flash(message, 'success' if success else 'error')
+    return redirect(url_for('settings.overview'))
+
+
+@settings_bp.route('/settings/advanced/toggle', methods=['POST'])
+@login_required
+def toggle_advanced():
+    """Toggle Advanced Mode on or off for the current user."""
+    success, message = toggle_advanced_mode(current_user.id)
+    flash(message, 'success' if success else 'error')
+    return redirect(url_for('settings.overview'))

@@ -2,9 +2,11 @@
 
 import json
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, jsonify, render_template, request
 from flask_login import login_required, current_user
 
+from app.decorators import advanced_required
+from app.market.levels import calculate_levels
 from app.models import get_all_ores, get_ore_by_id, get_price_history, get_holding
 
 market_bp = Blueprint('market', __name__)
@@ -114,5 +116,13 @@ def ore_price_history(ore_id):
 
     chart_data = [{'price': row['price'], 'time': row['created_at'], 'movement': row['movement']} for row in history]
 
-    from flask import jsonify
     return jsonify(chart_data)
+
+
+@market_bp.route('/market/ore/<int:ore_id>/levels')
+@login_required
+@advanced_required
+def ore_levels(ore_id):
+    """Return resistance and support levels for an ore (Advanced Mode only)."""
+    levels = calculate_levels(ore_id)
+    return jsonify(levels)

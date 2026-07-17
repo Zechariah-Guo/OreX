@@ -19,7 +19,7 @@
                 {% endif %}
             </td>
             <td class="leaderboard-table__username">
-                {{ user['username'] }}
+                <span class="leaderboard__username {% if user['advanced_active'] %}leaderboard__username--advanced{% endif %}">{{ user['username'] }}</span>
                 {% if user['id'] == current_user_id %}<span class="leaderboard-you">(you)</span>
                 {% elif 'Bot' in user['username'] or 'Trader' in user['username'] or 'Investor' in user['username'] or 'Miner' in user['username'] or 'Broker' in user['username'] or 'Dealer' in user['username'] or 'Merchant' in user['username'] %}<span class="leaderboard-bot">🤖</span>
                 {% endif %}

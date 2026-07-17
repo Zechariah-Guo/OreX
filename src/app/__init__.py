@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_wtf.csrf import CSRFProtect
 
 
@@ -34,6 +34,25 @@ def create_app():
     # Register blueprints
     from app.routes import register_blueprints
     register_blueprints(app)
+
+    # Context processor: inject Advanced Mode status into all templates
+    @app.context_processor
+    def inject_advanced_mode():
+        if current_user.is_authenticated:
+            from app.advanced import get_advanced_status
+            status = get_advanced_status(current_user.id)
+            return {
+                'is_advanced_active': status['active'],
+                'has_advanced_purchased': status['purchased'],
+                'advanced_eligible': status['eligible'],
+                'advanced_cooldown_remaining': status['cooldown_remaining'],
+            }
+        return {
+            'is_advanced_active': False,
+            'has_advanced_purchased': False,
+            'advanced_eligible': False,
+            'advanced_cooldown_remaining': 0,
+        }
 
     # Register error handlers
     from flask import render_template

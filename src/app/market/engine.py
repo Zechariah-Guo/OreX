@@ -5,10 +5,14 @@ per-request connection) to avoid threading issues with SQLite.
 """
 
 import atexit
+import logging
 import signal
 import sqlite3
 import threading
 import time
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 _engine_thread = None
 _shutdown_event = threading.Event()
@@ -68,6 +72,16 @@ def start_engine(app):
                         db.rollback()
                     except Exception:
                         pass
+
+                try:
+                    evaluate_stop_loss_take_profit(db)
+                except Exception as e:
+                    # Log error but keep the engine running
+                    print(f"[Market Engine] Error during SL/TP evaluation: {e}")
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
         finally:
             db.close()
             print("[Market Engine] Database connection closed.")
@@ -89,3 +103,76 @@ def start_engine(app):
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, _signal_handler)
         signal.signal(signal.SIGTERM, _signal_handler)
+
+
+def evaluate_stop_loss_take_profit(db):
+    """Check all active SL/TP orders against current prices and execute triggered ones.
+
+    For each active order, compares the ore's current price against the stop_loss
+    and take_profit thresholds. If triggered, executes an auto-sell: credits the
+    user's balance, deletes the holding, marks the order as triggered, and records
+    a transaction.
+
+    Each order is evaluated independently — errors on one order do not prevent
+    processing of the remaining orders.
+    """
+    orders = db.execute("""
+        SELECT sltp.id AS sltp_id, sltp.stop_loss, sltp.take_profit,
+               sltp.holding_id, h.quantity, h.user_id, h.ore_id,
+               o.current_price
+        FROM stop_loss_take_profit sltp
+        JOIN holdings h ON sltp.holding_id = h.id
+        JOIN ores o ON h.ore_id = o.id
+        WHERE sltp.active = 1
+    """).fetchall()
+
+    for order in orders:
+        try:
+            triggered = False
+            if order['stop_loss'] is not None and order['current_price'] <= order['stop_loss']:
+                triggered = True
+            elif order['take_profit'] is not None and order['current_price'] >= order['take_profit']:
+                triggered = True
+
+            if not triggered:
+                continue
+
+            # Calculate sell proceeds
+            quantity = order['quantity']
+            current_price = order['current_price']
+            total_value = quantity * current_price
+
+            # Credit the user's balance
+            db.execute(
+                "UPDATE users SET balance = balance + ? WHERE id = ?",
+                (total_value, order['user_id'])
+            )
+
+            # Delete the holding (full sell of entire holding)
+            db.execute(
+                "DELETE FROM holdings WHERE id = ?",
+                (order['holding_id'],)
+            )
+
+            # Mark the SL/TP order as triggered
+            db.execute(
+                "UPDATE stop_loss_take_profit SET active = 0, triggered_at = datetime('now') WHERE id = ?",
+                (order['sltp_id'],)
+            )
+
+            # Record the auto-sell transaction
+            now = datetime.now().isoformat()
+            db.execute(
+                """INSERT INTO transactions (user_id, ore_id, type, quantity, price_at_trade, total_value, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (order['user_id'], order['ore_id'], 'sell', quantity, current_price, total_value, now)
+            )
+
+        except Exception as e:
+            logger.error(
+                "Error evaluating SL/TP order %s for user %s: %s",
+                order['sltp_id'], order['user_id'], e
+            )
+            continue
+
+    db.commit()

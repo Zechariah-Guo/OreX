@@ -294,11 +294,22 @@ def update_password(user_id, new_password):
 
 
 def reset_account(user_id):
-    """Reset a user's account: restore default balance, clear holdings, archive transactions."""
+    """Reset a user's account: restore default balance, clear holdings, archive transactions, and clear Advanced Mode state."""
     db = get_db()
     default_balance = current_app.config['DEFAULT_BALANCE']
 
-    db.execute("UPDATE users SET balance = ? WHERE id = ?", (default_balance, user_id))
+    # Clear all Advanced Mode state
+    db.execute(
+        "UPDATE users SET advanced_eligible=0, advanced_purchased=0, advanced_active=0, advanced_toggled_at=NULL, balance = ? WHERE id = ?",
+        (default_balance, user_id)
+    )
+
+    # Explicitly delete SL/TP orders before holdings (FK cascade would handle it, but being explicit is safer)
+    db.execute(
+        "DELETE FROM stop_loss_take_profit WHERE holding_id IN (SELECT id FROM holdings WHERE user_id = ?)",
+        (user_id,)
+    )
+
     db.execute("DELETE FROM holdings WHERE user_id = ?", (user_id,))
     db.execute("UPDATE transactions SET archived = 1 WHERE user_id = ? AND archived = 0", (user_id,))
     db.commit()
@@ -373,6 +384,7 @@ def get_leaderboard():
     return db.execute(
         """SELECT u.id, u.username,
                   u.balance,
+                  u.advanced_active,
                   COALESCE(SUM(h.quantity * o.current_price), 0) as holdings_value,
                   u.balance + COALESCE(SUM(h.quantity * o.current_price), 0) as total_value
            FROM users u

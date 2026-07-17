@@ -1,0 +1,407 @@
+/* ===== Advanced Mode Theme & Components ===== */
+
+/*
+ * Styles for the OreX Advanced Mode prestige layer.
+ * Applied when .advanced-theme class is on <body>.
+ * Includes: theme overrides, settings activation box,
+ * toggle switch, SL/TP fields, R/S info box, leaderboard indicator,
+ * and confirmation popup.
+ */
+
+/* ===== Advanced Theme — Body-Level Overrides ===== */
+.advanced-theme {
+    --colour-accent: #9b59b6;
+    --colour-accent-hover: #8e44ad;
+    --colour-border: #7c5e99;
+}
+
+html[data-theme="dark"] .advanced-theme {
+    --colour-border: #6b4d8a;
+}
+
+/* Subtle border accent on main content cards when advanced is active */
+.advanced-theme .ore-detail,
+.advanced-theme .trade-form,
+.advanced-theme .chart-container,
+.advanced-theme .settings-card,
+.advanced-theme .dashboard-card {
+    border-color: var(--colour-border);
+}
+
+/* Expand max-width slightly for advanced layout accommodating extra controls */
+.advanced-theme main {
+    max-width: 1140px;
+}
+
+/* Preserve 3-column grid on market page in advanced mode */
+.advanced-theme .ore-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Nav brand glow in advanced mode */
+.advanced-theme .nav__brand {
+    background: linear-gradient(135deg, rgba(155, 89, 182, 0.4), rgba(142, 68, 173, 0.2));
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    box-shadow: 0 0 12px rgba(155, 89, 182, 0.3);
+}
+
+html[data-theme="dark"] .advanced-theme .nav__brand {
+    background: linear-gradient(135deg, rgba(155, 89, 182, 0.5), rgba(142, 68, 173, 0.3));
+    box-shadow: 0 0 16px rgba(155, 89, 182, 0.4), 0 0 32px rgba(142, 68, 173, 0.2);
+}
+
+
+/* ===== Advanced Mode Activation Box (Settings Page) ===== */
+.advanced-mode-box {
+    padding: var(--spacing-md);
+    border: 2px solid var(--colour-border);
+    border-radius: var(--radius);
+    background-color: var(--colour-surface);
+    transition: opacity 0.2s, border-color 0.2s;
+}
+
+.advanced-mode-box__title {
+    font-size: 1.1rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.advanced-mode-box__message {
+    color: var(--colour-text-muted);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.6;
+}
+
+/* State: Disabled / Ineligible */
+.advanced-mode-box--disabled {
+    opacity: 0.5;
+    border-color: var(--colour-border);
+    pointer-events: none;
+}
+
+.advanced-mode-box--disabled .advanced-mode-box__title {
+    color: var(--colour-text-muted);
+}
+
+/* State: Eligible (ready to purchase) */
+.advanced-mode-box__content--eligible {
+    border-top: 1px solid var(--colour-border);
+    padding-top: var(--spacing-md);
+}
+
+.advanced-mode-box__content--eligible .advanced-mode-box__message {
+    color: var(--colour-text);
+}
+
+/* State: Purchased (toggle visible) */
+.advanced-mode-box__content--purchased {
+    border-top: 1px solid var(--colour-border);
+    padding-top: var(--spacing-md);
+}
+
+/* Cooldown display */
+.advanced-mode-box__cooldown {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.advanced-mode-box__cooldown-timer {
+    font-size: 0.85rem;
+    color: var(--colour-text-muted);
+    font-family: var(--font-mono);
+}
+
+/* Cooldown disabled toggle button */
+.btn--toggle {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 2px solid var(--colour-border);
+    background-color: var(--colour-bg);
+    color: var(--colour-text-muted);
+    cursor: not-allowed;
+}
+
+.btn--toggle-on {
+    background-color: rgba(155, 89, 182, 0.15);
+    border-color: #9b59b6;
+    color: #9b59b6;
+}
+
+
+/* ===== Toggle Switch ===== */
+.toggle-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-switch input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* Track */
+.toggle-switch__slider {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    background-color: var(--colour-border);
+    border-radius: 26px;
+    transition: background-color 0.2s;
+}
+
+/* Thumb */
+.toggle-switch__slider::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Checked state — track */
+.toggle-switch input[type="checkbox"]:checked + .toggle-switch__slider {
+    background-color: #9b59b6;
+}
+
+/* Checked state — thumb slides right */
+.toggle-switch input[type="checkbox"]:checked + .toggle-switch__slider::before {
+    transform: translateX(22px);
+}
+
+/* Focus ring for accessibility */
+.toggle-switch input[type="checkbox"]:focus-visible + .toggle-switch__slider {
+    outline: 2px solid var(--colour-accent);
+    outline-offset: 2px;
+}
+
+/* Label text beside toggle */
+.toggle-switch__label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--colour-text);
+}
+
+
+/* ===== SL/TP Form in Portfolio Table ===== */
+.sltp-form {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.sltp-form__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.sltp-form__fields .form-input--sm {
+    width: 80px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+}
+
+.sltp-form .btn--xs {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+}
+
+.holdings-table__sltp {
+    min-width: 120px;
+}
+
+/* ===== SL/TP Form Fields (Trade Pages) ===== */
+.sltp-fields {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px dashed var(--colour-border);
+}
+
+.sltp-fields--no-border {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.sltp-fields__title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--colour-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--spacing-sm);
+}
+
+.sltp-fields .form-group {
+    margin-bottom: var(--spacing-sm);
+}
+
+.sltp-fields .form-label {
+    font-size: 0.85rem;
+    color: var(--colour-text-muted);
+}
+
+.sltp-fields .form-input {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+}
+
+.sltp-fields .form-input::placeholder {
+    font-size: 0.8rem;
+}
+
+
+/* ===== Resistance/Support Info Box (Ore Detail) ===== */
+.rs-info-box {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--colour-surface);
+    border: 1px dashed var(--colour-border);
+    border-radius: var(--radius);
+    align-items: center;
+    margin-top: var(--spacing-sm);
+}
+
+.rs-info-box__item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.rs-info-box__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.rs-info-box__dot--resistance {
+    background-color: #FF4560;
+}
+
+.rs-info-box__dot--support {
+    background-color: #00E396;
+}
+
+.rs-info-box__label {
+    color: var(--colour-text-muted);
+}
+
+.rs-info-box__value {
+    color: var(--colour-text);
+    font-family: var(--font-mono);
+}
+
+/* Dark theme adjustments for R/S info box */
+html[data-theme="dark"] .rs-info-box {
+    background: var(--colour-surface);
+    border-color: var(--colour-border);
+}
+
+html[data-theme="dark"] .rs-info-box__value {
+    color: var(--colour-text);
+}
+
+
+/* ===== Leaderboard Advanced Username Indicator ===== */
+.leaderboard__username--advanced {
+    color: #e74c3c;
+    font-weight: 700;
+}
+
+
+/* ===== Confirmation Popup (Toggle Action) ===== */
+.confirm-popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-popup-overlay--active {
+    display: flex;
+}
+
+.confirm-popup {
+    background-color: var(--colour-surface);
+    border: 2px solid var(--colour-border);
+    border-radius: var(--radius);
+    padding: var(--spacing-lg);
+    max-width: 420px;
+    width: calc(100% - 2rem);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+.confirm-popup__title {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.confirm-popup__message {
+    color: var(--colour-text-muted);
+    line-height: 1.7;
+    margin-bottom: var(--spacing-md);
+}
+
+.confirm-popup__list {
+    list-style: disc;
+    margin-left: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    color: var(--colour-text-muted);
+    line-height: 1.8;
+}
+
+.confirm-popup__actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: flex-end;
+}
+
+
+/* ===== Responsive Adjustments ===== */
+@media (max-width: 768px) {
+    .advanced-theme main {
+        max-width: 100%;
+    }
+
+    .rs-info-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    .advanced-mode-box__cooldown {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    .confirm-popup__actions {
+        flex-direction: column;
+    }
+}

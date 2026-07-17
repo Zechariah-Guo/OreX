@@ -2,7 +2,11 @@
     <div class="nav__container">
         <a href="{{ url_for('pages.landing') }}" class="nav__brand">
             {% if current_user.is_authenticated %}
-                <img src="{{ url_for('static', filename='images/logo-expanded.png') }}" alt="OreX" class="nav__logo">
+                {% if is_advanced_active %}
+                    <img src="{{ url_for('static', filename='images/logo-expanded-advanced.png') }}" alt="OreX Advanced" class="nav__logo">
+                {% else %}
+                    <img src="{{ url_for('static', filename='images/logo-expanded.png') }}" alt="OreX" class="nav__logo">
+                {% endif %}
             {% else %}
                 <img src="{{ url_for('static', filename='images/logo.png') }}" alt="OreX" class="nav__logo">
             {% endif %}

@@ -198,6 +198,18 @@ Implement the in-app Notification System for OreX. This proceeds bottom-up: sche
   - [ ] 12.3 Final checkpoint
     - Ensure all tests pass, ask the user if questions arise.
 
+- [ ] 13. SL/TP trigger toast notifications (Advanced Mode integration)
+  - [ ] 13.1 Fire notification on SL/TP auto-sell in tick engine
+    - In `evaluate_stop_loss_take_profit()` (engine.py), after a successful auto-sell, call `create_notification(user_id, 'liquidation', message, action_url)`
+    - Message format: "Stop Loss triggered: sold {quantity} {ore_name} at ${price}" or "Take Profit triggered: sold {quantity} {ore_name} at ${price}"
+    - action_url: link to transaction history or portfolio page
+    - _Requirements: 5.1 (toast appearance), Advanced Mode Req 6.3, 6.4_
+
+  - [ ] 13.2 Verify toast appears on next poll cycle
+    - The existing polling loop (task 9.1) will pick up the new notification and show it as a toast with the "liquidation" category styling (red background, warning icon)
+    - No additional client-side work needed — the existing system handles it
+    - _Requirements: 6.1, 6.2_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP

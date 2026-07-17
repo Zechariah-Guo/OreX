@@ -25,6 +25,9 @@
     var currentRange = '5m';
     var chart = null;
 
+    // Expose chart instance for external use (e.g., R/S annotations)
+    window.getOreChart = function () { return chart; };
+
     // Gap threshold in milliseconds — scales with selected range
     var GAP_THRESHOLDS = {
         '5m': 2 * 60 * 1000,
@@ -194,6 +197,9 @@
         }
         chart = new ApexCharts(chartContainer, options);
         chart.render();
+
+        // Notify external scripts (e.g., R/S annotations) that chart was re-rendered
+        window.dispatchEvent(new CustomEvent('oreChartRendered'));
     }
 
     // Initial render — fetch 5m data from API if available, otherwise use embedded data

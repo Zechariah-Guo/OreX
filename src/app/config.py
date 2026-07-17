@@ -12,3 +12,9 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = False   # Set True in production with HTTPS
+
+    # Advanced Mode
+    ADVANCED_MODE_THRESHOLD = 100_000    # Net worth eligibility threshold
+    ADVANCED_MODE_COST = 50_000          # Purchase cost
+    ADVANCED_TOGGLE_COOLDOWN = 300       # 5 minutes in seconds
+    RS_LOOKBACK_WINDOW = 50              # Price ticks for resistance/support

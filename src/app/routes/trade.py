@@ -1,6 +1,6 @@
 """Trade routes: buy and sell ores."""
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, abort
 from flask_login import login_required, current_user
 
 from app.database import get_db
@@ -11,18 +11,20 @@ from app.models import (
 )
 from app.market.influence import record_player_trade
 from app.utils.validation import validate_quantity
+from app.advanced import is_advanced_active
+from app.decorators import advanced_required
 
 trade_bp = Blueprint('trade', __name__)
 
 
 def _get_buy_cap():
-    """Get the buy quantity cap for standard mode players.
+    """Get the buy quantity cap for the current user.
 
-    Returns the max quantity cap or None if uncapped (Advanced Mode).
-    TODO: When Advanced Mode is implemented, check if the user has it active
-    and return None to remove the cap.
+    Returns None if advanced mode is active (no cap), otherwise returns
+    the MAX_BUY_QUANTITY config value for standard mode players.
     """
-    # For now, all users are in standard mode
+    if current_user.is_authenticated and is_advanced_active(current_user.id):
+        return None
     return current_app.config.get('MAX_BUY_QUANTITY', 500)
 
 
@@ -52,6 +54,51 @@ def buy(ore_id):
             ore = get_ore_by_id(ore_id)
             total_cost = quantity * ore['current_price']
 
+            # Process optional stop_loss and take_profit parameters
+            stop_loss = None
+            take_profit = None
+            advanced_active = is_advanced_active(current_user.id)
+
+            if advanced_active:
+                stop_loss_str = request.form.get('stop_loss')
+                take_profit_str = request.form.get('take_profit')
+
+                if stop_loss_str:
+                    try:
+                        stop_loss = float(stop_loss_str)
+                    except (ValueError, TypeError):
+                        flash('Stop loss must be a valid number.', 'error')
+                        user = get_user_by_id(current_user.id)
+                        return render_template('pages/trade_confirm.html',
+                                               ore=ore, quantity=quantity, price=ore['current_price'],
+                                               total=total_cost, trade_type='buy',
+                                               balance_after=user.balance - total_cost)
+                    if stop_loss >= ore['current_price']:
+                        flash(f'Stop loss must be below current price (${ore["current_price"]:,.2f}).', 'error')
+                        user = get_user_by_id(current_user.id)
+                        return render_template('pages/trade_confirm.html',
+                                               ore=ore, quantity=quantity, price=ore['current_price'],
+                                               total=total_cost, trade_type='buy',
+                                               balance_after=user.balance - total_cost)
+
+                if take_profit_str:
+                    try:
+                        take_profit = float(take_profit_str)
+                    except (ValueError, TypeError):
+                        flash('Take profit must be a valid number.', 'error')
+                        user = get_user_by_id(current_user.id)
+                        return render_template('pages/trade_confirm.html',
+                                               ore=ore, quantity=quantity, price=ore['current_price'],
+                                               total=total_cost, trade_type='buy',
+                                               balance_after=user.balance - total_cost)
+                    if take_profit <= ore['current_price']:
+                        flash(f'Take profit must be above current price (${ore["current_price"]:,.2f}).', 'error')
+                        user = get_user_by_id(current_user.id)
+                        return render_template('pages/trade_confirm.html',
+                                               ore=ore, quantity=quantity, price=ore['current_price'],
+                                               total=total_cost, trade_type='buy',
+                                               balance_after=user.balance - total_cost)
+
             # Check balance
             user = get_user_by_id(current_user.id)
             if user.balance < total_cost:
@@ -74,11 +121,23 @@ def buy(ore_id):
                     new_qty = old_qty + quantity
                     new_avg = ((old_qty * old_avg) + (quantity * ore['current_price'])) / new_qty
                     update_holding(holding['id'], new_qty, new_avg)
+                    holding_id = holding['id']
                 else:
                     create_holding(user.id, ore_id, quantity, ore['current_price'])
+                    # Get the newly created holding ID
+                    new_holding = get_holding(user.id, ore_id)
+                    holding_id = new_holding['id']
 
                 # Record transaction
                 create_transaction(user.id, ore_id, 'buy', quantity, ore['current_price'], total_cost)
+
+                # Insert stop_loss/take_profit order if advanced mode is active and values provided
+                if advanced_active and (stop_loss is not None or take_profit is not None):
+                    db.execute(
+                        """INSERT INTO stop_loss_take_profit (holding_id, stop_loss, take_profit, active)
+                           VALUES (?, ?, ?, 1)""",
+                        (holding_id, stop_loss, take_profit)
+                    )
 
                 db.commit()
                 flash(f'Successfully bought {quantity} {ore["name"]} for ${total_cost:,.2f}!', 'success')
@@ -207,3 +266,91 @@ def sell(ore_id):
                                    balance_after=user.balance + total_proceeds)
 
     return redirect(url_for('market.ore_detail', ore_id=ore_id))
+
+
+@trade_bp.route('/trade/sltp/<int:holding_id>', methods=['POST'])
+@login_required
+@advanced_required
+def modify_sltp(holding_id):
+    """Modify or remove stop loss / take profit on an existing holding."""
+    db = get_db()
+
+    # Fetch holding and verify ownership
+    holding = db.execute(
+        "SELECT * FROM holdings WHERE id = ?", (holding_id,)
+    ).fetchone()
+
+    if not holding or holding['user_id'] != current_user.id:
+        abort(403)
+
+    # Get current ore price for validation
+    ore = get_ore_by_id(holding['ore_id'])
+    if not ore:
+        flash('Ore not found.', 'error')
+        return redirect(url_for('portfolio.overview'))
+
+    current_price = ore['current_price']
+
+    # Parse optional stop_loss and take_profit form values
+    stop_loss_str = request.form.get('stop_loss', '').strip()
+    take_profit_str = request.form.get('take_profit', '').strip()
+
+    stop_loss = None
+    take_profit = None
+
+    # Validate stop_loss if provided
+    if stop_loss_str:
+        try:
+            stop_loss = float(stop_loss_str)
+        except (ValueError, TypeError):
+            flash('Stop loss must be a valid number.', 'error')
+            return redirect(url_for('market.ore_detail', ore_id=holding['ore_id']))
+        if stop_loss >= current_price:
+            flash(f'Stop loss must be below current price (${current_price:,.2f}).', 'error')
+            return redirect(url_for('market.ore_detail', ore_id=holding['ore_id']))
+
+    # Validate take_profit if provided
+    if take_profit_str:
+        try:
+            take_profit = float(take_profit_str)
+        except (ValueError, TypeError):
+            flash('Take profit must be a valid number.', 'error')
+            return redirect(url_for('market.ore_detail', ore_id=holding['ore_id']))
+        if take_profit <= current_price:
+            flash(f'Take profit must be above current price (${current_price:,.2f}).', 'error')
+            return redirect(url_for('market.ore_detail', ore_id=holding['ore_id']))
+
+    # Check if an existing SL/TP order exists for this holding
+    existing = db.execute(
+        "SELECT * FROM stop_loss_take_profit WHERE holding_id = ? AND active = 1",
+        (holding_id,)
+    ).fetchone()
+
+    if stop_loss is None and take_profit is None:
+        # Both empty — deactivate any existing SL/TP order
+        if existing:
+            db.execute(
+                "UPDATE stop_loss_take_profit SET active = 0 WHERE id = ?",
+                (existing['id'],)
+            )
+            db.commit()
+            flash('Stop loss and take profit removed.', 'success')
+        else:
+            flash('No active stop loss or take profit to remove.', 'info')
+    else:
+        # Update existing or create new SL/TP order
+        if existing:
+            db.execute(
+                "UPDATE stop_loss_take_profit SET stop_loss = ?, take_profit = ?, active = 1 WHERE id = ?",
+                (stop_loss, take_profit, existing['id'])
+            )
+        else:
+            db.execute(
+                """INSERT INTO stop_loss_take_profit (holding_id, stop_loss, take_profit, active)
+                   VALUES (?, ?, ?, 1)""",
+                (holding_id, stop_loss, take_profit)
+            )
+        db.commit()
+        flash('Stop loss and take profit updated.', 'success')
+
+    return redirect(url_for('portfolio.overview'))

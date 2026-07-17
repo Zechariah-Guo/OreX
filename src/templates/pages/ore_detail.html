@@ -14,6 +14,32 @@
     }
     .ore-detail__header { margin-bottom: var(--spacing-sm); gap: var(--spacing-md); }
     .ore-detail__stats { gap: var(--spacing-sm); grid-template-columns: repeat(6, 1fr); }
+    .rs-info-box {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: var(--spacing-md);
+        padding: var(--spacing-sm);
+        background: var(--color-surface, #f8f6fc);
+        border: 1px dashed var(--color-border, #c4b8d9);
+        border-radius: 6px;
+        align-items: center;
+    }
+    .rs-info-box__item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .rs-info-box__dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+    .rs-info-box__dot--resistance { background: #FF4560; }
+    .rs-info-box__dot--support { background: #00E396; }
+    .rs-info-box__label { color: #6b5f7a; }
+    .rs-info-box__value { color: #4a3968; }
     .stat-card { padding: var(--spacing-sm); }
     .stat-card__label { font-size: 0.7rem; }
     .stat-card__value { font-size: 1rem; }
@@ -76,6 +102,20 @@
              hx-swap="innerHTML">
             {% include 'partials/ore_detail_stats.html' %}
         </div>
+        {% if is_advanced_active %}
+        <div class="rs-info-box" id="rs-info-box">
+            <div class="rs-info-box__item">
+                <span class="rs-info-box__dot rs-info-box__dot--resistance"></span>
+                <span class="rs-info-box__label">Resistance:</span>
+                <span class="rs-info-box__value" id="rs-resistance-value">Loading...</span>
+            </div>
+            <div class="rs-info-box__item">
+                <span class="rs-info-box__dot rs-info-box__dot--support"></span>
+                <span class="rs-info-box__label">Support:</span>
+                <span class="rs-info-box__value" id="rs-support-value">Loading...</span>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <div class="ore-detail-body">
@@ -117,12 +157,16 @@
                     <div class="form-group">
                         <label for="buy-quantity" class="form-label">Quantity</label>
                         <input type="number" id="buy-quantity" name="quantity"
-                               class="form-input" required min="1" max="{{ config.MAX_BUY_QUANTITY }}" step="1" placeholder="Amount">
+                               class="form-input" required min="1" {% if not is_advanced_active %}max="{{ config.MAX_BUY_QUANTITY }}"{% endif %} step="1" placeholder="Amount">
                     </div>
+                    {% if is_advanced_active %}
+                    <p class="trade-form__balance">You can buy: {{ (current_user.balance // ore['current_price']) | int }}</p>
+                    {% else %}
                     <p class="trade-form__balance">You can buy: {{ [((current_user.balance // ore['current_price']) | int), config.MAX_BUY_QUANTITY] | min }}</p>
                         {% if (current_user.balance // ore['current_price']) | int > config.MAX_BUY_QUANTITY %}
                         <p class="trade-form__cap">Max {{ config.MAX_BUY_QUANTITY }} in standard mode</p>
                         {% endif %}
+                    {% endif %}
                     <button type="submit" class="btn btn--primary btn--full">Buy</button>
                 </form>
             </div>
@@ -149,5 +193,98 @@
 {% if chart_data %}
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% if is_advanced_active %}
+<script id="rs-config" type="application/json">{{ ore.id | tojson }}</script>
+<script>
+(function () {
+    'use strict';
+
+    var oreId = JSON.parse(document.getElementById('rs-config').textContent);
+    var levelsUrl = '/market/ore/' + oreId + '/levels';
+    var resistanceEl = document.getElementById('rs-resistance-value');
+    var supportEl = document.getElementById('rs-support-value');
+
+    function addAnnotations(resistance, support) {
+        var chart = window.getOreChart ? window.getOreChart() : null;
+        if (!chart) return;
+
+        // Clear previous R/S annotations before adding new ones
+        chart.clearAnnotations();
+
+        if (resistance !== null && resistance !== undefined) {
+            chart.addYaxisAnnotation({
+                y: resistance,
+                borderColor: '#FF4560',
+                label: {
+                    text: 'Resistance: $' + resistance.toFixed(2),
+                    style: { color: '#fff', background: '#FF4560' }
+                },
+                strokeDashArray: 4
+            });
+        }
+
+        if (support !== null && support !== undefined) {
+            chart.addYaxisAnnotation({
+                y: support,
+                borderColor: '#00E396',
+                label: {
+                    text: 'Support: $' + support.toFixed(2),
+                    style: { color: '#fff', background: '#00E396' }
+                },
+                strokeDashArray: 4
+            });
+        }
+    }
+
+    function updateInfoBox(resistance, support) {
+        if (resistanceEl) {
+            resistanceEl.textContent = resistance !== null && resistance !== undefined
+                ? '$' + resistance.toFixed(2)
+                : 'N/A';
+        }
+        if (supportEl) {
+            supportEl.textContent = support !== null && support !== undefined
+                ? '$' + support.toFixed(2)
+                : 'N/A';
+        }
+    }
+
+    function fetchLevels() {
+        fetch(levelsUrl)
+            .then(function (res) {
+                if (!res.ok) throw new Error('Failed to fetch levels');
+                return res.json();
+            })
+            .then(function (data) {
+                lastResistance = data.resistance;
+                lastSupport = data.support;
+                updateInfoBox(data.resistance, data.support);
+                addAnnotations(data.resistance, data.support);
+            })
+            .catch(function () {
+                updateInfoBox(null, null);
+            });
+    }
+
+    var lastResistance = null;
+    var lastSupport = null;
+
+    // Re-apply annotations when chart is re-rendered (range change, auto-refresh)
+    window.addEventListener('oreChartRendered', function () {
+        if (lastResistance !== null || lastSupport !== null) {
+            setTimeout(function () {
+                addAnnotations(lastResistance, lastSupport);
+            }, 100);
+        }
+    });
+
+    // Wait briefly for chart to initialize, then fetch levels
+    setTimeout(fetchLevels, 500);
+
+    // Refresh levels every 20 seconds (aligned with tick engine)
+    setInterval(fetchLevels, 20000);
+})();
+</script>
+{% endif %}
 {% endif %}
 {% endblock %}

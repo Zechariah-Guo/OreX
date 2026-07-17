@@ -3,6 +3,56 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/theme-manager.js') }}" defer></script>
+<script>
+function confirmAdvancedToggle(checkbox) {
+    var action = checkbox.checked ? 'enable' : 'disable';
+    var message = 'Are you sure you want to ' + action + ' Advanced Mode?\n\n';
+    if (checkbox.checked) {
+        message += 'This will activate:\n';
+        message += '• Stop Loss / Take Profit automation\n';
+        message += '• Resistance & Support chart overlays\n';
+        message += '• OreX Advanced theme\n';
+        message += '• Buy cap removal';
+    } else {
+        message += 'This will deactivate:\n';
+        message += '• Stop Loss / Take Profit automation\n';
+        message += '• Resistance & Support chart overlays\n';
+        message += '• OreX Advanced theme\n';
+        message += '• Buy cap will be restored';
+    }
+    message += '\n\nA 5-minute cooldown will apply after toggling.';
+
+    if (confirm(message)) {
+        document.getElementById('advanced-toggle-form').submit();
+    } else {
+        checkbox.checked = !checkbox.checked;
+    }
+}
+
+// Cooldown countdown timer
+(function () {
+    var timerEl = document.querySelector('.advanced-mode-box__cooldown-timer');
+    if (!timerEl) return;
+
+    var text = timerEl.textContent;
+    var match = text.match(/(\d+)m\s*(\d+)s/);
+    if (!match) return;
+
+    var remaining = parseInt(match[1]) * 60 + parseInt(match[2]);
+
+    var interval = setInterval(function () {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(interval);
+            location.reload();
+            return;
+        }
+        var m = Math.floor(remaining / 60);
+        var s = remaining % 60;
+        timerEl.textContent = 'Cooldown: ' + m + 'm ' + s + 's remaining';
+    }, 1000);
+})();
+</script>
 {% endblock %}
 
 {% block content %}
@@ -119,6 +169,76 @@
             <button class="theme-switcher__btn" data-theme="system" role="radio" aria-checked="false">
                 💻 System
             </button>
+        </div>
+    </div>
+
+    <!-- Advanced Mode -->
+    <div class="settings-card">
+        <div class="advanced-mode-box {% if not advanced_eligible %}advanced-mode-box--disabled{% endif %}" aria-label="Advanced Mode activation">
+            <h3 class="advanced-mode-box__title">⚡ Advanced Mode</h3>
+
+            {% if not advanced_eligible %}
+            {# State 1: Ineligible - greyed out #}
+            <div class="advanced-mode-box__content advanced-mode-box__content--ineligible">
+                <p class="advanced-mode-box__message">
+                    Reach <strong>$100,000</strong> net worth to unlock Advanced Mode.
+                </p>
+                <button class="btn btn--primary" disabled aria-disabled="true">
+                    Locked
+                </button>
+            </div>
+
+            {% elif not has_advanced_purchased %}
+            {# State 2: Eligible but not purchased #}
+            <div class="advanced-mode-box__content advanced-mode-box__content--eligible">
+                <p class="advanced-mode-box__message">
+                    You are eligible for Advanced Mode! Unlock stop loss/take profit automation,
+                    resistance &amp; support overlays, and the OreX Advanced theme.
+                </p>
+                <form method="POST" action="{{ url_for('settings.purchase_advanced') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--primary">
+                        Purchase Advanced Mode &mdash; $50,000
+                    </button>
+                </form>
+            </div>
+
+            {% else %}
+            {# State 3 & 4: Purchased - toggle with optional cooldown #}
+            <div class="advanced-mode-box__content advanced-mode-box__content--purchased">
+                <p class="advanced-mode-box__message">
+                    Advanced Mode is currently
+                    <strong>{% if is_advanced_active %}ON{% else %}OFF{% endif %}</strong>.
+                </p>
+
+                {% if advanced_cooldown_remaining > 0 %}
+                {# State 4: Cooldown active - disabled toggle with remaining time #}
+                <div class="advanced-mode-box__cooldown">
+                    <button class="btn btn--toggle {% if is_advanced_active %}btn--toggle-on{% endif %}" disabled aria-disabled="true">
+                        {% if is_advanced_active %}ON{% else %}OFF{% endif %}
+                    </button>
+                    <span class="advanced-mode-box__cooldown-timer" aria-live="polite">
+                        Cooldown: {{ (advanced_cooldown_remaining // 60) }}m {{ (advanced_cooldown_remaining % 60) }}s remaining
+                    </span>
+                </div>
+                {% else %}
+                {# State 3: No cooldown - active toggle with confirmation #}
+                <form method="POST" action="{{ url_for('settings.toggle_advanced') }}" id="advanced-toggle-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <label class="toggle-switch" for="advanced-mode-toggle">
+                        <input type="checkbox" id="advanced-mode-toggle"
+                               {% if is_advanced_active %}checked{% endif %}
+                               onchange="confirmAdvancedToggle(this)"
+                               aria-label="Toggle Advanced Mode">
+                        <span class="toggle-switch__slider"></span>
+                        <span class="toggle-switch__label">
+                            {% if is_advanced_active %}ON{% else %}OFF{% endif %}
+                        </span>
+                    </label>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
 

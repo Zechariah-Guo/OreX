@@ -8,7 +8,11 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     last_login TEXT,
     totp_enabled INTEGER NOT NULL DEFAULT 0,
-    totp_secret_encrypted TEXT
+    totp_secret_encrypted TEXT,
+    advanced_eligible INTEGER NOT NULL DEFAULT 0,
+    advanced_purchased INTEGER NOT NULL DEFAULT 0,
+    advanced_active INTEGER NOT NULL DEFAULT 0,
+    advanced_toggled_at TEXT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ores (
@@ -68,6 +72,17 @@ CREATE TABLE IF NOT EXISTS backup_codes (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS stop_loss_take_profit (
+    id INTEGER PRIMARY KEY,
+    holding_id INTEGER NOT NULL,
+    stop_loss REAL DEFAULT NULL,
+    take_profit REAL DEFAULT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    triggered_at TEXT DEFAULT NULL,
+    FOREIGN KEY (holding_id) REFERENCES holdings(id) ON DELETE CASCADE
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_holdings_user ON holdings(user_id);
 CREATE INDEX IF NOT EXISTS idx_holdings_ore ON holdings(ore_id);
@@ -76,3 +91,5 @@ CREATE INDEX IF NOT EXISTS idx_transactions_ore ON transactions(ore_id);
 CREATE INDEX IF NOT EXISTS idx_price_history_ore ON price_history(ore_id);
 CREATE INDEX IF NOT EXISTS idx_price_history_created ON price_history(created_at);
 CREATE INDEX IF NOT EXISTS idx_backup_codes_user ON backup_codes(user_id);
+CREATE INDEX IF NOT EXISTS idx_sltp_holding ON stop_loss_take_profit(holding_id);
+CREATE INDEX IF NOT EXISTS idx_sltp_active ON stop_loss_take_profit(active);

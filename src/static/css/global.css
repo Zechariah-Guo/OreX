@@ -2072,3 +2072,10 @@ details summary:focus-visible {
     background-color: var(--colour-accent-hover);
     border-color: var(--colour-accent-hover);
 }
+
+/* ===== 2FA Setup ===== */
+.totp-setup__qr {
+    display: flex;
+    justify-content: center;
+    margin: var(--spacing-md) 0;
+}
