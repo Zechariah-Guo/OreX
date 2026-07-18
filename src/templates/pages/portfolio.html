@@ -1,6 +1,158 @@
 {% extends 'base.html' %}
 {% block title %}Portfolio - OreX{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* SL/TP Modal */
+    .sltp-modal-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    .sltp-modal-backdrop--open {
+        display: flex;
+    }
+    .sltp-modal {
+        background: var(--color-card-bg, #fff);
+        border-radius: 12px;
+        padding: var(--spacing-lg, 1.5rem);
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        position: relative;
+    }
+    .sltp-modal__title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: var(--spacing-sm, 0.5rem);
+        color: var(--color-text, #1a1a2e);
+    }
+    .sltp-modal__price {
+        font-size: 0.85rem;
+        color: var(--color-text-muted, #6b5f7a);
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+    .sltp-modal__field {
+        margin-bottom: var(--spacing-sm, 0.5rem);
+    }
+    .sltp-modal__field label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: var(--color-text-muted, #6b5f7a);
+    }
+    .sltp-modal__field input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--color-border, #e0dce6);
+        border-radius: 6px;
+        font-size: 0.9rem;
+        background: var(--color-surface, #f8f6fc);
+        color: var(--color-text, #1a1a2e);
+    }
+    .sltp-modal__field input:focus {
+        outline: none;
+        border-color: var(--color-primary, #7c3aed);
+    }
+    .sltp-modal__hint {
+        font-size: 0.75rem;
+        color: var(--color-text-muted, #6b5f7a);
+        margin-top: 0.2rem;
+    }
+    .sltp-modal__actions {
+        display: flex;
+        gap: var(--spacing-sm, 0.5rem);
+        margin-top: var(--spacing-md, 1rem);
+    }
+    .sltp-modal__actions .btn {
+        flex: 1;
+    }
+
+    /* Portfolio tabs (advanced mode) */
+    .portfolio-tabs {
+        display: flex;
+        border-bottom: 2px solid var(--color-border, #e0dce6);
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+    .portfolio-tabs .trade-tabs__tab {
+        flex: 1;
+        padding: 0.6rem 1rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: var(--color-text-muted, #6b5f7a);
+        transition: color 0.2s, border-color 0.2s;
+    }
+    .portfolio-tabs .trade-tabs__tab:hover {
+        color: var(--color-primary, #7c3aed);
+    }
+    .portfolio-tabs .trade-tabs__tab--active {
+        color: var(--color-primary, #7c3aed);
+        border-bottom-color: var(--color-primary, #7c3aed);
+    }
+    .portfolio-tab-content {
+        display: none;
+    }
+    .portfolio-tab-content--active {
+        display: block;
+    }
+
+    /* Shorts table */
+    .shorts-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    .shorts-table th {
+        text-align: left;
+        padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 0.75rem);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--colour-text-muted, #6b5f7a);
+        background-color: var(--colour-bg, #f5f3fa);
+        border-bottom: 1px solid var(--color-border, #e0dce6);
+        white-space: nowrap;
+    }
+    .shorts-table td {
+        padding: 0.6rem 0.75rem;
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--color-border, #e0dce6);
+        background: var(--colour-surface, #fff);
+    }
+    .shorts-table td a {
+        font-family: var(--font-main);
+        font-weight: 600;
+    }
+    .info-icon {
+        display: inline-block;
+        font-size: 0.7rem;
+        color: var(--colour-text-muted, #6b5f7a);
+        cursor: help;
+        vertical-align: middle;
+        margin-left: 0.2rem;
+    }
+
+    @media (max-width: 768px) {
+        .shorts-table-wrapper { overflow-x: auto; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="portfolio-page">
     <div class="page-header">
@@ -12,10 +164,38 @@
          hx-get="{{ url_for('portfolio.overview') }}"
          hx-trigger="every 20s"
          hx-swap="innerHTML"
-         hx-indicator="#portfolio-indicator">
+         hx-indicator="#portfolio-indicator"
+         hx-on::after-settle="if(typeof _applyPortfolioTab==='function') _applyPortfolioTab()">
         {% include 'partials/portfolio_live.html' %}
     </div>
 </div>
+
+<!-- Shared SL/TP Edit Modal -->
+{% if is_advanced_active %}
+<div class="sltp-modal-backdrop" id="sltp-modal-backdrop" onclick="closeSltpModal(event)">
+    <div class="sltp-modal" onclick="event.stopPropagation()">
+        <h2 class="sltp-modal__title">Edit Stop Loss / Take Profit</h2>
+        <p class="sltp-modal__price">Current Price: <strong id="sltp-modal-price">—</strong></p>
+        <form id="sltp-modal-form" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="sltp-modal__field">
+                <label for="sltp-modal-sl">Stop Loss</label>
+                <input type="number" id="sltp-modal-sl" name="stop_loss" step="0.01" min="0" placeholder="Leave empty to clear">
+                <p class="sltp-modal__hint" id="sltp-modal-sl-hint"></p>
+            </div>
+            <div class="sltp-modal__field">
+                <label for="sltp-modal-tp">Take Profit</label>
+                <input type="number" id="sltp-modal-tp" name="take_profit" step="0.01" min="0" placeholder="Leave empty to clear">
+                <p class="sltp-modal__hint" id="sltp-modal-tp-hint"></p>
+            </div>
+            <div class="sltp-modal__actions">
+                <button type="button" class="btn btn--secondary" onclick="closeSltpModal()">Cancel</button>
+                <button type="submit" class="btn btn--primary">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -32,5 +212,96 @@ document.addEventListener('submit', function(e) {
     }
     form.querySelector('.qt-hidden-qty').value = input.value;
 });
+
+{% if is_advanced_active %}
+/* Portfolio tab state persistence across htmx swaps */
+var _activePortfolioTab = 'longs';
+
+function switchPortfolioTab(tab) {
+    _activePortfolioTab = tab;
+    _applyPortfolioTab();
+}
+
+function _applyPortfolioTab() {
+    var tabs = document.querySelectorAll('.portfolio-tabs .trade-tabs__tab');
+    var contents = document.querySelectorAll('.portfolio-tab-content');
+    tabs.forEach(function(t) {
+        t.classList.toggle('trade-tabs__tab--active', t.getAttribute('data-tab') === _activePortfolioTab);
+    });
+    contents.forEach(function(c) {
+        c.classList.toggle('portfolio-tab-content--active', c.id === 'portfolio-tab-' + _activePortfolioTab);
+    });
+}
+
+/* Apply on initial page load */
+_applyPortfolioTab();
+
+/* SL/TP Modal with dynamic price polling */
+var _sltpPriceInterval = null;
+var _sltpPosType = null;
+
+function openSltpModal(btn) {
+    var backdrop = document.getElementById('sltp-modal-backdrop');
+    var form = document.getElementById('sltp-modal-form');
+    var priceEl = document.getElementById('sltp-modal-price');
+    var slInput = document.getElementById('sltp-modal-sl');
+    var tpInput = document.getElementById('sltp-modal-tp');
+    var slHint = document.getElementById('sltp-modal-sl-hint');
+    var tpHint = document.getElementById('sltp-modal-tp-hint');
+
+    _sltpPosType = btn.getAttribute('data-type');
+    var orePrice = parseFloat(btn.getAttribute('data-ore-price'));
+    var oreId = btn.getAttribute('data-ore-id');
+    var actionUrl = btn.getAttribute('data-action-url');
+    var currentSl = btn.getAttribute('data-sl');
+    var currentTp = btn.getAttribute('data-tp');
+
+    form.action = actionUrl;
+    priceEl.textContent = '$' + orePrice.toFixed(2);
+    slInput.value = currentSl || '';
+    tpInput.value = currentTp || '';
+
+    _updateSltpHints(orePrice);
+
+    backdrop.classList.add('sltp-modal-backdrop--open');
+
+    /* Start polling price every 5 seconds */
+    if (_sltpPriceInterval) clearInterval(_sltpPriceInterval);
+    if (oreId) {
+        _sltpPriceInterval = setInterval(function() {
+            fetch('/market/ore/' + oreId + '/price')
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.price) {
+                        priceEl.textContent = '$' + data.price.toFixed(2);
+                        _updateSltpHints(data.price);
+                    }
+                })
+                .catch(function() {});
+        }, 5000);
+    }
+}
+
+function _updateSltpHints(price) {
+    var slHint = document.getElementById('sltp-modal-sl-hint');
+    var tpHint = document.getElementById('sltp-modal-tp-hint');
+    if (_sltpPosType === 'short') {
+        slHint.textContent = 'Must be above current price ($' + price.toFixed(2) + ')';
+        tpHint.textContent = 'Must be below current price ($' + price.toFixed(2) + ')';
+    } else {
+        slHint.textContent = 'Must be below current price ($' + price.toFixed(2) + ')';
+        tpHint.textContent = 'Must be above current price ($' + price.toFixed(2) + ')';
+    }
+}
+
+function closeSltpModal(e) {
+    if (e && e.target !== document.getElementById('sltp-modal-backdrop')) return;
+    document.getElementById('sltp-modal-backdrop').classList.remove('sltp-modal-backdrop--open');
+    if (_sltpPriceInterval) {
+        clearInterval(_sltpPriceInterval);
+        _sltpPriceInterval = null;
+    }
+}
+{% endif %}
 </script>
 {% endblock %}

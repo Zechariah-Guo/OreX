@@ -75,6 +75,7 @@
 ## Fully Implemented
 - Hard cap on buy quantity in standard mode (500 max) — config.py + trade route + template
 - Two-Factor Authentication — TOTP + backup codes, login challenge, setup/disable flows, 122 tests passing
+- Advanced Mode
 
 ---
 
@@ -89,7 +90,6 @@ Things you need to do manually that Kiro can't handle:
 - [ ] Alpine.js will be loaded from CDN (no pip install needed, already allowed in CSP)
 
 ### Assets to Create/Source
-- [ ] **OreX Advanced logo** — SVG or PNG for the Advanced Mode theme (replaces standard logo when active)
 - [ ] **Default avatar image** — `static/images/default-avatar.png` (generic user silhouette, used when no PFP uploaded)
 - [ ] **Bot icon** — `static/images/bot-icon.png` (displayed on leaderboard for bot accounts instead of PFP)
 - [ ] **Achievement badge icons** — 9 badge images (one per achievement), both locked (greyed) and unlocked versions
@@ -115,8 +115,8 @@ Things you need to do manually that Kiro can't handle:
 ## Implementation Order (Dependency-Based)
 
 1. ~~**2FA** — Isolated (auth + settings only)~~ ✅ Done
-2. **Advanced Mode** — Foundation for feature gating ← NEXT
-3. **Shorting System** — Depends on advanced mode
+2. **Advanced Mode** — Foundation for feature gating ✅ Done
+3. **Shorting System** — Depends on advanced mode <-- Next
 4. **Finances Page** — Depends on advanced mode + shorting
 5. **Achievements** — Depends on advanced mode + shorting
 6. **Profile Page** — Depends on achievements

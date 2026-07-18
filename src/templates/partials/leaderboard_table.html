@@ -5,6 +5,7 @@
             <th>Username</th>
             <th>Balance</th>
             <th>Holdings</th>
+            <th>Short Equity</th>
             <th>Total Value</th>
         </tr>
     </thead>
@@ -26,6 +27,13 @@
             </td>
             <td>${{ "%.2f" | format(user['balance']) }}</td>
             <td>${{ "%.2f" | format(user['holdings_value']) }}</td>
+            <td class="{% if user['short_equity'] > 0 %}text--success{% elif user['short_equity'] < 0 %}text--danger{% endif %}">
+                {% if user['short_equity'] != 0 %}
+                    {% if user['short_equity'] >= 0 %}+{% endif %}${{ "%.2f" | format(user['short_equity']) }}
+                {% else %}
+                    —
+                {% endif %}
+            </td>
             <td class="leaderboard-table__total">${{ "%.2f" | format(user['total_value']) }}</td>
         </tr>
         {% endfor %}

@@ -1,0 +1,28 @@
+<form method="POST"
+      action="{{ url_for('trade.short_open', ore_id=ore['id']) }}"
+      id="short-order-form"
+      hx-post="{{ url_for('trade.short_preview') }}"
+      hx-trigger="input delay:300ms from:#short-quantity"
+      hx-target="#short-preview"
+      hx-swap="outerHTML"
+      hx-include="#short-order-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="ore_id" value="{{ ore['id'] }}">
+
+    <span class="short-form-title">Short {{ ore['name'] }}</span>
+
+    <div class="form-group">
+        <input type="number"
+               id="short-quantity"
+               name="quantity"
+               class="form-input"
+               required
+               min="1"
+               max="10000"
+               step="1"
+               placeholder="Qty">
+    </div>
+
+    {% set quantity_zero = quantity_zero if quantity_zero is defined else true %}
+    {% include 'partials/short_preview.html' %}
+</form>

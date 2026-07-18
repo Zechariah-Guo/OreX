@@ -140,6 +140,16 @@ def toggle_advanced_mode(user_id: int) -> tuple:
 
     # Flip the active state
     new_active = 0 if user['advanced_active'] == 1 else 1
+
+    # Block disabling if user has active short positions
+    if new_active == 0:
+        active_shorts = db.execute(
+            "SELECT COUNT(*) as cnt FROM short_positions WHERE user_id = ? AND status = 'active'",
+            (user_id,)
+        ).fetchone()
+        if active_shorts['cnt'] > 0:
+            return (False, "You have active short positions. Close all shorts before disabling Advanced Mode.")
+
     now_iso = now.isoformat()
 
     db.execute(

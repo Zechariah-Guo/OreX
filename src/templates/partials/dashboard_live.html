@@ -1,4 +1,22 @@
-<!-- Dashboard Summary -->
+<!-- Dashboard Summary Stats -->
+{% if advanced_active %}
+<div class="dashboard-summary">
+    <div class="stat-card">
+        <span class="stat-card__label">Free Cash</span>
+        <span class="stat-card__value">${{ "%.2f" | format(user.balance) }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-card__label">Net Worth</span>
+        <span class="stat-card__value">${{ "%.2f" | format(net_worth) }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-card__label">Total P/L</span>
+        <span class="stat-card__value {% if total_pnl >= 0 %}stat-card__value--rise{% else %}stat-card__value--fall{% endif %}">
+            {% if total_pnl >= 0 %}+{% endif %}${{ "%.2f" | format(total_pnl) }}
+        </span>
+    </div>
+</div>
+{% else %}
 <div class="dashboard-summary">
     <div class="stat-card">
         <span class="stat-card__label">Cash Balance</span>
@@ -19,6 +37,7 @@
         </span>
     </div>
 </div>
+{% endif %}
 
 <div class="dashboard-grid">
     <!-- Top Movers -->
@@ -64,3 +83,67 @@
         {% endif %}
     </div>
 </div>
+
+{% if advanced_active %}
+<!-- Longs / Shorts Summary (Advanced Mode) -->
+<div class="dashboard-grid dashboard-grid--positions">
+    <!-- Longs Box -->
+    <div class="dashboard-card dashboard-card--longs">
+        <h2 class="dashboard-card__title">Longs</h2>
+        <div class="position-summary">
+            <div class="position-summary__row">
+                <span class="position-summary__label">Holdings Value</span>
+                <span class="position-summary__value">${{ "%.2f" | format(longs_summary.holdings_value) }}</span>
+            </div>
+            <div class="position-summary__row">
+                <span class="position-summary__label">Unrealized P/L</span>
+                <span class="position-summary__value {% if longs_summary.unrealized_pnl >= 0 %}text--success{% else %}text--danger{% endif %}">
+                    {% if longs_summary.unrealized_pnl >= 0 %}+{% endif %}${{ "%.2f" | format(longs_summary.unrealized_pnl) }}
+                </span>
+            </div>
+            <div class="position-summary__row">
+                <span class="position-summary__label"># Positions</span>
+                <span class="position-summary__value">{{ longs_summary.num_positions }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shorts Box -->
+    <div class="dashboard-card dashboard-card--shorts">
+        <h2 class="dashboard-card__title">Shorts</h2>
+        {% if shorts_summary %}
+        <div class="position-summary">
+            <div class="position-summary__row">
+                <span class="position-summary__label">Total Short Value</span>
+                <span class="position-summary__value">${{ "%.2f" | format(shorts_summary.total_short_value) }}</span>
+            </div>
+            <div class="position-summary__row">
+                <span class="position-summary__label">Unrealized P/L</span>
+                <span class="position-summary__value {% if shorts_summary.unrealized_pnl >= 0 %}text--success{% else %}text--danger{% endif %}">
+                    {% if shorts_summary.unrealized_pnl >= 0 %}+{% endif %}${{ "%.2f" | format(shorts_summary.unrealized_pnl) }}
+                </span>
+            </div>
+            <!-- Threat Horizon -->
+            {% if threat_horizon %}
+            <div class="position-summary__row">
+                <span class="position-summary__label">Threat</span>
+                <span class="position-summary__value">
+                    <span class="threat-dot threat-dot--{{ threat_horizon.color }}"></span>
+                    {% if threat_horizon.color == 'green' %}Safe
+                    {% elif threat_horizon.color == 'amber' %}At Risk
+                    {% else %}Critical{% endif %}
+                    {% if threat_horizon.tick_countdown is not none %} · ~{{ threat_horizon.tick_countdown }} ticks{% endif %}
+                </span>
+            </div>
+            {% endif %}
+            <div class="position-summary__row">
+                <span class="position-summary__label"># Positions</span>
+                <span class="position-summary__value">{{ shorts_summary.num_positions }}</span>
+            </div>
+        </div>
+        {% else %}
+        <p class="dashboard-card__empty">No active shorts.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

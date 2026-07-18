@@ -142,8 +142,49 @@ def delete_holding(holding_id):
 
 # --- Transaction Model ---
 
+# Valid transaction type constants.
+# The `total_value` field semantics vary by type:
+#   - "buy":              total cost paid (quantity × price)
+#   - "sell":             total proceeds received (quantity × price)
+#   - "short_open":       locked collateral amount frozen from FreeCash
+#   - "short_close":      profit/loss amount (positive = profit, negative = loss)
+#   - "short_liquidated": profit/loss amount at forced liquidation (typically negative)
+TRANSACTION_TYPE_BUY = "buy"
+TRANSACTION_TYPE_SELL = "sell"
+TRANSACTION_TYPE_SHORT_OPEN = "short_open"
+TRANSACTION_TYPE_SHORT_CLOSE = "short_close"
+TRANSACTION_TYPE_SHORT_LIQUIDATED = "short_liquidated"
+
+VALID_TRANSACTION_TYPES = (
+    TRANSACTION_TYPE_BUY,
+    TRANSACTION_TYPE_SELL,
+    TRANSACTION_TYPE_SHORT_OPEN,
+    TRANSACTION_TYPE_SHORT_CLOSE,
+    TRANSACTION_TYPE_SHORT_LIQUIDATED,
+)
+
+SHORT_TRANSACTION_TYPES = (
+    TRANSACTION_TYPE_SHORT_OPEN,
+    TRANSACTION_TYPE_SHORT_CLOSE,
+    TRANSACTION_TYPE_SHORT_LIQUIDATED,
+)
+
+
 def create_transaction(user_id, ore_id, trade_type, quantity, price_at_trade, total_value):
-    """Record a transaction."""
+    """Record a transaction.
+
+    Args:
+        user_id: The player's user ID.
+        ore_id: The ore involved in the transaction.
+        trade_type: One of VALID_TRANSACTION_TYPES.
+        quantity: Number of shares/units.
+        price_at_trade: Ore price at time of trade.
+        total_value: Semantic meaning depends on trade_type:
+            - buy/sell: total cost or proceeds (quantity × price)
+            - short_open: locked collateral amount frozen from FreeCash
+            - short_close: P/L amount (Locked_Collateral - Short_Value)
+            - short_liquidated: P/L amount at forced liquidation
+    """
     db = get_db()
     now = datetime.now().isoformat()
     db.execute(
@@ -208,7 +249,11 @@ def get_price_history(ore_id, limit=50, hours=None):
 # --- Dashboard Model ---
 
 def get_portfolio_value(user_id):
-    """Calculate total current market value of a user's holdings."""
+    """Calculate total current market value of a user's long holdings only.
+
+    This function intentionally excludes short position equity. For full
+    net worth including shorts, use get_net_worth().
+    """
     db = get_db()
     row = db.execute(
         """SELECT COALESCE(SUM(h.quantity * o.current_price), 0) as total_value
@@ -218,6 +263,36 @@ def get_portfolio_value(user_id):
         (user_id,)
     ).fetchone()
     return row['total_value']
+
+
+def get_net_worth(user_id):
+    """Calculate total net worth including short position equity.
+
+    Net_Worth = FreeCash + SUM(holdings.qty * ore.price)
+                + SUM(locked_collateral - (share_quantity * current_price))
+                  for all active short positions.
+
+    When no active short positions exist, the short equity term is 0
+    and the result matches the legacy formula (balance + holdings value).
+    """
+    db = get_db()
+    row = db.execute(
+        """SELECT
+               u.balance +
+               COALESCE((SELECT SUM(h.quantity * o2.current_price)
+                         FROM holdings h JOIN ores o2 ON h.ore_id = o2.id
+                         WHERE h.user_id = u.id), 0) +
+               COALESCE((SELECT SUM(sp.locked_collateral - (sp.share_quantity * o3.current_price))
+                         FROM short_positions sp JOIN ores o3 ON sp.ore_id = o3.id
+                         WHERE sp.user_id = u.id AND sp.status = 'active'), 0)
+               AS net_worth
+           FROM users u
+           WHERE u.id = ?""",
+        (user_id,)
+    ).fetchone()
+    if row is None:
+        return 0.0
+    return row['net_worth']
 
 
 def get_portfolio_cost(user_id):
@@ -298,7 +373,17 @@ def reset_account(user_id):
     db = get_db()
     default_balance = current_app.config['DEFAULT_BALANCE']
 
-    # Clear all Advanced Mode state
+    # --- Short position cleanup BEFORE balance restore (Req 14.1, 14.5) ---
+    # Delete all short positions without crediting collateral or registering buy pressure
+    db.execute("DELETE FROM short_positions WHERE user_id = ?", (user_id,))
+
+    # Archive short-related transactions (Req 14.2)
+    db.execute(
+        "UPDATE transactions SET archived = 1 WHERE user_id = ? AND type IN ('short_open', 'short_close', 'short_liquidated')",
+        (user_id,)
+    )
+
+    # Clear all Advanced Mode state and restore default balance (Req 14.3)
     db.execute(
         "UPDATE users SET advanced_eligible=0, advanced_purchased=0, advanced_active=0, advanced_toggled_at=NULL, balance = ? WHERE id = ?",
         (default_balance, user_id)
@@ -318,6 +403,15 @@ def reset_account(user_id):
 def delete_account(user_id):
     """Permanently delete a user account and all associated data."""
     db = get_db()
+
+    # Delete short positions before the user row (FK uses ON DELETE RESTRICT)
+    db.execute("DELETE FROM short_positions WHERE user_id = ?", (user_id,))
+
+    # Delete notifications if the table exists (defined in notification-system spec)
+    try:
+        db.execute("DELETE FROM notifications WHERE user_id = ?", (user_id,))
+    except Exception:
+        pass
 
     db.execute("DELETE FROM transactions WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM holdings WHERE user_id = ?", (user_id,))
@@ -379,14 +473,30 @@ def get_encrypted_totp_secret(user_id):
 # --- Leaderboard Model ---
 
 def get_leaderboard():
-    """Calculate total value (balance + portfolio market value) per user, ranked descending."""
+    """Calculate net worth (balance + portfolio + short equity) per user, ranked descending.
+
+    Uses the updated net worth formula that includes short position equity:
+    Net_Worth = FreeCash + SUM(holdings.qty * ore.price)
+                + SUM(locked_collateral - share_quantity * current_price)
+                  for all active short positions.
+    """
     db = get_db()
     return db.execute(
         """SELECT u.id, u.username,
                   u.balance,
                   u.advanced_active,
                   COALESCE(SUM(h.quantity * o.current_price), 0) as holdings_value,
-                  u.balance + COALESCE(SUM(h.quantity * o.current_price), 0) as total_value
+                  COALESCE((SELECT SUM(sp.locked_collateral - (sp.share_quantity * o3.current_price))
+                            FROM short_positions sp
+                            JOIN ores o3 ON sp.ore_id = o3.id
+                            WHERE sp.user_id = u.id AND sp.status = 'active'), 0) as short_equity,
+                  u.balance
+                    + COALESCE(SUM(h.quantity * o.current_price), 0)
+                    + COALESCE((SELECT SUM(sp.locked_collateral - (sp.share_quantity * o3.current_price))
+                                FROM short_positions sp
+                                JOIN ores o3 ON sp.ore_id = o3.id
+                                WHERE sp.user_id = u.id AND sp.status = 'active'), 0)
+                    as total_value
            FROM users u
            LEFT JOIN holdings h ON h.user_id = u.id
            LEFT JOIN ores o ON h.ore_id = o.id

@@ -8,6 +8,8 @@ from flask_login import login_required, current_user
 from app.decorators import advanced_required
 from app.market.levels import calculate_levels
 from app.models import get_all_ores, get_ore_by_id, get_price_history, get_holding
+from app.database import get_db
+from app.market.shorting import _calculate_squeeze_price, _calculate_tick_fee, _get_ticks_per_hour
 
 market_bp = Blueprint('market', __name__)
 
@@ -126,3 +128,64 @@ def ore_levels(ore_id):
     """Return resistance and support levels for an ore (Advanced Mode only)."""
     levels = calculate_levels(ore_id)
     return jsonify(levels)
+
+
+@market_bp.route('/market/ore/<int:ore_id>/price')
+@login_required
+def ore_current_price(ore_id):
+    """Return the current price of an ore as JSON."""
+    ore = get_ore_by_id(ore_id)
+    if not ore:
+        return jsonify({'price': None}), 404
+    return jsonify({'price': ore['current_price']})
+
+
+@market_bp.route('/market/ore/<int:ore_id>/squeeze')
+@login_required
+@advanced_required
+def ore_squeeze_price(ore_id):
+    """Return the squeeze price for the current user's active short on this ore.
+
+    Returns JSON with squeeze_price (float or null if no active short exists).
+    """
+    db = get_db()
+
+    # Find active short position(s) for this user on this ore
+    position = db.execute(
+        """SELECT sp.share_quantity, sp.entry_price, sp.locked_collateral,
+                  o.volatility
+           FROM short_positions sp
+           JOIN ores o ON sp.ore_id = o.id
+           WHERE sp.user_id = ? AND sp.ore_id = ? AND sp.status = 'active'
+           ORDER BY sp.opened_at ASC
+           LIMIT 1""",
+        (current_user.id, ore_id)
+    ).fetchone()
+
+    if not position:
+        return jsonify({'squeeze_price': None})
+
+    # Get user balance
+    user_row = db.execute(
+        "SELECT balance FROM users WHERE id = ?", (current_user.id,)
+    ).fetchone()
+    user_balance = user_row['balance'] if user_row else 0.0
+
+    ticks_per_hour = _get_ticks_per_hour()
+
+    squeeze_price = _calculate_squeeze_price(
+        {
+            'share_quantity': position['share_quantity'],
+            'entry_price': position['entry_price'],
+            'locked_collateral': position['locked_collateral'],
+        },
+        user_balance,
+        position['volatility'],
+        ticks_per_hour,
+    )
+
+    # Convert infinity to None for JSON serialization
+    if squeeze_price == float('inf'):
+        squeeze_price = None
+
+    return jsonify({'squeeze_price': squeeze_price})

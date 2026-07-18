@@ -57,6 +57,7 @@ def start_engine(app):
         ensure_bots_exist(db, default_balance)
 
         from app.market.algorithm import process_tick
+        from app.market.shorting import process_short_positions
 
         try:
             while not _shutdown_event.is_set():
@@ -68,6 +69,17 @@ def start_engine(app):
                 except Exception as e:
                     # Log error but keep the engine running
                     print(f"[Market Engine] Error during tick: {e}")
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
+
+                try:
+                    process_short_positions(db)
+                except Exception as e:
+                    # Log error but keep the engine running — shorting errors
+                    # must not block the main tick loop
+                    print(f"[Market Engine] Error during short position processing: {e}")
                     try:
                         db.rollback()
                     except Exception:

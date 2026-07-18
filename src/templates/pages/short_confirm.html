@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Short - OreX{% endblock %}
+
+{% block content %}
+<div class="trade-confirm-page">
+    <div class="confirm-card">
+        <h1>Confirm Short</h1>
+
+        <div class="confirm-card__details">
+            <div class="confirm-row">
+                <span class="confirm-row__label">Ore</span>
+                <span class="confirm-row__value">{{ ore['name'] }}</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Shares</span>
+                <span class="confirm-row__value">{{ quantity }}</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Current Price</span>
+                <span class="confirm-row__value" id="confirm-price">${{ "%.2f" | format(price) }}</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Position <span class="info-icon" title="Shares × Price">ⓘ</span></span>
+                <span class="confirm-row__value" id="confirm-position">${{ "%.2f" | format(position_size) }}</span>
+            </div>
+            <div class="confirm-row confirm-row--total">
+                <span class="confirm-row__label">Margin <span class="info-icon" title="Deducted from your FreeCash">ⓘ</span></span>
+                <span class="confirm-row__value" id="confirm-margin">${{ "%.2f" | format(player_margin) }}</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Vault <span class="info-icon" title="Total locked. Returned minus buyback on close.">ⓘ</span></span>
+                <span class="confirm-row__value" id="confirm-vault">${{ "%.2f" | format(collateral) }}</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Surcharge <span class="info-icon" title="Extra margin from crowding">ⓘ</span></span>
+                <span class="confirm-row__value">{{ "%.1f" | format(crowding_surcharge) }}%</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Tick Fee <span class="info-icon" title="Per-tick fee from FreeCash">ⓘ</span></span>
+                <span class="confirm-row__value" id="confirm-fee">-${{ "%.2f" | format(tick_fee) }}</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Balance after</span>
+                <span class="confirm-row__value" id="confirm-balance">${{ "%.2f" | format(balance_after) }}</span>
+            </div>
+        </div>
+
+        <div class="sltp-fields sltp-fields--no-border">
+            <p class="sltp-fields__title">Automated Orders</p>
+            <div class="form-group">
+                <label for="stop_loss" class="form-label">Stop Loss (optional)</label>
+                <input type="number" id="stop_loss" name="stop_loss" class="form-input" step="0.01" min="0"
+                       placeholder="Price above current (triggers close)" form="confirm-short-form">
+            </div>
+            <div class="form-group">
+                <label for="take_profit" class="form-label">Take Profit (optional)</label>
+                <input type="number" id="take_profit" name="take_profit" class="form-input" step="0.01" min="0"
+                       placeholder="Price below current (locks profit)" form="confirm-short-form">
+            </div>
+        </div>
+        <br>
+        <div class="confirm-card__actions">
+            <form method="POST" action="{{ url_for('trade.short_open', ore_id=ore['id']) }}" class="confirm-card__form" id="confirm-short-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="quantity" value="{{ quantity }}">
+                <input type="hidden" name="confirmed" value="1">
+                <button type="submit" class="btn btn--primary btn--full">Confirm Short</button>
+            </form>
+            <a href="{{ url_for('market.ore_detail', ore_id=ore['id']) }}" class="btn btn--secondary btn--full">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var oreId = {{ ore['id'] }};
+    var shares = {{ quantity }};
+    var multiplier = {{ ((collateral / position_size) - 1) if position_size > 0 else 0.5 }};
+    var userBalance = {{ balance_after + player_margin }};
+    var vol = {{ ore['volatility'] or 0.5 }};
+    var tph = 3600 / {{ config.TICK_INTERVAL }};
+
+    function updateValues() {
+        fetch('/market/ore/' + oreId + '/price')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (!data.price) return;
+                var price = data.price;
+                var position = shares * price;
+                var margin = Math.round(position * multiplier * 100) / 100;
+                var vault = Math.round(position * (1 + multiplier) * 100) / 100;
+                var balAfter = Math.round((userBalance - margin) * 100) / 100;
+                var fee = Math.round(position * ((0.005 + 0.10 * vol * vol) / tph) * 100) / 100;
+
+                document.getElementById('confirm-price').textContent = '$' + price.toFixed(2);
+                document.getElementById('confirm-position').textContent = '$' + position.toFixed(2);
+                document.getElementById('confirm-margin').textContent = '$' + margin.toFixed(2);
+                document.getElementById('confirm-vault').textContent = '$' + vault.toFixed(2);
+                document.getElementById('confirm-fee').textContent = '-$' + fee.toFixed(2);
+                document.getElementById('confirm-balance').textContent = '$' + balAfter.toFixed(2);
+            })
+            .catch(function() {});
+    }
+
+    setInterval(updateValues, 5000);
+})();
+</script>
+{% endblock %}

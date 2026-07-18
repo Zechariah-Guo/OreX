@@ -1,0 +1,108 @@
+<!-- Short Position Cards — includable partial for dashboard -->
+<!-- Context: short_position_cards (list of position dicts), threat_horizon (dict with color, tick_countdown, aggregate_fee) -->
+<div id="short-positions-section"
+     hx-get="{{ url_for('dashboard.overview') }}"
+     hx-trigger="every 20s"
+     hx-select="#short-positions-section"
+     hx-swap="outerHTML">
+
+    {% if short_position_cards %}
+    <!-- Threat Horizon Meter -->
+    <div class="threat-horizon">
+        <h3 class="threat-horizon__title">Threat Horizon</h3>
+        <div class="threat-horizon__bar threat-horizon__bar--{{ threat_horizon.color }}">
+            <div class="threat-horizon__fill"></div>
+        </div>
+        <div class="threat-horizon__info">
+            {% if threat_horizon.tick_countdown is not none %}
+            <span class="threat-horizon__countdown threat-horizon__countdown--{{ threat_horizon.color }}">
+                ~{{ threat_horizon.tick_countdown }} ticks remaining
+            </span>
+            {% else %}
+            <span class="threat-horizon__countdown threat-horizon__countdown--green">
+                No active fees
+            </span>
+            {% endif %}
+            <span class="threat-horizon__fee">
+                Aggregate fee: -${{ "%.2f" | format(threat_horizon.aggregate_fee) }} / tick
+            </span>
+        </div>
+    </div>
+
+    <!-- Position Cards -->
+    <div class="short-positions">
+        <h2 class="short-positions__title">Active Short Positions</h2>
+        <div class="short-positions__grid">
+            {% for pos in short_position_cards %}
+            <div class="short-card">
+                <div class="short-card__header">
+                    <span class="short-card__ore-name">{{ pos.ore_name }}</span>
+                    <span class="short-card__qty">{{ pos.share_quantity }} shares</span>
+                </div>
+
+                <div class="short-card__prices">
+                    <div class="short-card__row">
+                        <span class="short-card__label">Entry Price</span>
+                        <span class="short-card__value">${{ "%.2f" | format(pos.entry_price) }}</span>
+                    </div>
+                    <div class="short-card__row">
+                        <span class="short-card__label">Current Price</span>
+                        <span class="short-card__value">${{ "%.2f" | format(pos.current_price) }}</span>
+                    </div>
+                    <div class="short-card__row">
+                        <span class="short-card__label">Unrealized P/L</span>
+                        <span class="short-card__value {% if pos.unrealized_pnl >= 0 %}text--success{% else %}text--danger{% endif %}">
+                            {% if pos.unrealized_pnl >= 0 %}+{% endif %}${{ "%.2f" | format(pos.unrealized_pnl) }}
+                        </span>
+                    </div>
+                    <div class="short-card__row">
+                        <span class="short-card__label">Squeeze Price</span>
+                        <span class="short-card__value short-card__value--squeeze">
+                            {% if pos.squeeze_price is not none %}
+                                ${{ "%.2f" | format(pos.squeeze_price) }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="short-card__row">
+                        <span class="short-card__label">Per-Tick Fee</span>
+                        <span class="short-card__value">-${{ "%.2f" | format(pos.tick_fee) }}</span>
+                    </div>
+                </div>
+
+                <!-- SL/TP Controls -->
+                <div class="short-card__sltp">
+                    <div class="short-card__sltp-values">
+                        <span class="short-card__sltp-item">
+                            SL: {% if pos.stop_loss_price %}${{ "%.2f" | format(pos.stop_loss_price) }}{% else %}—{% endif %}
+                        </span>
+                        <span class="short-card__sltp-item">
+                            TP: {% if pos.take_profit_price %}${{ "%.2f" | format(pos.take_profit_price) }}{% else %}—{% endif %}
+                        </span>
+                    </div>
+                    <form method="POST" action="{{ url_for('trade.short_edit_sltp', position_id=pos.id) }}" class="short-card__sltp-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="short-card__sltp-fields">
+                            <input type="number" name="stop_loss" class="form-input form-input--sm" step="0.01" min="0"
+                                   placeholder="SL"
+                                   value="{{ '%.2f' | format(pos.stop_loss_price) if pos.stop_loss_price else '' }}">
+                            <input type="number" name="take_profit" class="form-input form-input--sm" step="0.01" min="0"
+                                   placeholder="TP"
+                                   value="{{ '%.2f' | format(pos.take_profit_price) if pos.take_profit_price else '' }}">
+                        </div>
+                        <button type="submit" class="btn btn--xs btn--secondary">Edit</button>
+                    </form>
+                </div>
+
+                <!-- Close Position Button -->
+                <form method="POST" action="{{ url_for('trade.short_close', position_id=pos.id) }}" class="short-card__close">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--sm btn--danger btn--full">Close Position</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>

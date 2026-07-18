@@ -20,6 +20,16 @@
     </div>
 </div>
 
+{% if is_advanced_active %}
+<!-- Tabs for advanced users -->
+<div class="portfolio-tabs">
+    <button class="trade-tabs__tab" data-tab="longs" onclick="switchPortfolioTab('longs')">Longs</button>
+    <button class="trade-tabs__tab" data-tab="shorts" onclick="switchPortfolioTab('shorts')">Shorts</button>
+</div>
+
+<div id="portfolio-tab-longs" class="portfolio-tab-content portfolio-tab-content--active">
+{% endif %}
+
 {% if holdings %}
 <div class="holdings-table-wrapper">
     <table class="holdings-table">
@@ -33,8 +43,10 @@
                 <th>Profit / Loss</th>
                 {% if is_advanced_active %}
                 <th>SL / TP</th>
-                {% endif %}
+                <th>Actions</th>
+                {% else %}
                 <th>Trade</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -60,20 +72,34 @@
                 </td>
                 {% if is_advanced_active %}
                 <td class="holdings-table__sltp">
-                    <form method="POST" action="{{ url_for('trade.modify_sltp', holding_id=h['id']) }}" class="sltp-form">
+                    {% if h['sltp'] and (h['sltp']['stop_loss'] or h['sltp']['take_profit']) %}
+                        <span class="sltp-display">
+                            SL: {{ "%.2f" | format(h['sltp']['stop_loss']) if h['sltp']['stop_loss'] else '—' }}
+                            / TP: {{ "%.2f" | format(h['sltp']['take_profit']) if h['sltp']['take_profit'] else '—' }}
+                        </span>
+                    {% else %}
+                        <span class="sltp-display">—</span>
+                    {% endif %}
+                </td>
+                <td class="holdings-table__actions">
+                    <button type="button" class="btn btn--xs btn--secondary"
+                            data-position-id="{{ h['id'] }}"
+                            data-type="long"
+                            data-ore-id="{{ h['ore_id'] }}"
+                            data-ore-price="{{ h['current_price'] }}"
+                            data-sl="{{ '%.2f' | format(h['sltp']['stop_loss']) if h['sltp'] and h['sltp']['stop_loss'] else '' }}"
+                            data-tp="{{ '%.2f' | format(h['sltp']['take_profit']) if h['sltp'] and h['sltp']['take_profit'] else '' }}"
+                            data-action-url="{{ url_for('trade.modify_sltp', holding_id=h['id']) }}"
+                            onclick="openSltpModal(this)">
+                        Edit SL/TP
+                    </button>
+                    <form method="POST" action="{{ url_for('trade.sell', ore_id=h['ore_id']) }}" style="display:inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <div class="sltp-form__fields">
-                            <input type="number" name="stop_loss" class="form-input form-input--sm" step="0.01" min="0"
-                                   placeholder="SL"
-                                   value="{{ '%.2f' | format(h['sltp']['stop_loss']) if h['sltp'] and h['sltp']['stop_loss'] else '' }}">
-                            <input type="number" name="take_profit" class="form-input form-input--sm" step="0.01" min="0"
-                                   placeholder="TP"
-                                   value="{{ '%.2f' | format(h['sltp']['take_profit']) if h['sltp'] and h['sltp']['take_profit'] else '' }}">
-                        </div>
-                        <button type="submit" class="btn btn--xs btn--secondary">Set</button>
+                        <input type="hidden" name="quantity" value="{{ h['quantity'] }}">
+                        <button type="submit" class="btn btn--xs btn--danger">Sell</button>
                     </form>
                 </td>
-                {% endif %}
+                {% else %}
                 <td class="holdings-table__trade">
                     <div class="ore-card__quick-trade">
                         <input type="number" min="1" step="1" placeholder="Qty" class="quick-trade-input" hx-preserve="true" id="pqty-{{ h['ore_id'] }}">
@@ -89,6 +115,7 @@
                         </form>
                     </div>
                 </td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>
@@ -99,4 +126,82 @@
     <p>You don't own any ores yet.</p>
     <a href="{{ url_for('market.overview') }}" class="btn btn--primary">Browse the Market</a>
 </div>
+{% endif %}
+
+{% if is_advanced_active %}
+</div><!-- end #portfolio-tab-longs -->
+
+<div id="portfolio-tab-shorts" class="portfolio-tab-content">
+    {% if short_positions is defined and short_positions %}
+    <div class="shorts-table-wrapper">
+        <table class="shorts-table">
+            <thead>
+                <tr>
+                    <th>Ore</th>
+                    <th>Qty</th>
+                    <th>Entry Price</th>
+                    <th>Current Price</th>
+                    <th>Net P/L <span class="info-icon" title="Unrealized price P/L minus cumulative fees paid">ⓘ</span></th>
+                    <th>Squeeze Price</th>
+                    <th>SL / TP</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sp in short_positions %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('market.ore_detail', ore_id=sp['ore_id']) }}">{{ sp['ore_name'] }}</a>
+                    </td>
+                    <td>{{ sp['share_quantity'] }}</td>
+                    <td>${{ "%.2f" | format(sp['entry_price']) }}</td>
+                    <td>${{ "%.2f" | format(sp['current_price']) }}</td>
+                    <td class="{% if (sp['unrealized_pnl'] - sp['cumulative_fees_paid']) >= 0 %}text--success{% else %}text--danger{% endif %}">
+                        {% set net_pnl = sp['unrealized_pnl'] - sp['cumulative_fees_paid'] %}
+                        {% if net_pnl >= 0 %}+{% endif %}${{ "%.2f" | format(net_pnl) }}
+                    </td>
+                    <td>
+                        {% if sp['squeeze_price'] is not none %}
+                            ${{ "%.2f" | format(sp['squeeze_price']) }}
+                        {% else %}
+                            ∞
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if sp['stop_loss'] or sp['take_profit'] %}
+                            SL: {{ "%.2f" | format(sp['stop_loss']) if sp['stop_loss'] else '—' }}
+                            / TP: {{ "%.2f" | format(sp['take_profit']) if sp['take_profit'] else '—' }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn--xs btn--secondary"
+                                data-position-id="{{ sp['id'] }}"
+                                data-type="short"
+                                data-ore-id="{{ sp['ore_id'] }}"
+                                data-ore-price="{{ sp['current_price'] }}"
+                                data-sl="{{ '%.2f' | format(sp['stop_loss']) if sp['stop_loss'] else '' }}"
+                                data-tp="{{ '%.2f' | format(sp['take_profit']) if sp['take_profit'] else '' }}"
+                                data-action-url="{{ url_for('trade.short_edit_sltp', position_id=sp['id']) }}"
+                                onclick="openSltpModal(this)">
+                            Edit SL/TP
+                        </button>
+                        <form method="POST" action="{{ url_for('trade.short_close', position_id=sp['id']) }}" style="display:inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn--xs btn--danger">Close</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No active short positions.</p>
+        <a href="{{ url_for('market.overview') }}" class="btn btn--primary">Browse the Market</a>
+    </div>
+    {% endif %}
+</div><!-- end #portfolio-tab-shorts -->
 {% endif %}

@@ -117,8 +117,10 @@ class TestAdvancedPurchase:
 
         Requirements: 3.3
         """
-        # Set up: user has plenty of cash but is NOT eligible
-        _set_user_state(app, balance=100000.0, advanced_eligible=0)
+        # Set up: user has enough cash to cover the $50,000 cost but net worth
+        # is below the $100,000 eligibility threshold, so auto-eligibility
+        # detection won't promote them during the page render.
+        _set_user_state(app, balance=60000.0, advanced_eligible=0)
 
         settings_resp = authenticated_client.get('/settings')
         token = get_csrf_token(settings_resp)
@@ -132,7 +134,7 @@ class TestAdvancedPurchase:
 
         # Verify balance unchanged
         user = _get_user_row(app)
-        assert user['balance'] == 100000.0
+        assert user['balance'] == 60000.0
         assert user['advanced_purchased'] == 0
 
     def test_purchase_double_purchase_no_op(self, authenticated_client, app):

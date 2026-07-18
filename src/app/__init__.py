@@ -40,18 +40,27 @@ def create_app():
     def inject_advanced_mode():
         if current_user.is_authenticated:
             from app.advanced import get_advanced_status
+            from app.database import get_db
             status = get_advanced_status(current_user.id)
+            # Check for active short positions (needed by settings modal)
+            db = get_db()
+            active_shorts_count = db.execute(
+                "SELECT COUNT(*) as cnt FROM short_positions WHERE user_id = ? AND status = 'active'",
+                (current_user.id,)
+            ).fetchone()['cnt']
             return {
                 'is_advanced_active': status['active'],
                 'has_advanced_purchased': status['purchased'],
                 'advanced_eligible': status['eligible'],
                 'advanced_cooldown_remaining': status['cooldown_remaining'],
+                'has_active_shorts': active_shorts_count > 0,
             }
         return {
             'is_advanced_active': False,
             'has_advanced_purchased': False,
             'advanced_eligible': False,
             'advanced_cooldown_remaining': 0,
+            'has_active_shorts': False,
         }
 
     # Register error handlers

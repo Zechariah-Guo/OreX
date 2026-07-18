@@ -1,0 +1,5 @@
+"Best of the rest" badge name change — rename to something that clearly means "#1" (not "2nd place").
+  Current: "Best of the Rest" — sounds like runner-up.
+  Suggestions: "Top Dog", "Peak Performer", "Market King", "Apex Trader", "The Summit"
+  Location: .kiro/specs/achievements-system/ (requirements.md, design.md, tasks.md)
+  Status: Not yet implemented — change in spec before building.

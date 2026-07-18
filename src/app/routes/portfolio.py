@@ -8,8 +8,81 @@ from flask_login import login_required, current_user
 from app.database import get_db
 from app.models import get_holdings_by_user, get_user_by_id
 from app.advanced import is_advanced_active
+from app.market.shorting import (
+    _calculate_tick_fee,
+    _calculate_squeeze_price,
+    _get_ticks_per_hour,
+)
 
 portfolio_bp = Blueprint('portfolio', __name__)
+
+
+def _get_short_positions(user_id: int) -> list:
+    """Build display data for each active short position."""
+    db = get_db()
+
+    positions = db.execute(
+        """SELECT sp.id, sp.ore_id, sp.share_quantity, sp.entry_price,
+                  sp.locked_collateral, sp.cumulative_fees_paid,
+                  sp.stop_loss_price, sp.take_profit_price, sp.opened_at,
+                  o.name AS ore_name, o.current_price, o.volatility
+           FROM short_positions sp
+           JOIN ores o ON sp.ore_id = o.id
+           WHERE sp.user_id = ? AND sp.status = 'active'
+           ORDER BY sp.opened_at ASC""",
+        (user_id,)
+    ).fetchall()
+
+    if not positions:
+        return []
+
+    user_row = db.execute(
+        "SELECT balance FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    user_balance = user_row['balance'] if user_row else 0.0
+
+    ticks_per_hour = _get_ticks_per_hour()
+    results = []
+
+    for pos in positions:
+        shares = pos['share_quantity']
+        current_price = pos['current_price']
+        entry_price = pos['entry_price']
+        volatility = pos['volatility']
+
+        unrealized_pnl = (entry_price * shares) - (current_price * shares)
+
+        tick_fee = _calculate_tick_fee(shares * current_price, volatility, ticks_per_hour)
+
+        squeeze_price = _calculate_squeeze_price(
+            {
+                'share_quantity': shares,
+                'entry_price': entry_price,
+                'locked_collateral': pos['locked_collateral'],
+            },
+            user_balance,
+            volatility,
+            ticks_per_hour,
+        )
+        # Convert infinity to None for template rendering
+        if squeeze_price == float('inf'):
+            squeeze_price = None
+
+        results.append({
+            'id': pos['id'],
+            'ore_name': pos['ore_name'],
+            'ore_id': pos['ore_id'],
+            'share_quantity': shares,
+            'entry_price': entry_price,
+            'current_price': current_price,
+            'unrealized_pnl': round(unrealized_pnl, 2),
+            'cumulative_fees_paid': round(pos['cumulative_fees_paid'], 2),
+            'squeeze_price': squeeze_price,
+            'stop_loss': pos['stop_loss_price'],
+            'take_profit': pos['take_profit_price'],
+        })
+
+    return results
 
 
 @portfolio_bp.route('/portfolio')
@@ -22,6 +95,8 @@ def overview():
     # Fetch active SL/TP orders for this user's holdings if advanced mode is active
     sltp_by_holding = {}
     advanced_active = is_advanced_active(current_user.id)
+
+    short_positions = []
     if advanced_active:
         db = get_db()
         holding_ids = [h['id'] for h in holdings]
@@ -36,6 +111,9 @@ def overview():
                     'stop_loss': row['stop_loss'],
                     'take_profit': row['take_profit'],
                 }
+
+        # Fetch active short positions
+        short_positions = _get_short_positions(current_user.id)
 
     # Calculate portfolio totals
     total_invested = 0
@@ -82,6 +160,8 @@ def overview():
         return render_template('partials/portfolio_live.html',
                                user=user,
                                holdings=holdings_data,
+                               short_positions=short_positions,
+                               is_advanced_active=advanced_active,
                                total_current_value=total_current_value,
                                total_profit_loss=total_profit_loss,
                                total_portfolio_value=total_portfolio_value)
@@ -89,6 +169,8 @@ def overview():
     return render_template('pages/portfolio.html',
                            user=user,
                            holdings=holdings_data,
+                           short_positions=short_positions,
+                           is_advanced_active=advanced_active,
                            total_invested=total_invested,
                            total_current_value=total_current_value,
                            total_profit_loss=total_profit_loss,

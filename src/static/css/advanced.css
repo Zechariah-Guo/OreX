@@ -405,3 +405,299 @@ html[data-theme="dark"] .rs-info-box__value {
         flex-direction: column;
     }
 }
+
+
+/* ===== Threat Horizon Meter ===== */
+.threat-horizon {
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--colour-surface);
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+}
+
+.threat-horizon__title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--colour-text-muted);
+    margin-bottom: var(--spacing-sm);
+}
+
+.threat-horizon__bar {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--colour-border);
+    overflow: hidden;
+    position: relative;
+}
+
+.threat-horizon__bar--green {
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+}
+
+.threat-horizon__bar--amber {
+    background: linear-gradient(90deg, #f39c12, #f1c40f);
+}
+
+.threat-horizon__bar--red {
+    background: linear-gradient(90deg, #c0392b, #e74c3c);
+}
+
+.threat-horizon__fill {
+    height: 100%;
+    width: 100%;
+    border-radius: 4px;
+}
+
+.threat-horizon__info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-xs);
+    font-size: 0.8rem;
+}
+
+.threat-horizon__countdown {
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+.threat-horizon__countdown--green {
+    color: #27ae60;
+}
+
+.threat-horizon__countdown--amber {
+    color: #f39c12;
+}
+
+.threat-horizon__countdown--red {
+    color: #e74c3c;
+}
+
+.threat-horizon__fee {
+    color: var(--colour-text-muted);
+    font-family: var(--font-mono);
+}
+
+
+/* ===== Short Position Cards ===== */
+.short-positions {
+    margin-top: var(--spacing-md);
+}
+
+.short-positions__title {
+    font-size: 1.1rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.short-positions__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.short-card {
+    background: var(--colour-surface);
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.short-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--colour-border);
+}
+
+.short-card__ore-name {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.short-card__qty {
+    font-size: 0.8rem;
+    color: var(--colour-text-muted);
+    font-family: var(--font-mono);
+}
+
+.short-card__prices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.short-card__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.short-card__label {
+    color: var(--colour-text-muted);
+}
+
+.short-card__value {
+    font-family: var(--font-mono);
+    font-weight: 600;
+}
+
+.short-card__value--squeeze {
+    color: #e74c3c;
+}
+
+/* SL/TP section in short cards */
+.short-card__sltp {
+    padding-top: var(--spacing-sm);
+    border-top: 1px dashed var(--colour-border);
+}
+
+.short-card__sltp-values {
+    display: flex;
+    gap: var(--spacing-md);
+    font-size: 0.8rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.short-card__sltp-item {
+    font-family: var(--font-mono);
+    color: var(--colour-text-muted);
+}
+
+.short-card__sltp-form {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.short-card__sltp-fields {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.short-card__sltp-fields .form-input--sm {
+    width: 75px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+}
+
+/* Close position button */
+.short-card__close {
+    margin-top: auto;
+    padding-top: var(--spacing-sm);
+}
+
+
+/* ===== Dark theme adjustments for short cards ===== */
+html[data-theme="dark"] .threat-horizon {
+    background: var(--colour-surface);
+}
+
+html[data-theme="dark"] .short-card {
+    background: var(--colour-surface);
+}
+
+html[data-theme="dark"] .short-card__value--squeeze {
+    color: #ff6b6b;
+}
+
+
+/* ===== Responsive: Short Position Cards ===== */
+@media (max-width: 768px) {
+    .short-positions__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .threat-horizon__info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+}
+
+/* ===== Dashboard Position Summary (Advanced Mode) ===== */
+.dashboard-grid--positions {
+    margin-top: var(--spacing-lg);
+}
+
+.position-summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.position-summary__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--colour-border);
+}
+
+.position-summary__row:last-child {
+    border-bottom: none;
+}
+
+.position-summary__label {
+    font-size: 0.85rem;
+    color: var(--colour-text-muted);
+    font-weight: 500;
+}
+
+.position-summary__value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+.position-summary__threat {
+    padding: var(--spacing-sm) 0;
+}
+
+/* Compact threat horizon for within position summary */
+.threat-horizon--compact {
+    margin-bottom: 0;
+    padding: var(--spacing-xs) 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+}
+
+.threat-horizon--compact .threat-horizon__bar {
+    height: 6px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.threat-horizon--compact .threat-horizon__countdown {
+    font-size: 0.75rem;
+}
+
+/* Card accent borders for longs/shorts */
+.dashboard-card--longs {
+    border-top: 3px solid #27ae60;
+}
+
+.dashboard-card--shorts {
+    border-top: 3px solid #e74c3c;
+}
+
+/* Threat Horizon Dot */
+.threat-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+    vertical-align: middle;
+}
+.threat-dot--green { background: #27ae60; }
+.threat-dot--amber { background: #f39c12; }
+.threat-dot--red { background: #e74c3c; }
