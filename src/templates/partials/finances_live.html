@@ -1,0 +1,109 @@
+<!-- Capital Breakdown -->
+<section class="finances-section" aria-label="Capital Breakdown">
+    <h2 class="finances-section__title">Capital Breakdown</h2>
+    <div class="finances-summary">
+        <div class="stat-card">
+            <span class="stat-card__label">Free Cash</span>
+            <span class="stat-card__value">${{ "{:,.2f}".format(free_cash) }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card__label">Locked Collateral</span>
+            <span class="stat-card__value">${{ "{:,.2f}".format(locked_collateral) }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card__label">Short Equity</span>
+            <span class="stat-card__value">${{ "{:,.2f}".format(total_short_equity) }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card__label">Long Holdings Value</span>
+            <span class="stat-card__value">${{ "{:,.2f}".format(long_holdings_value) }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card__label">Net Worth</span>
+            <span class="stat-card__value">${{ "{:,.2f}".format(net_worth) }}</span>
+        </div>
+    </div>
+</section>
+<br>
+
+{% if has_shorts %}
+<!-- Active Short Positions -->
+<section class="finances-section" aria-label="Active Short Positions">
+    <h2 class="finances-section__title">Active Short Positions</h2>
+
+    {% if short_positions %}
+    <div class="finances-table-wrapper">
+        <table class="shorts-table">
+            <thead>
+                <tr>
+                    <th>Ore</th>
+                    <th>Shares</th>
+                    <th>Entry Price</th>
+                    <th>Short Value</th>
+                    <th>Locked Collateral</th>
+                    <th>Unrealized PnL</th>
+                    <th>SL Price</th>
+                    <th>TP Price</th>
+                    <th>Ticks to Liq.</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pos in short_positions %}
+                <tr>
+                    <td>{{ pos.ore_name }}</td>
+                    <td>{{ pos.share_quantity }}</td>
+                    <td>${{ "{:,.2f}".format(pos.entry_price) }}</td>
+                    <td>${{ "{:,.2f}".format(pos.short_value) }}</td>
+                    <td>${{ "{:,.2f}".format(pos.locked_collateral) }}</td>
+                    <td class="{% if pos.unrealized_pnl >= 0 %}text--success{% else %}text--danger{% endif %}">
+                        {% if pos.unrealized_pnl >= 0 %}+{% endif %}${{ "{:,.2f}".format(pos.unrealized_pnl) }}
+                    </td>
+                    <td>{{ "{:.2f}".format(pos.stop_loss_price) if pos.stop_loss_price is not none else "None" }}</td>
+                    <td>{{ "{:.2f}".format(pos.take_profit_price) if pos.take_profit_price is not none else "None" }}</td>
+                    <td>{% if pos.ticks_to_liquidation >= 9223372036854775807 %}∞{% else %}{{ pos.ticks_to_liquidation }}{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- Aggregate Summary -->
+    <div class="finances-aggregate">
+        <span class="finances-aggregate__item">Positions: <strong>{{ position_count }}</strong></span>
+        <span class="finances-aggregate__item">Total Exposure: <strong>${{ "{:,.2f}".format(total_exposure) }}</strong></span>
+        <span class="finances-aggregate__item">Total Fees Paid: <strong>${{ "{:,.2f}".format(total_fees_paid) }}</strong></span>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No active short positions.</p>
+    </div>
+    {% endif %}
+</section>
+<br>
+<!-- Cash Flow Projections -->
+<section class="finances-section" aria-label="Cash Flow Projections">
+    <h2 class="finances-section__title">Cash Flow Projections</h2>
+
+    <div class="finances-cashflow">
+        <div class="finances-cashflow__row">
+            <span class="finances-cashflow__label">Fee Burn Rate (per tick)</span>
+            <span class="finances-cashflow__value">-${{ "{:,.2f}".format(fee_burn_per_tick) }} / tick</span>
+        </div>
+        <div class="finances-cashflow__row">
+            <span class="finances-cashflow__label">Fee Burn Rate (per hour)</span>
+            <span class="finances-cashflow__value">-${{ "{:,.2f}".format(fee_burn_per_hour) }} / hour</span>
+        </div>
+        <div class="finances-cashflow__row">
+            <span class="finances-cashflow__label">Cash Runway</span>
+            <span class="finances-cashflow__value">{{ cash_runway_formatted }}</span>
+        </div>
+    </div>
+
+    <!-- Cash Runway Indicator -->
+    <div class="runway-indicator">
+        <div class="runway-bar runway-bar--{{ runway_color }}" style="width: {{ runway_bar_width }}%"></div>
+    </div>
+    {% if cash_runway_ticks < 20 %}
+    <p class="runway-warning text--danger">Liquidation imminent</p>
+    {% endif %}
+</section>
+{% endif %}

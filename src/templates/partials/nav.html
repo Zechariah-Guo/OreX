@@ -27,7 +27,13 @@
 
                 <li class="nav__profile-group">
                     <div class="nav__profile-pill">
-                        <span id="nav-balance" class="nav__balance">${{ "%.2f" | format(current_user.balance) }}</span>
+                        {% if is_advanced_active %}
+                            <a href="{{ url_for('finances.overview') }}" class="nav__balance nav__balance--link" id="nav-balance">
+                                ${{ "%.2f" | format(current_user.balance) }}
+                            </a>
+                        {% else %}
+                            <span id="nav-balance" class="nav__balance">${{ "%.2f" | format(current_user.balance) }}</span>
+                        {% endif %}
                         <button class="nav__avatar" id="nav-avatar-btn" aria-expanded="false" aria-haspopup="true"
                                 data-username="{{ current_user.username }}">
                             {{ current_user.username[:2] | upper }}

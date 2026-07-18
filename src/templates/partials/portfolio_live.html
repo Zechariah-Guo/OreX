@@ -21,6 +21,12 @@
 </div>
 
 {% if is_advanced_active %}
+<div class="portfolio-finances-link">
+    <a href="{{ url_for('finances.overview') }}" class="btn btn--secondary btn--small">View Finances</a>
+</div>
+{% endif %}
+
+{% if is_advanced_active %}
 <!-- Tabs for advanced users -->
 <div class="portfolio-tabs">
     <button class="trade-tabs__tab" data-tab="longs" onclick="switchPortfolioTab('longs')">Longs</button>

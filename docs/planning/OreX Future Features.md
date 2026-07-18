@@ -24,8 +24,8 @@
 |--------|---------|-------|
 | ✅ | Shorting System | Full collateral/fee engine, forced liquidation, SL/TP for shorts |
 | ✅ | Stop Loss / Take Profit | Covered in both advanced-mode and shorting-system specs |
-| 🔲 | Finances Page (Advanced) | Breakdown of free cash, locked collateral, short equity — accessible via green money pill or portfolio |
-| 🔲 | Resistance & Support Metrics | Chart overlays, lookback window calculation |
+| ✅ | Finances Page (Advanced) | Breakdown of free cash, locked collateral, short equity — accessible via green money pill or portfolio |
+| ✅ | Resistance & Support Metrics | Chart overlays, lookback window calculation |
 | 🔲 | Bot Shorting AI | Bots react to advanced players, risk-managed short entries |
 
 ---
@@ -75,7 +75,11 @@
 ## Fully Implemented
 - Hard cap on buy quantity in standard mode (500 max) — config.py + trade route + template
 - Two-Factor Authentication — TOTP + backup codes, login challenge, setup/disable flows, 122 tests passing
-- Advanced Mode
+- Advanced Mode — Unlock at 100k NW, purchase for 50k, feature gating, theme/logo swap
+- Shorting System — Full collateral/fee engine, forced liquidation, SL/TP for shorts
+- Stop Loss / Take Profit — Automated price triggers for both longs and shorts
+- Finances Page — Free cash, locked collateral, short equity breakdown
+- Resistance & Support Metrics — Chart overlays with lookback window calculation
 
 ---
 
@@ -107,7 +111,7 @@ Things you need to do manually that Kiro can't handle:
 ### Design Decisions Still Needed
 - [ ] Exact colors/gradients for Money theme and Gold theme
 - [ ] Achievement badge visual style (pixel art? flat icons? illustrated?)
-- [ ] Advanced Mode logo design direction
+- [x] Advanced Mode logo design direction
 - [ ] Tutorial step targeting (need to add `id` attributes to key DOM elements for tutorial selectors)
 
 ---
@@ -115,11 +119,12 @@ Things you need to do manually that Kiro can't handle:
 ## Implementation Order (Dependency-Based)
 
 1. ~~**2FA** — Isolated (auth + settings only)~~ ✅ Done
-2. **Advanced Mode** — Foundation for feature gating ✅ Done
-3. **Shorting System** — Depends on advanced mode <-- Next
-4. **Finances Page** — Depends on advanced mode + shorting
-5. **Achievements** — Depends on advanced mode + shorting
-6. **Profile Page** — Depends on achievements
-7. **Notification System** — Depends on achievements + shorting (emitters)
-8. **Tutorial System** — Depends on everything being in place
-9. **Changelog** — Vibe at the end
+2. ~~**Advanced Mode** — Foundation for feature gating~~ ✅ Done
+3. ~~**Shorting System** — Depends on advanced mode~~ ✅ Done
+4. ~~**Finances Page** — Depends on advanced mode + shorting~~ ✅ Done
+5. ~~**Resistance & Support** — Chart overlays~~ ✅ Done
+6. **Achievements** — Depends on advanced mode + shorting <-- Next
+7. **Profile Page** — Depends on achievements
+8. **Notification System** — Depends on achievements + shorting (emitters)
+9. **Tutorial System** — Depends on everything being in place
+10. **Changelog** — Add to revamped about section. 

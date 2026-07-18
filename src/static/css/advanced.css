@@ -701,3 +701,188 @@ html[data-theme="dark"] .short-card__value--squeeze {
 .threat-dot--green { background: #27ae60; }
 .threat-dot--amber { background: #f39c12; }
 .threat-dot--red { background: #e74c3c; }
+
+
+/* ===== Finances Page ===== */
+.finances-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+/* Section wrapper */
+.finances-section {
+    background: var(--colour-surface);
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+    padding: var(--spacing-lg);
+}
+
+.finances-section__title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--colour-text-muted);
+    margin-bottom: var(--spacing-md);
+}
+
+/* Capital Breakdown — stat cards grid */
+.finances-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+/* Active Short Positions — table with horizontal scroll */
+.finances-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: var(--spacing-md);
+}
+
+.shorts-table {
+    width: 100%;
+    border-collapse: collapse;
+    white-space: nowrap;
+}
+
+.shorts-table th,
+.shorts-table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--colour-border);
+}
+
+.shorts-table th {
+    background-color: var(--colour-bg);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--colour-text-muted);
+}
+
+.shorts-table td {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+}
+
+/* Aggregate summary below the table */
+.finances-aggregate {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md) var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--colour-border);
+}
+
+.finances-aggregate__item {
+    font-size: 0.85rem;
+    color: var(--colour-text-muted);
+}
+
+.finances-aggregate__item strong {
+    color: var(--colour-text);
+    font-family: var(--font-mono);
+}
+
+/* Cash Flow Projections */
+.finances-cashflow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.finances-cashflow__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--colour-border);
+}
+
+.finances-cashflow__row:last-child {
+    border-bottom: none;
+}
+
+.finances-cashflow__label {
+    font-size: 0.85rem;
+    color: var(--colour-text-muted);
+    font-weight: 500;
+}
+
+.finances-cashflow__value {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Cash Runway Indicator Bar */
+.runway-indicator {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--colour-border);
+    overflow: hidden;
+    position: relative;
+    margin-top: var(--spacing-sm);
+}
+
+.runway-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.runway-bar--green {
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+}
+
+.runway-bar--amber {
+    background: linear-gradient(90deg, #f39c12, #f1c40f);
+}
+
+.runway-bar--red {
+    background: linear-gradient(90deg, #c0392b, #e74c3c);
+}
+
+/* Liquidation imminent warning */
+.runway-warning {
+    margin-top: var(--spacing-sm);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* ===== Dark theme adjustments for Finances ===== */
+html[data-theme="dark"] .finances-section {
+    background: var(--colour-surface);
+    border-color: var(--colour-border);
+}
+
+html[data-theme="dark"] .shorts-table th {
+    background-color: var(--colour-bg);
+}
+
+/* ===== Responsive: Finances Page ===== */
+@media (max-width: 768px) {
+    .finances-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .finances-section {
+        padding: var(--spacing-md);
+    }
+
+    .finances-cashflow__row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    .finances-aggregate {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+}

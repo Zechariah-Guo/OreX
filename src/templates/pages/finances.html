@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Finances - OreX{% endblock %}
+
+{% block content %}
+<div class="finances-page">
+    <div class="page-header">
+        <h1>Finances</h1>
+        <span id="finances-indicator" class="htmx-indicator">Updating...</span>
+    </div>
+
+    <div id="finances-live"
+         hx-get="{{ url_for('finances.overview') }}"
+         hx-trigger="every 20s"
+         hx-swap="innerHTML"
+         hx-indicator="#finances-indicator">
+        {% include 'partials/finances_live.html' %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.body.addEventListener('htmx:responseError', function(event) {
+    if (event.detail.xhr.status === 403) {
+        window.location.href = '/dashboard';
+    }
+});
+</script>
+{% endblock %}

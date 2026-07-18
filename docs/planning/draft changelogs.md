@@ -4,7 +4,7 @@
 
 ---
 
-## Alpha (Current Version)
+## Alpha - "The Foundation"
 
 *The foundation of OreX — core trading experience.*
 
@@ -20,34 +20,42 @@
 
 ---
 
-## Beta (Upcoming)
+## Beta 1 — "The Advanced Update"
 
-*A massive expansion introducing progression, advanced mechanics, and player identity.*
+*Advanced trading mechanics, risk management, and account security.*
+
+### Advanced Mode
+- **Advanced Mode** — Unlock a prestige tier with expanded trading mechanics at high net worth
+- **Short selling** — Bet against ores and profit when prices fall
+- **Stop Loss & Take Profit** — Set automated price triggers to manage risk hands-free
+- **Resistance & Support levels** — See key price boundaries on charts to inform your trades
+- **Finances dashboard** — A dedicated breakdown of where your capital is allocated
+- **Leaderboard indicators** — Advanced players stand out with a red name
+
+### Security
+- **Two-Factor Authentication** — Optional TOTP-based login security via Google Authenticator
+
+### Quality of Life
+- **Buy limits in standard mode** — Encourages strategic trading over bulk purchases
+
+---
+
+## Beta 2 — "The Progression Update"
+
+*Player identity, progression, and guided onboarding.*
 
 ### Progression & Rewards
-- **Advanced Mode** — Unlock a prestige tier with expanded trading mechanics at high net worth
 - **9 Achievements** — Earn badges for milestones like reaching $1M, completing 100 trades, hitting #1 on the leaderboard, and more
 - **Exclusive themes** — Unlock the Money theme and Gold theme through prestigious achievements
 - **3-Day Welcome Bonus** — Collect rewards across your first 3 logins to jumpstart your portfolio
 
-### Advanced Trading
-- **Short selling** — Bet against ores and profit when prices fall (Advanced Mode)
-- **Stop Loss & Take Profit** — Set automated price triggers to manage risk hands-free
-- **Resistance & Support levels** — See key price boundaries on charts to inform your trades
-- **Finances dashboard** — A dedicated breakdown of where your capital is allocated
-
 ### Player Identity
 - **Profile page** — Your personal hub with stats, achievements, and avatar
 - **Custom profile pictures** — Upload and crop a personalized avatar
-- **Leaderboard indicators** — Advanced players stand out with a red name
 
 ### Quality of Life
 - **Interactive tutorials** — Guided walkthroughs for new players and advanced mechanics
-- **Buy limits in standard mode** — Encourages strategic trading over bulk purchases
 - **Help section** — Reorganized for easier access from the profile menu
-
-### Security
-- **Two-Factor Authentication** — Optional TOTP-based login security via Google Authenticator
 
 ---
 
@@ -56,3 +64,5 @@
 *Coming after deployment and final polish.*
 
 > Beta features plus full production deployment, performance optimizations, and any additional features or changes added along the way. Stay tuned!
+
+## Version 1.1 (Mobile support)

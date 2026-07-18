@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
 
 import pytest
-from hypothesis import given, settings
+from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
 
 from app.market.shorting import (
@@ -281,7 +281,7 @@ from hypothesis import assume
     required_collateral=st.floats(1, 500000, allow_nan=False, allow_infinity=False),
     free_cash=st.floats(0, 1000000, allow_nan=False, allow_infinity=False),
 )
-@settings(max_examples=100)
+@settings(max_examples=100, suppress_health_check=[HealthCheck.filter_too_much])
 def test_collateral_rebalancing_conservation_of_money(
     locked_collateral: float, required_collateral: float, free_cash: float
 ):

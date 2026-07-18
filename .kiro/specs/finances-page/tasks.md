@@ -6,8 +6,8 @@ Implement the Finances Page — an Advanced Mode-exclusive financial dashboard t
 
 ## Tasks
 
-- [ ] 1. Create finances helper module
-  - [ ] 1.1 Create `src/app/finances.py` with core calculation functions
+- [x] 1. Create finances helper module
+  - [x] 1.1 Create `src/app/finances.py` with core calculation functions
     - Implement `get_finances_data(user_id)` orchestrator that queries all data and returns the full context dict
     - Implement `get_active_short_positions(user_id)` fetching active positions joined with ore data, computing per-position short_value, unrealized_pnl, tick_fee, ticks_to_liquidation
     - Implement `calculate_fee_burn_per_tick(positions, ores_map)` using formula: `SUM(round(short_value * ((0.005 + 0.10 * volatility^2) / ticks_per_hour), 2))`
@@ -18,32 +18,32 @@ Implement the Finances Page — an Advanced Mode-exclusive financial dashboard t
     - Handle edge cases: no short positions → all aggregates 0.0, fee burn 0 → infinite runway
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 4.1, 4.3, 4.5, 5.1, 5.2, 5.3, 5.4, 5.6, 7.1, 7.2, 7.3, 7.4, 7.5_
 
-  - [ ]* 1.2 Write property test for net worth formula
+  - [x] 1.2 Write property test for net worth formula
     - **Property 1: Net Worth Formula**
     - Generate random balance (≥0), lists of holdings (quantity ≥1, price >0), and short positions (locked_collateral >0, shares ≥1, price >0)
     - Verify computed net_worth = balance + Σ(q_i × p_i) + Σ(L_j − (s_j × cp_j))
     - **Validates: Requirements 3.5**
 
-  - [ ]* 1.3 Write property test for short position aggregates
+  - [x] 1.3 Write property test for short position aggregates
     - **Property 2: Short Position Aggregates**
     - Generate random lists of short positions (including empty list)
     - Verify total_locked_collateral = Σ(L_i), total_short_equity = Σ(L_i − s_i × p_i), total_exposure = Σ(s_i × p_i), total_fees_paid = Σ(f_i), position_count = len(list)
     - **Validates: Requirements 3.2, 3.3, 4.5**
 
-  - [ ]* 1.4 Write property test for fee burn calculation
+  - [x] 1.4 Write property test for fee burn calculation
     - **Property 3: Fee Burn Calculation**
     - Generate random (short_value, volatility) pairs and tick_interval values
     - Verify fee_burn_per_tick = Σ(round(SV_i × ((0.005 + 0.10 × v_i²) / (3600 / T)), 2)) and fee_burn_per_hour = fee_burn_per_tick × (3600 / T)
     - **Validates: Requirements 5.1, 5.2**
 
-  - [ ]* 1.5 Write property test for cash runway calculation
+  - [x] 1.5 Write property test for cash runway calculation
     - **Property 4: Cash Runway Calculation**
     - Generate random free_cash (≥0) and fee_burn_per_tick (>0)
     - Verify cash_runway_ticks = floor(free_cash / fee_burn_per_tick)
     - Also verify per-position ticks_to_liquidation = floor(free_cash / tick_fee) for tick_fee > 0
     - **Validates: Requirements 4.3, 5.3**
 
-  - [ ]* 1.6 Write property test for runway indicator classification
+  - [x] 1.6 Write property test for runway indicator classification
     - **Property 5: Runway Indicator Classification**
     - Generate random non-negative integer tick counts
     - Verify: green when >60, amber when 20≤ticks≤60, red when <20
@@ -52,17 +52,17 @@ Implement the Finances Page — an Advanced Mode-exclusive financial dashboard t
     - Verify fee_burn=0 → infinite runway with green color and full bar
     - **Validates: Requirements 5.4, 7.1, 7.2, 7.3, 7.4, 7.5**
 
-  - [ ]* 1.7 Write property test for currency and percentage formatting
+  - [x] 1.7 Write property test for currency and percentage formatting
     - **Property 6: Currency and Percentage Formatting**
     - Generate random non-negative floats for currency, verify output matches `$[digits with comma grouping].[2 decimals]`
     - Generate random floats for percentage, verify output has exactly 1 decimal place followed by "%"
     - **Validates: Requirements 3.1, 8.2, 8.3**
 
-- [ ] 2. Checkpoint
+- [x] 2. Checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3. Create finances route and blueprint
-  - [ ] 3.1 Create `src/app/routes/finances.py` with the finances blueprint
+- [x] 3. Create finances route and blueprint
+  - [x] 3.1 Create `src/app/routes/finances.py` with the finances blueprint
     - Create `finances_bp` Blueprint
     - Implement `GET /finances` route with `@login_required` and `@advanced_required` decorators
     - Call `get_finances_data(current_user.id)` for context
@@ -70,19 +70,19 @@ Implement the Finances Page — an Advanced Mode-exclusive financial dashboard t
     - On full request: return `pages/finances.html` full page
     - _Requirements: 1.1, 1.2, 1.3, 6.1, 6.2, 6.3_
 
-  - [ ] 3.2 Register finances blueprint in `src/app/routes/__init__.py`
+  - [x] 3.2 Register finances blueprint in `src/app/routes/__init__.py`
     - Import and register `finances_bp` in the app route registration
     - _Requirements: 1.1_
 
-  - [ ]* 3.3 Write unit tests for finances route access control
+  - [x] 3.3 Write unit tests for finances route access control
     - Test GET /finances returns 200 for authenticated advanced-mode user
     - Test GET /finances redirects unauthenticated users to login
     - Test GET /finances returns 403 for user without advanced mode
     - Test htmx request returns partial HTML only (no `<html>` wrapper)
     - _Requirements: 1.1, 1.2, 1.3, 6.2_
 
-- [ ] 4. Create finances page templates
-  - [ ] 4.1 Create `src/templates/pages/finances.html` full page template
+- [x] 4. Create finances page templates
+  - [x] 4.1 Create `src/templates/pages/finances.html` full page template
     - Extend `base.html`
     - Set page title to "Finances - OreX"
     - Add page header with "Finances" heading and htmx indicator
@@ -91,7 +91,7 @@ Implement the Finances Page — an Advanced Mode-exclusive financial dashboard t
     - Add htmx error recovery JavaScript: redirect to dashboard on 403 response
     - _Requirements: 6.1, 6.2, 6.3, 9.1, 9.2_
 
-  - [ ] 4.2 Create `src/templates/partials/finances_live.html` live partial template
+  - [x] 4.2 Create `src/templates/partials/finances_live.html` live partial template
     - **Capital Breakdown section**: Display Free Cash, Locked Collateral, Short Equity, Long Holdings Value, Net Worth as labeled stat cards with formatted currency values ($X,XXX.XX)
     - Display Locked Collateral as $0.00 and Short Equity as $0.00 when no active shorts
     - Visually distinguish each category as separate labeled line items summing to Net Worth
@@ -110,20 +110,20 @@ Implement the Finances Page — an Advanced Mode-exclusive financial dashboard t
     - Handle zero free cash: display "$0.00" and "0 ticks" with red indicator
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 7.1, 7.2, 7.3, 7.4, 7.5, 8.1, 8.2, 8.3, 8.4, 9.3, 9.4_
 
-- [ ] 5. Update navigation and entry points
-  - [ ] 5.1 Update `src/templates/partials/nav.html` to make green money pill a conditional link
-    - When `is_advanced_active` is True: render balance as `<a>` linking to `/finances`
+- [x] 5. Update navigation and entry points
+  - [x] 5.1 Update `src/templates/partials/nav.html` to make green money pill a conditional link
+    - When `is_advanced_active` is True: render balance as `<a>` linking to `/finances`and have the pill expand on hover
     - When `is_advanced_active` is False: render balance as non-interactive `<span>`
     - Ensure the displayed Free_Cash value remains visible regardless of mode
     - _Requirements: 1.4, 1.5, 2.1, 2.2, 2.4_
 
-  - [ ] 5.2 Update portfolio template to add "View Finances" link
+  - [x] 5.2 Update portfolio template to add "View Finances" link
     - Add a "View Finances" button/link in the portfolio section, wrapped in `{% if is_advanced_active %}`
     - Link navigates to `/finances` route
     - _Requirements: 2.3_
 
-- [ ] 6. Add finances page CSS styles
-  - [ ] 6.1 Add CSS styles for the finances page to `src/static/css/`
+- [x] 6. Add finances page CSS styles
+  - [x] 6.1 Add CSS styles for the finances page to `src/static/css/`
     - Style the capital breakdown stat cards layout
     - Style the active short positions table with horizontal scroll on narrow viewports
     - Style the cash flow projections section
@@ -134,11 +134,11 @@ Implement the Finances Page — an Advanced Mode-exclusive financial dashboard t
     - Style empty state messages
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 8.1, 8.4, 8.5_
 
-- [ ] 7. Checkpoint
+- [x] 7. Checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Integration tests and final verification
-  - [ ]* 8.1 Write integration tests for the full finances page lifecycle
+- [x] 8. Integration tests and final verification
+  - [x] 8.1 Write integration tests for the full finances page lifecycle
     - Test: open short position → load /finances → verify position appears in table with correct metrics
     - Test: close short position → reload /finances partial → verify position removed
     - Test: fee burn displayed matches actual tick engine formula
@@ -148,7 +148,7 @@ Implement the Finances Page — an Advanced Mode-exclusive financial dashboard t
     - Test: zero free cash with active shorts → displays "$0.00" and "0 ticks" with red indicator
     - _Requirements: 1.1, 1.3, 4.1, 4.5, 5.1, 6.4, 6.5, 9.1, 9.2, 9.3, 9.4_
 
-  - [ ] 8.2 Final checkpoint
+  - [x] 8.2 Final checkpoint
     - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
