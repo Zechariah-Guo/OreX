@@ -92,15 +92,19 @@ function confirmAdvancedToggle(checkbox) {
     var html = '';
     if (checkbox.checked) {
         html += '<p>This will activate:</p><ul>';
+        html += '<li>Short selling system</li>';
         html += '<li>Stop Loss / Take Profit automation</li>';
         html += '<li>Resistance & Support chart overlays</li>';
+        html += '<li>Finances dashboard</li>';
         html += '<li>OreX Advanced theme</li>';
         html += '<li>Buy cap removal</li>';
         html += '</ul>';
     } else {
         html += '<p>This will deactivate:</p><ul>';
+        html += '<li>Short selling system</li>';
         html += '<li>Stop Loss / Take Profit automation</li>';
         html += '<li>Resistance & Support chart overlays</li>';
+        html += '<li>Finances dashboard</li>';
         html += '<li>OreX Advanced theme</li>';
         html += '<li>Buy cap will be restored</li>';
         html += '</ul>';
@@ -319,6 +323,7 @@ function confirmToggleSubmit() {
 
         {% if advanced_cooldown_remaining > 0 %}
         {# State 4: Cooldown active - disabled toggle with remaining time #}
+        <br>
         <div class="advanced-mode-box__cooldown">
             <button class="btn btn--toggle {% if is_advanced_active %}btn--toggle-on{% endif %}" disabled aria-disabled="true">
                 {% if is_advanced_active %}ON{% else %}OFF{% endif %}
@@ -329,6 +334,7 @@ function confirmToggleSubmit() {
         </div>
         {% else %}
         {# State 3: No cooldown - active toggle with confirmation #}
+        <br>
         <form method="POST" action="{{ url_for('settings.toggle_advanced') }}" id="advanced-toggle-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label class="toggle-switch" for="advanced-mode-toggle">

@@ -1,2 +1,5 @@
-# Production-only dependencies (in addition to requirements.txt)
+# Production dependencies for Oracle VM deployment
+-r ../../../requirements.txt # potentially change if the production repo looks different
+
+# WSGI server
 gunicorn==23.0.0

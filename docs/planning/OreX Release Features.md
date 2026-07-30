@@ -1,9 +1,9 @@
-# OreX Future Features Roadmap
+# OreX Release Roadmap (Beta 1 - v1.0)
 
 ## Legend
-- ✅ Requirements spec'd
-- 🔲 Not yet started
-- 🚧 Partially explored
+- ✅ Completed
+- 🔲 Not started (Spec completed)
+- 🚧 In progress
 
 ---
 
@@ -12,8 +12,8 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | Advanced Mode | Unlock at 100k NW, purchase for 50k, feature flags, theme/logo swap |
-| ✅ | Achievements (9 badges) | Millionaire, Multimillionaire, The Big Short, Dedicated, Day Trader, Budding Enthusiast, Completionist, Tragedy, Best of the Rest |
-| ✅ | Profile Page | PFP, stats, daily bonus, achievement display, help relocation |
+| 🚧 | Achievements (9 badges) | Millionaire, Multimillionaire, The Big Short, Dedicated, Day Trader, Budding Enthusiast, Completionist, Tragedy, Best of the Rest |
+| 🚧 | Profile Page | PFP, stats, daily bonus, achievement display, help relocation |
 | ✅ | Hard cap on stocks (simple mode) | Max 500 per buy order in standard mode, implemented |
 
 ---
@@ -26,7 +26,7 @@
 | ✅ | Stop Loss / Take Profit | Covered in both advanced-mode and shorting-system specs |
 | ✅ | Finances Page (Advanced) | Breakdown of free cash, locked collateral, short equity — accessible via green money pill or portfolio |
 | ✅ | Resistance & Support Metrics | Chart overlays, lookback window calculation |
-| 🔲 | Bot Shorting AI | Bots react to advanced players, risk-managed short entries |
+| ✅ | Bot Shorting AI | Bots react to advanced players, risk-managed short entries |
 
 ---
 
@@ -34,10 +34,10 @@
 
 | Status | Feature | Notes |
 |--------|---------|-------|
-| ✅ | Custom PFP | Cropper.js, Oracle-compatible storage, leaderboard integration |
+| 🔲 | Custom PFP | Cropper.js, Oracle-compatible storage, leaderboard integration |
 | ✅ | Leaderboard Indicators | Red name (advanced), bot icons |
-| ✅ | Money & Gold Themes | Multimillionaire → Money theme, Completionist → Gold theme |
-| ✅ | 2FA (Google Authenticator) | TOTP setup, backup codes, login challenge, rate limited — **IMPLEMENTED** |
+| 🚧 | Money & Gold Themes | Multimillionaire → Money theme, Completionist → Gold theme |
+| ✅ | 2FA (Google Authenticator) | TOTP setup, backup codes, login challenge, rate limited |
 
 ---
 
@@ -45,11 +45,11 @@
 
 | Status | Feature | Notes |
 |--------|---------|-------|
-| ✅ | 3-Day Welcome Bonus | One-time $1k/$10k/$100k, no streak required |
-| ✅ | Login Streak Tracking | For Dedicated badge |
-| ✅ | Play Time Tracking | For Budding Enthusiast badge |
+| 🔲 | 3-Day Welcome Bonus | One-time $1k/$10k/$100k, no streak required |
+| 🔲 | Login Streak Tracking | For Dedicated badge |
+| 🔲 | Play Time Tracking | For Budding Enthusiast badge |
 | 🔲 | Tutorial System | Beginner + Advanced tutorials, notification system |
-| 🔲 | Changelogs | Major version notes, in-app display |
+| 🚧 | Changelogs | Major version notes, in-app display |
 
 ---
 
@@ -72,20 +72,9 @@
 6. `.kiro/specs/tutorial-system/` — 12 requirements
 7. `.kiro/specs/two-factor-auth/` — 10 requirements
 
-## Fully Implemented
-- Hard cap on buy quantity in standard mode (500 max) — config.py + trade route + template
-- Two-Factor Authentication — TOTP + backup codes, login challenge, setup/disable flows, 122 tests passing
-- Advanced Mode — Unlock at 100k NW, purchase for 50k, feature gating, theme/logo swap
-- Shorting System — Full collateral/fee engine, forced liquidation, SL/TP for shorts
-- Stop Loss / Take Profit — Automated price triggers for both longs and shorts
-- Finances Page — Free cash, locked collateral, short equity breakdown
-- Resistance & Support Metrics — Chart overlays with lookback window calculation
-
 ---
 
 ## Manual Tasks / Prerequisites (Before or During Implementation)
-
-Things you need to do manually that Kiro can't handle:
 
 ### Dependencies to Install
 - [x] `pip install pyotp==2.9.0` — TOTP generation/verification for 2FA
@@ -94,11 +83,11 @@ Things you need to do manually that Kiro can't handle:
 - [ ] Alpine.js will be loaded from CDN (no pip install needed, already allowed in CSP)
 
 ### Assets to Create/Source
-- [ ] **Default avatar image** — `static/images/default-avatar.png` (generic user silhouette, used when no PFP uploaded)
-- [ ] **Bot icon** — `static/images/bot-icon.png` (displayed on leaderboard for bot accounts instead of PFP)
-- [ ] **Achievement badge icons** — 9 badge images (one per achievement), both locked (greyed) and unlocked versions
-- [ ] **Money theme CSS** — Gold/cash-inspired color palette for Multimillionaire unlock
-- [ ] **Gold theme CSS** — Gold/prestige color palette for Completionist unlock
+- [x] **Default avatar image** — `static/images/default-avatar.png` (generic user silhouette, used when no PFP uploaded)
+- [x] **Bot icon** — `static/images/bot-icon.png` (displayed on leaderboard for bot accounts instead of PFP)
+- [x] **Achievement badge icons** — 9 badge images (one per achievement), both locked (greyed) and unlocked versions
+- [x] **Money theme CSS** — Gold/cash-inspired color palette for Multimillionaire unlock
+- [x] **Gold theme CSS** — Gold/prestige color palette for Completionist unlock
 - [ ] **Notification bell icon** — SVG icon for the nav bar notification bell
 - [ ] **Tutorial step content** — Write the actual text for each tutorial step (beginner 7 steps, advanced 7 steps) in `static/data/tutorials.json`
 
@@ -127,4 +116,4 @@ Things you need to do manually that Kiro can't handle:
 7. **Profile Page** — Depends on achievements
 8. **Notification System** — Depends on achievements + shorting (emitters)
 9. **Tutorial System** — Depends on everything being in place
-10. **Changelog** — Add to revamped about section. 
+10. **Changelog** — Add to revamped about section. <-- Ongoing

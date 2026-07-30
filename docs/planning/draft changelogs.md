@@ -63,6 +63,31 @@
 
 *Coming after deployment and final polish.*
 
-> Beta features plus full production deployment, performance optimizations, and any additional features or changes added along the way. Stay tuned!
+> Beta features plus changes to accomodate a full production deployment
 
-## Version 1.1 (Mobile support)
+## Version 1.1 
+
+*QoL update including mobile support*
+
+### Mobile Support
+- TBC
+
+### QoL
+- Allow "forgot password" functionality by leveraging the existing 2fa system
+- Optimise leaderboard and other pages' SQL with CTE
+- Implement celery and redis for background profile picture processing and storage
+- Migrate all images to avif with webp fallback
+- Migrate sqlite3 to prostgres (for practice --> say its for "scalability") (and potentnially switch from rawSQL to SQLAlchemy)
+<blockquote> 
+How to Prepare for Migration
+
+1. Dump the Data: Export your SQLite database into an SQL text file using the .dump
+command in your terminal.
+
+2. Convert Syntax: SQLite and PostgreSQL have slight syntax differences (e.g., SQLite
+uses AUTOINCREMENT , PostgreSQL uses SERIAL or GENERATED ALWAYS AS IDENTITY ).
+Tools like pgloader can automate this conversion.
+
+3. Update Code: Replace import sqlite3 with import psycopg2, update your
+connection credentials, and swap ? placeholders to %s 
+<blockquote/>
