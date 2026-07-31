@@ -26,14 +26,17 @@ class User(UserMixin):
 
 def create_user(username, password):
     """Create a new user with hashed password and default balance. Returns the new user's ID."""
+    from app.avatar import get_random_avatar_color
+
     db = get_db()
     password_hash = generate_password_hash(password)
     default_balance = current_app.config['DEFAULT_BALANCE']
     now = datetime.now().isoformat()
+    avatar_color = get_random_avatar_color()
 
     cursor = db.execute(
-        "INSERT INTO users (username, password_hash, balance, created_at) VALUES (?, ?, ?, ?)",
-        (username, password_hash, default_balance, now)
+        "INSERT INTO users (username, password_hash, balance, created_at, avatar_color) VALUES (?, ?, ?, ?, ?)",
+        (username, password_hash, default_balance, now, avatar_color)
     )
     db.commit()
     return cursor.lastrowid
@@ -384,8 +387,11 @@ def reset_account(user_id):
     )
 
     # Clear all Advanced Mode state and restore default balance (Req 14.3)
+    # Also reset play_time, login_streak, last_streak_date (Req 16.2, 16.3)
+    # NOTE: money_theme_unlocked and gold_theme_unlocked are NOT reset (Req 16.4)
+    # NOTE: advancements table is NOT touched — achievements persist across resets (Req 16.1)
     db.execute(
-        "UPDATE users SET advanced_eligible=0, advanced_purchased=0, advanced_active=0, advanced_toggled_at=NULL, balance = ? WHERE id = ?",
+        "UPDATE users SET advanced_eligible=0, advanced_purchased=0, advanced_active=0, advanced_toggled_at=NULL, play_time=0, login_streak=0, last_streak_date=NULL, balance = ? WHERE id = ?",
         (default_balance, user_id)
     )
 
@@ -485,6 +491,7 @@ def get_leaderboard():
         """SELECT u.id, u.username,
                   u.balance,
                   u.advanced_active,
+                  u.avatar_color,
                   COALESCE(SUM(h.quantity * o.current_price), 0) as holdings_value,
                   COALESCE((SELECT SUM(sp.locked_collateral - (sp.share_quantity * o3.current_price))
                             FROM short_positions sp

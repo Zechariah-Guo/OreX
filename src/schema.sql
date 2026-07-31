@@ -12,7 +12,13 @@ CREATE TABLE IF NOT EXISTS users (
     advanced_eligible INTEGER NOT NULL DEFAULT 0,
     advanced_purchased INTEGER NOT NULL DEFAULT 0,
     advanced_active INTEGER NOT NULL DEFAULT 0,
-    advanced_toggled_at TEXT DEFAULT NULL
+    advanced_toggled_at TEXT DEFAULT NULL,
+    play_time INTEGER NOT NULL DEFAULT 0,
+    login_streak INTEGER NOT NULL DEFAULT 0,
+    last_streak_date TEXT DEFAULT NULL,
+    money_theme_unlocked INTEGER NOT NULL DEFAULT 0,
+    gold_theme_unlocked INTEGER NOT NULL DEFAULT 0,
+    avatar_color TEXT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ores (
@@ -106,7 +112,28 @@ CREATE TABLE IF NOT EXISTS short_positions (
     FOREIGN KEY (ore_id) REFERENCES ores(id) ON DELETE RESTRICT
 );
 
+CREATE TABLE IF NOT EXISTS advancements (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    advancement_key TEXT NOT NULL,
+    earned_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    UNIQUE(user_id, advancement_key),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    message TEXT NOT NULL,
+    action_url TEXT DEFAULT NULL,
+    is_read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_holdings_user ON holdings(user_id);
 CREATE INDEX IF NOT EXISTS idx_holdings_ore ON holdings(ore_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
@@ -119,3 +146,4 @@ CREATE INDEX IF NOT EXISTS idx_sltp_active ON stop_loss_take_profit(active);
 CREATE INDEX IF NOT EXISTS idx_short_positions_user ON short_positions(user_id);
 CREATE INDEX IF NOT EXISTS idx_short_positions_status ON short_positions(status);
 CREATE INDEX IF NOT EXISTS idx_short_positions_ore_status ON short_positions(ore_id, status);
+CREATE INDEX IF NOT EXISTS idx_advancements_user ON advancements(user_id);

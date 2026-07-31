@@ -523,6 +523,18 @@ def _evaluate_sltp_triggers(db, ores_map: dict) -> set:
             _close_position(db, position, "tp_triggered", current_price)
             closed_ids.add(position['id'])
 
+            # Evaluate short advancement for profitable TP-triggered close
+            # TP trigger means price fell → short is profitable (pnl > 0)
+            pnl = position['locked_collateral'] - (position['share_quantity'] * current_price)
+            if pnl > 0:
+                try:
+                    from app.advanced import is_advanced_active
+                    from app.advancements import evaluate_short_advancement
+                    if is_advanced_active(position['user_id']):
+                        evaluate_short_advancement(db, position['user_id'])
+                except Exception:
+                    pass
+
     return closed_ids
 
 

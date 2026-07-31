@@ -223,6 +223,38 @@ Implement the in-app Notification System for OreX. This proceeds bottom-up: sche
 - All DELETE endpoints reuse existing CSRF protection from Flask-WTF
 - The `notifications.js` extension builds on the existing file that handles flash toasts
 
+## Existing Placeholder (from achievements-system task 7.3)
+
+The achievements-system spec (task 7.3) implemented a **partial notification infrastructure** as a placeholder. This was done before the notification-system spec was started and **must be refactored** when implementing this spec. Here is what currently exists and what needs to change:
+
+### What already exists
+
+| File | What's there |
+|------|-------------|
+| `src/schema.sql` | `notifications` table with an `is_read` column (INTEGER NOT NULL DEFAULT 0) |
+| `migrations/add_notifications.sql` | CREATE TABLE with `is_read` column, index on `(user_id, is_read)` |
+| `src/app/routes/advancements.py` | `GET /notifications/poll` endpoint — returns HTML partial of unread notifications, marks them `is_read=1` |
+| `src/templates/partials/notification_toasts.html` | Toast partial rendering notifications as clickable `<a>` elements with 8000ms duration |
+| `src/templates/base.html` | `#notification-toasts` div with `hx-get` polling every 10s targeting the advancements blueprint poll route |
+| `src/static/js/notifications.js` | Refactored to use `initToast()` + `htmx:afterSwap` listener for dynamic toast injection |
+| `src/static/css/global.css` | `.flash--advancement` yellow style |
+| `src/app/advancements.py` | `create_notification()` function that inserts directly into the notifications table |
+
+### What must change (tasks 1.1 and 1.2 should handle this)
+
+1. **Remove `is_read` column** — This spec uses delete-on-dismiss, not a read flag. Drop the column from the table definition in `src/schema.sql` and the migration. Write a migration step: `ALTER TABLE notifications DROP COLUMN is_read` (or recreate the table since SQLite doesn't support DROP COLUMN before 3.35.0 — use the standard temp-table-swap pattern).
+2. **Replace indexes** — Remove `idx_notifications_user_read`. Add `idx_notifications_user_created` on (user_id, created_at) and `idx_notifications_user_id_desc` on (user_id, id DESC).
+3. **Delete the poll route from advancements blueprint** — Remove the `poll_notifications()` function from `src/app/routes/advancements.py`. The new `notifications_bp` blueprint (task 5.1) will own all notification endpoints at `/notifications/poll`.
+4. **Remove htmx polling div from base.html** — Remove the `#notification-toasts` div that currently polls the advancements blueprint. Task 8.4 will add the proper toast container.
+5. **Delete `src/templates/partials/notification_toasts.html`** — Task 8.3 will create the correct toast template.
+6. **Move `create_notification()` to models.py** — The function in `src/app/advancements.py` is a simple INSERT wrapper. Task 2.1 implements the proper version with validation and pruning in `src/app/models.py`. After that, update `advancements.py` to import from models instead of defining its own.
+7. **Keep `notifications.js` changes** — The `initToast()` + `htmx:afterSwap` pattern is correct and will be extended by tasks 9.1/9.2. No need to revert.
+8. **Keep `.flash--advancement` CSS** — The yellow style is correct and will be reused. Task 10.1 adds additional category styles alongside it.
+
+### Migration safety note
+
+Since the table already exists in `src/data/orex.db` with the `is_read` column, the migration in task 1.2 must handle both fresh installs (CREATE TABLE without `is_read`) and existing databases (drop `is_read`, re-index). Use `CREATE TABLE IF NOT EXISTS` for the final schema and a conditional migration block for existing DBs.
+
 ## Task Dependency Graph
 
 ```json

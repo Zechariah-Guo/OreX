@@ -224,6 +224,24 @@ html[data-theme="dark"] .nav__brand {
     outline-offset: 2px;
 }
 
+/* Avatar circle (leaderboard & reusable) */
+.avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.65rem;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    font-family: var(--font-main);
+    flex-shrink: 0;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+}
+
 /* --- Dropdown menu --- */
 .nav__dropdown {
     position: absolute;
@@ -342,6 +360,13 @@ html[data-theme="dark"] .nav__brand {
     background-color: rgba(231, 76, 60, 0.15);
     border: 1px solid var(--colour-danger);
     color: var(--colour-danger);
+}
+
+.flash--advancement {
+    background-color: rgba(241, 196, 15, 0.15);
+    border: 1px solid #f1c40f;
+    color: #f39c12;
+    cursor: pointer;
 }
 
 @keyframes flashToastIn {
@@ -1503,6 +1528,8 @@ input::-webkit-inner-spin-button {
 .leaderboard-table__username {
     font-family: var(--font-main);
     font-weight: 600;
+    display: flex;
+    align-items: center;
 }
 
 .leaderboard-table__total {

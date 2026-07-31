@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/advanced.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
     <script src="https://unpkg.com/htmx.org@1.9.12"
             integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
             crossorigin="anonymous"></script>
@@ -20,14 +21,46 @@
                 theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
             document.documentElement.setAttribute('data-theme', theme);
+
+            // Apply cosmetic theme class if unlocked (server-side data attrs checked after DOM ready)
+            var cosmetic = localStorage.getItem('orex-cosmetic-theme');
+            if (cosmetic) {
+                document.documentElement.setAttribute('data-cosmetic-theme', cosmetic);
+            }
         })();
     </script>
 </head>
-<body class="{% if is_advanced_active %}advanced-theme{% endif %}">
+<body class="{% if is_advanced_active %}advanced-theme{% endif %}" data-money-unlocked="{{ money_theme_unlocked | tojson }}" data-gold-unlocked="{{ gold_theme_unlocked | tojson }}">
+    <script>
+        // Apply cosmetic theme class on body after server-side unlock validation
+        (function() {
+            var html = document.documentElement;
+            var body = document.currentScript.parentElement;
+            var cosmetic = localStorage.getItem('orex-cosmetic-theme');
+            if (cosmetic === 'money' && body.dataset.moneyUnlocked === 'true') {
+                html.classList.add('cosmetic-money');
+                body.classList.add('money-theme');
+            } else if (cosmetic === 'gold' && body.dataset.goldUnlocked === 'true') {
+                html.classList.add('cosmetic-gold');
+                body.classList.add('gold-theme');
+            }
+        })();
+    </script>
     <a href="#main-content" class="skip-link">Skip to content</a>
 
     {% include 'partials/nav.html' %}
     {% include 'partials/flash.html' %}
+
+    {% if current_user.is_authenticated %}
+    <div id="notification-toasts"
+         class="flash-messages"
+         hx-get="{{ url_for('advancements.poll_notifications') }}"
+         hx-trigger="every 10s"
+         hx-swap="afterbegin"
+         aria-live="polite"
+         data-toast-container>
+    </div>
+    {% endif %}
 
     <main id="main-content">
         {% block content %}{% endblock %}
@@ -36,6 +69,7 @@
     {% include 'partials/footer.html' %}
     <script src="{{ url_for('static', filename='js/nav.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/falling-ores.js') }}" defer></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

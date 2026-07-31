@@ -58,6 +58,7 @@ def start_engine(app):
 
         from app.market.algorithm import process_tick
         from app.market.shorting import process_short_positions
+        from app.advancements import evaluate_tick_advancements
 
         try:
             while not _shutdown_event.is_set():
@@ -84,6 +85,12 @@ def start_engine(app):
                         db.rollback()
                     except Exception:
                         pass
+
+                try:
+                    evaluate_tick_advancements(db)
+                except Exception:
+                    # Achievement evaluation failures must not block price updates
+                    pass
 
                 try:
                     evaluate_stop_loss_take_profit(db)

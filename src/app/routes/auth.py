@@ -11,6 +11,8 @@ from app.models import (
     verify_password, update_last_login, get_2fa_status
 )
 from app.utils.validation import validate_username, validate_password
+from app.database import get_db
+from app.advancements import update_login_streak
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -170,6 +172,14 @@ def login():
         user = User(row['id'], row['username'], row['balance'])
         login_user(user)
         update_last_login(row['id'])
+
+        # Update login streak and evaluate streak-based advancements
+        try:
+            db = get_db()
+            update_login_streak(db, row['id'])
+            db.commit()
+        except Exception:
+            pass
 
         flash(f'Welcome back, {user.username}!', 'success')
 

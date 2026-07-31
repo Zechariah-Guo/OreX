@@ -35,7 +35,8 @@
                             <span id="nav-balance" class="nav__balance">${{ "%.2f" | format(current_user.balance) }}</span>
                         {% endif %}
                         <button class="nav__avatar" id="nav-avatar-btn" aria-expanded="false" aria-haspopup="true"
-                                data-username="{{ current_user.username }}">
+                                data-username="{{ current_user.username }}"
+                                style="background-color: {{ user_avatar_color_hex }}; color: {{ user_avatar_text_color }};">
                             {{ current_user.username[:2] | upper }}
                         </button>
                     </div>

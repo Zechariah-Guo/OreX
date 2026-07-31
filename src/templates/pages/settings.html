@@ -284,6 +284,35 @@ function confirmToggleSubmit() {
         </div>
     </div>
 
+    <!-- Cosmetic Themes -->
+    <div class="settings-card">
+        <h2>Cosmetic Themes</h2>
+        <p class="settings-card__description">Unlock and apply prestige cosmetic themes. These layer on top of your chosen colour theme.</p>
+        <div class="cosmetic-theme-switcher" role="radiogroup" aria-label="Cosmetic theme selection">
+            <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="none" role="radio" aria-checked="false">
+                🚫 None
+            </button>
+            {% if money_theme_unlocked %}
+            <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="money" role="radio" aria-checked="false">
+                💰 Money
+            </button>
+            {% else %}
+            <button class="cosmetic-theme-switcher__btn cosmetic-theme-switcher__btn--locked" disabled aria-disabled="true" title="Earn Multimillionaire to unlock">
+                🔒 Money
+            </button>
+            {% endif %}
+            {% if gold_theme_unlocked %}
+            <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="gold" role="radio" aria-checked="false">
+                🏆 Gold
+            </button>
+            {% else %}
+            <button class="cosmetic-theme-switcher__btn cosmetic-theme-switcher__btn--locked" disabled aria-disabled="true" title="Earn Completionist to unlock">
+                🔒 Gold
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Advanced Mode -->
     <div class="settings-card">
         <h2>⚡ Advanced Mode</h2>

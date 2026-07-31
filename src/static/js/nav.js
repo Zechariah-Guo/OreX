@@ -49,12 +49,15 @@
 
         if (!avatarBtn || !dropdown) return;
 
-        // Assign avatar colour based on username
-        const username = avatarBtn.dataset.username || '';
-        const colourIndex = hashUsername(username) % AVATAR_COLOURS.length;
-        const bgColour = AVATAR_COLOURS[colourIndex];
-        avatarBtn.style.backgroundColor = bgColour;
-        avatarBtn.style.color = getContrastingTextColour(bgColour);
+        // Avatar colour: use server-provided inline style if present,
+        // otherwise fall back to client-side hash (shouldn't happen normally)
+        if (!avatarBtn.style.backgroundColor || avatarBtn.style.backgroundColor === 'rgb(74, 74, 74)') {
+            const username = avatarBtn.dataset.username || '';
+            const colourIndex = hashUsername(username) % AVATAR_COLOURS.length;
+            const bgColour = AVATAR_COLOURS[colourIndex];
+            avatarBtn.style.backgroundColor = bgColour;
+            avatarBtn.style.color = getContrastingTextColour(bgColour);
+        }
 
         // Toggle dropdown on click
         avatarBtn.addEventListener('click', function (e) {

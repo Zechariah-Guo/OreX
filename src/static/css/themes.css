@@ -1,0 +1,232 @@
+/* ===== Advancement Cosmetic Themes ===== */
+
+/*
+ * Cosmetic themes unlocked via achievements.
+ * Money Theme — unlocked by "multimillionaire" achievement.
+ * Gold Theme — unlocked by "completionist" achievement.
+ *
+ * These themes apply ONLY cosmetic changes (colour palette, cursor, decorative effects).
+ * They do NOT alter layout, spacing, max-width, or trading mechanics.
+ * They coexist independently with .advanced-theme (functional UI layer).
+ *
+ * Classes are applied on <html> element (cosmetic-money / cosmetic-gold)
+ * AND on <body> (.money-theme / .gold-theme) for robustness.
+ */
+
+
+/* ===== Money Theme (Green Palette) ===== */
+.money-theme,
+html.cosmetic-money body {
+    --colour-accent: #27ae60;
+    --colour-accent-hover: #219a52;
+    --colour-border: #5dbe8a;
+    --colour-bg: #f4fbf7;
+    --colour-surface: #f8fdf9;
+    --colour-surface-hover: #edf8f1;
+    --colour-nav-scrolled: rgba(235, 250, 240, 0.92);
+    cursor: url('/static/images/money-cursor.png') 0 0, auto;
+}
+
+html[data-theme="dark"] .money-theme,
+html[data-theme="dark"].cosmetic-money body {
+    --colour-accent: #2ecc71;
+    --colour-accent-hover: #27ae60;
+    --colour-border: #3d8c5c;
+    --colour-bg: #162e1f;
+    --colour-surface: #1f3d29;
+    --colour-surface-hover: #2a5236;
+    --colour-nav-scrolled: rgba(22, 46, 31, 0.92);
+    cursor: url('/static/images/money-cursor.png') 0 0, auto;
+}
+
+/* Money Theme — Navbar scrolled background */
+.money-theme .main-nav--scrolled,
+html.cosmetic-money .main-nav--scrolled {
+    background-color: var(--colour-nav-scrolled);
+}
+
+/* Money Theme — Text selection highlight */
+.money-theme ::selection,
+html.cosmetic-money ::selection {
+    background-color: rgba(46, 204, 113, 0.35);
+    color: inherit;
+}
+.money-theme ::-moz-selection,
+html.cosmetic-money ::-moz-selection {
+    background-color: rgba(46, 204, 113, 0.35);
+    color: inherit;
+}
+
+/* Money Theme — Dark mode nav brand glow override */
+html[data-theme="dark"] body.money-theme .nav__brand,
+html[data-theme="dark"].cosmetic-money .nav__brand {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.5), rgba(39, 174, 96, 0.3)) !important;
+    box-shadow: 0 0 16px rgba(46, 204, 113, 0.4), 0 0 32px rgba(39, 174, 96, 0.2) !important;
+}
+
+/* Money Theme — Light mode: no nav brand glow (matches default light behavior) */
+
+
+/* ===== Gold Theme (Warm Gold Palette) ===== */
+.gold-theme,
+html.cosmetic-gold body {
+    --colour-accent: #d4a030;
+    --colour-accent-hover: #c48f20;
+    --colour-border: #e0b84d;
+    --colour-bg: #fefaf2;
+    --colour-surface: #fffcf5;
+    --colour-surface-hover: #fdf5e8;
+    --colour-nav-scrolled: rgba(254, 248, 235, 0.92);
+    cursor: url('/static/images/gold-cursor.png') 0 0, auto;
+}
+
+html[data-theme="dark"] .gold-theme,
+html[data-theme="dark"].cosmetic-gold body {
+    --colour-accent: #e6b422;
+    --colour-accent-hover: #d4a030;
+    --colour-border: #a07a1e;
+    --colour-bg: #2e2512;
+    --colour-surface: #3d321a;
+    --colour-surface-hover: #504224;
+    --colour-nav-scrolled: rgba(46, 37, 18, 0.92);
+    cursor: url('/static/images/gold-cursor.png') 0 0, auto;
+}
+
+/* Gold Theme — Navbar scrolled background */
+.gold-theme .main-nav--scrolled,
+html.cosmetic-gold .main-nav--scrolled {
+    background-color: var(--colour-nav-scrolled);
+}
+
+/* Gold Theme — Text selection highlight */
+.gold-theme ::selection,
+html.cosmetic-gold ::selection {
+    background-color: rgba(230, 180, 34, 0.35);
+    color: inherit;
+}
+.gold-theme ::-moz-selection,
+html.cosmetic-gold ::-moz-selection {
+    background-color: rgba(230, 180, 34, 0.35);
+    color: inherit;
+}
+
+/* Gold Theme — Dark mode nav brand glow override */
+html[data-theme="dark"] body.gold-theme .nav__brand,
+html[data-theme="dark"].cosmetic-gold .nav__brand {
+    background: linear-gradient(135deg, rgba(230, 180, 34, 0.5), rgba(212, 160, 48, 0.3)) !important;
+    box-shadow: 0 0 16px rgba(230, 180, 34, 0.4), 0 0 32px rgba(212, 160, 48, 0.2) !important;
+}
+
+/* Gold Theme — Light mode: no nav brand glow (matches default light behavior) */
+
+
+/* Money Theme — Cursor override for interactive elements */
+.money-theme *,
+html.cosmetic-money body * {
+    cursor: inherit;
+}
+.money-theme a,
+.money-theme button,
+.money-theme [role="button"],
+.money-theme input[type="submit"],
+html.cosmetic-money a,
+html.cosmetic-money button,
+html.cosmetic-money [role="button"],
+html.cosmetic-money input[type="submit"] {
+    cursor: url('/static/images/money-cursor.png') 0 0, pointer;
+}
+
+/* Gold Theme — Cursor override for interactive elements */
+.gold-theme *,
+html.cosmetic-gold body * {
+    cursor: inherit;
+}
+.gold-theme a,
+.gold-theme button,
+.gold-theme [role="button"],
+.gold-theme input[type="submit"],
+html.cosmetic-gold a,
+html.cosmetic-gold button,
+html.cosmetic-gold [role="button"],
+html.cosmetic-gold input[type="submit"] {
+    cursor: url('/static/images/gold-cursor.png') 0 0, pointer;
+}
+
+
+/* ===== Cosmetic Theme Switcher (Settings Page) ===== */
+.cosmetic-theme-switcher {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.cosmetic-theme-switcher__btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--colour-bg);
+    border: 2px solid var(--colour-border);
+    border-radius: var(--radius);
+    color: var(--colour-text);
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: var(--font-main);
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.cosmetic-theme-switcher__btn:hover {
+    background-color: var(--colour-surface-hover);
+    border-color: var(--colour-text-muted);
+}
+
+.cosmetic-theme-switcher__btn[aria-checked="true"] {
+    background-color: var(--colour-accent);
+    border-color: var(--colour-accent);
+    color: #fff;
+}
+
+.cosmetic-theme-switcher__btn[aria-checked="true"]:hover {
+    background-color: var(--colour-accent-hover);
+    border-color: var(--colour-accent-hover);
+}
+
+.cosmetic-theme-switcher__btn--locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+
+.cosmetic-theme-switcher__btn--locked:hover {
+    background-color: var(--colour-bg);
+    border-color: var(--colour-border);
+}
+
+
+/* ===== Falling Ore Background Container ===== */
+.falling-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.falling-img {
+    position: absolute;
+    top: -80px;
+    opacity: 0.12;
+    image-rendering: pixelated;
+    animation: fall linear forwards;
+}
+
+@keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(calc(100vh + 100px)) rotate(360deg); }
+}

@@ -33,3 +33,13 @@ class Config:
     BOT_SHORT_SUSTAIN_TICKS = 30         # Must sustain 30 ticks of fees
     BOT_SHORT_CAPITAL_CAP = 0.30         # 30% of bot balance max in shorts
     BOT_SHORT_SL_PERCENT = 0.05          # 5% above entry for mandatory SL
+
+    # Advancements System
+    ADVANCEMENT_MILLIONAIRE_THRESHOLD = 1_000_000        # Net worth for Millionaire achievement
+    ADVANCEMENT_MULTIMILLIONAIRE_THRESHOLD = 10_000_000  # Net worth for Multimillionaire achievement
+    ADVANCEMENT_WHAT_A_DEAL_TRADES = 100                 # Trade count for Day Trader achievement
+    ADVANCEMENT_SUIT_UP_MINUTES = 20                     # Play time minutes for Budding Enthusiast
+    ADVANCEMENT_DEDICATED_STREAK = 3                     # Login streak days for Dedicated achievement
+    ADVANCEMENT_POST_MORTEM_THRESHOLD = 10_000           # Net worth below which Tragedy triggers
+    PLAYTIME_HEARTBEAT_INTERVAL = 60                     # Seconds between play time heartbeats
+    PLAYTIME_MAX_INCREMENT = 5                           # Max minutes to add per heartbeat

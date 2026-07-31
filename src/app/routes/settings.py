@@ -1,14 +1,21 @@
 """Account settings: password change, account reset, and account deletion."""
 
+import logging
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, logout_user, current_user
 
 from app.models import (
     get_user_by_id, get_user_by_username, verify_password,
-    update_password, reset_account, delete_account, get_2fa_status
+    update_password, reset_account, delete_account, get_2fa_status,
+    get_net_worth,
 )
+from app.advancements import evaluate_post_mortem
+from app.database import get_db
 from app.utils.validation import validate_password
 from app.advanced import purchase_advanced_mode, toggle_advanced_mode
+
+logger = logging.getLogger(__name__)
 
 settings_bp = Blueprint('settings', __name__)
 
@@ -88,6 +95,14 @@ def reset():
         if confirmation != current_user.username:
             flash('Username confirmation does not match. Account was not reset.', 'error')
             return redirect(url_for('settings.reset'))
+
+        # Evaluate post-mortem (tragedy) achievement before reset clears data
+        try:
+            db = get_db()
+            net_worth = get_net_worth(current_user.id)
+            evaluate_post_mortem(db, current_user.id, net_worth)
+        except Exception:
+            logger.exception("Failed to evaluate post-mortem advancements for user %s", current_user.id)
 
         reset_account(current_user.id)
         flash('Account has been reset. Your balance has been restored and holdings cleared.', 'success')

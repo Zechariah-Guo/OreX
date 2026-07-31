@@ -24,6 +24,7 @@ from app.utils.validation import validate_quantity
 from app.advanced import is_advanced_active
 from app.decorators import advanced_required
 from app.config import Config
+from app.advancements import evaluate_trade_advancement, evaluate_short_advancement
 
 trade_bp = Blueprint('trade', __name__)
 
@@ -151,6 +152,13 @@ def buy(ore_id):
                     )
 
                 db.commit()
+
+                # Evaluate trade advancements after successful commit
+                try:
+                    evaluate_trade_advancement(db, current_user.id)
+                except Exception:
+                    pass
+
                 flash(f'Successfully bought {quantity} {ore["name"]} for ${total_cost:,.2f}!', 'success')
 
                 # Record trade for market influence on next tick
@@ -239,6 +247,13 @@ def sell(ore_id):
                 create_transaction(current_user.id, ore_id, 'sell', quantity, ore['current_price'], total_proceeds)
 
                 db.commit()
+
+                # Evaluate trade advancements after successful commit
+                try:
+                    evaluate_trade_advancement(db, current_user.id)
+                except Exception:
+                    pass
+
                 flash(f'Successfully sold {quantity} {ore["name"]} for ${total_proceeds:,.2f}!', 'success')
 
                 # Record trade for market influence on next tick
@@ -560,6 +575,14 @@ def short_close(position_id):
         short_value = position['share_quantity'] * current_price
         gross_pnl = entry_value - short_value
         net_pnl = gross_pnl - position['cumulative_fees_paid']
+
+        # Evaluate short advancement after profitable voluntary close
+        # Preconditions: advanced_mode active (@advanced_required), close_type is 'voluntary'
+        if net_pnl > 0:
+            try:
+                evaluate_short_advancement(db, current_user.id)
+            except Exception:
+                pass
 
         if net_pnl >= 0:
             flash(

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Advancements (Dev) - OreX{% endblock %}
+
+{% block content %}
+<div class="static-page">
+    <h1>Advancements Testing Page</h1>
+    <p style="color: #888; font-style: italic; margin-bottom: 1.5rem;">
+        Developer tool — not linked from any navigation. Access by typing <code>/advancements</code> in the URL bar.
+    </p>
+
+    <!-- Theme Status & Controls -->
+    <section style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #444; border-radius: 8px;">
+        <h2 style="margin-top: 0;">Theme Unlocks</h2>
+        <p>
+            Money Theme: <strong style="color: {{ 'limegreen' if money_theme else '#ff4444' }};">{{ money_theme }}</strong>
+            &nbsp;|&nbsp;
+            Gold Theme: <strong style="color: {{ 'gold' if gold_theme else '#ff4444' }};">{{ gold_theme }}</strong>
+        </p>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <form method="POST" action="{{ url_for('advancements.trigger_money_theme') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" style="padding: 0.4rem 0.8rem; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Trigger Money Theme
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('advancements.trigger_gold_theme') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" style="padding: 0.4rem 0.8rem; background: #b8860b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Trigger Gold Theme
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('advancements.reset_themes') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" style="padding: 0.4rem 0.8rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Reset Themes
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Advancements List -->
+    <section style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #444; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin: 0;">All Advancements ({{ advancements | selectattr('earned') | list | length }}/9 earned)</h2>
+            <form method="POST" action="{{ url_for('advancements.reset_all_advancements') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" style="padding: 0.4rem 0.8rem; background: #b71c1c; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Reset All
+                </button>
+            </form>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid #555; text-align: left;">
+                    <th style="padding: 0.5rem;">Key</th>
+                    <th style="padding: 0.5rem;">Name</th>
+                    <th style="padding: 0.5rem;">Description</th>
+                    <th style="padding: 0.5rem; text-align: center;">Earned</th>
+                    <th style="padding: 0.5rem; text-align: center;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for adv in advancements %}
+                <tr style="border-bottom: 1px solid #333;">
+                    <td style="padding: 0.5rem; font-family: monospace; font-size: 0.85rem;">{{ adv.key }}</td>
+                    <td style="padding: 0.5rem;">{{ adv.name }}</td>
+                    <td style="padding: 0.5rem; color: #aaa; font-size: 0.9rem;">{{ adv.description }}</td>
+                    <td style="padding: 0.5rem; text-align: center;">
+                        {% if adv.earned %}
+                            <span style="color: limegreen; font-weight: bold;">&#10003; true</span>
+                        {% else %}
+                            <span style="color: #ff4444;">&#10007; false</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.5rem; text-align: center;">
+                        {% if adv.earned %}
+                        <form method="POST" action="{{ url_for('advancements.reset_advancement', key=adv.key) }}" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" style="padding: 0.25rem 0.5rem; background: #c62828; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8rem;">
+                                Reset
+                            </button>
+                        </form>
+                        {% else %}
+                            <span style="color: #555;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endblock %}
