@@ -12,7 +12,7 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | Advanced Mode | Unlock at 100k NW, purchase for 50k, feature flags, theme/logo swap |
-| 🚧 | Achievements (9 badges) | Millionaire, Multimillionaire, The Big Short, Dedicated, Day Trader, Budding Enthusiast, Completionist, Tragedy, Best of the Rest |
+| ✅ | Achievements (9 badges) | Millionaire, Multimillionaire, The Big Short, Dedicated, Day Trader, Budding Enthusiast, Completionist, Tragedy, Best of the Rest |
 | 🚧 | Profile Page | PFP, stats, daily bonus, achievement display, help relocation |
 | ✅ | Hard cap on stocks (simple mode) | Max 500 per buy order in standard mode, implemented |
 
@@ -36,7 +36,7 @@
 |--------|---------|-------|
 | 🔲 | Custom PFP | Cropper.js, Oracle-compatible storage, leaderboard integration |
 | ✅ | Leaderboard Indicators | Red name (advanced), bot icons |
-| 🚧 | Money & Gold Themes | Multimillionaire → Money theme, Completionist → Gold theme |
+| ✅ | Money & Gold Themes | Multimillionaire → Money theme, Completionist → Gold theme |
 | ✅ | 2FA (Google Authenticator) | TOTP setup, backup codes, login challenge, rate limited |
 
 ---
@@ -46,8 +46,8 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | 🔲 | 3-Day Welcome Bonus | One-time $1k/$10k/$100k, no streak required |
-| 🔲 | Login Streak Tracking | For Dedicated badge |
-| 🔲 | Play Time Tracking | For Budding Enthusiast badge |
+| ✅ | Login Streak Tracking | For Dedicated badge |
+| ✅ | Play Time Tracking | For Budding Enthusiast badge |
 | 🔲 | Tutorial System | Beginner + Advanced tutorials, notification system |
 | 🚧 | Changelogs | Major version notes, in-app display |
 
@@ -66,11 +66,12 @@
 ## Specs Completed (Requirements Phase)
 1. `.kiro/specs/advanced-mode/` — 10 requirements
 2. `.kiro/specs/shorting-system/` — 14 requirements
-3. `.kiro/specs/achievements-system/` — 16 requirements
+3. `.kiro/specs/achievements-system/` — 16 requirements ✅ Implemented
 4. `.kiro/specs/profile-page/` — 10 requirements
 5. `.kiro/specs/finances-page/` — 9 requirements
 6. `.kiro/specs/tutorial-system/` — 12 requirements
 7. `.kiro/specs/two-factor-auth/` — 10 requirements
+8. `.kiro/specs/notification-system/` — Spec completed
 
 ---
 
@@ -98,8 +99,8 @@
 - [ ] Set environment variables: `STORAGE_BACKEND=oci`, `OCI_NAMESPACE`, `OCI_BUCKET`
 
 ### Design Decisions Still Needed
-- [ ] Exact colors/gradients for Money theme and Gold theme
-- [ ] Achievement badge visual style (pixel art? flat icons? illustrated?)
+- [x] Exact colors/gradients for Money theme and Gold theme
+- [x] Achievement badge visual style (pixel art? flat icons? illustrated?)
 - [x] Advanced Mode logo design direction
 - [ ] Tutorial step targeting (need to add `id` attributes to key DOM elements for tutorial selectors)
 
@@ -112,8 +113,8 @@
 3. ~~**Shorting System** — Depends on advanced mode~~ ✅ Done
 4. ~~**Finances Page** — Depends on advanced mode + shorting~~ ✅ Done
 5. ~~**Resistance & Support** — Chart overlays~~ ✅ Done
-6. **Achievements** — Depends on advanced mode + shorting <-- Next
-7. **Profile Page** — Depends on achievements
+6. ~~**Achievements** — Depends on advanced mode + shorting~~ ✅ Done
+7. **Profile Page** — Depends on achievements <-- Next
 8. **Notification System** — Depends on achievements + shorting (emitters)
 9. **Tutorial System** — Depends on everything being in place
 10. **Changelog** — Add to revamped about section. <-- Ongoing
