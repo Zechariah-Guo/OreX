@@ -4,7 +4,7 @@ A hidden, no-frills testing page with NO navigation links anywhere in the app.
 Only accessible by manually typing /advancements in the URL bar.
 """
 
-from flask import Blueprint, render_template, redirect, url_for, request
+from flask import Blueprint, render_template, redirect, url_for
 from flask_login import login_required, current_user
 
 from app.database import get_db
@@ -116,42 +116,19 @@ def reset_themes():
     return redirect(url_for('advancements.advancements_test'))
 
 
-@advancements_bp.route('/notifications/poll')
+@advancements_bp.route('/advancements/test-toasts', methods=['POST'])
 @login_required
-def poll_notifications():
-    """Poll for unread notifications and return toast HTML.
-
-    Returns htmx partial with toast markup for each unread notification.
-    Marks returned notifications as read so they aren't shown again.
-    """
-    db = get_db()
-
-    try:
-        notifications = db.execute(
-            """SELECT id, category, message, action_url
-               FROM notifications
-               WHERE user_id = ? AND is_read = 0
-               ORDER BY created_at DESC
-               LIMIT 5""",
-            (current_user.id,),
-        ).fetchall()
-    except Exception:
-        # Table may not exist yet — return empty
-        return '', 204
-
-    if not notifications:
-        return '', 204
-
-    # Mark as read
-    ids = [n['id'] for n in notifications]
-    placeholders = ','.join('?' * len(ids))
-    db.execute(
-        f"UPDATE notifications SET is_read = 1 WHERE id IN ({placeholders})",
-        ids,
-    )
-    db.commit()
-
-    return render_template(
-        'partials/notification_toasts.html',
-        notifications=notifications,
-    )
+def test_toasts():
+    """Fire one of each toast category for visual testing."""
+    from flask import flash
+    flash('Success toast — buy/sell confirmation', 'success')
+    flash('Error toast — validation failed', 'error')
+    flash('Info toast — neutral information', 'info')
+    flash('Achievement toast — gold/yellow theme', 'advancement')
+    flash('Liquidation toast — red danger theme', 'liquidation')
+    flash('Stop Loss toast — red with bell', 'stop-loss')
+    flash('Take Profit toast — green with bell', 'take-profit')
+    flash('Short open toast — purple theme', 'short-open')
+    flash('Short close toast — blue theme', 'short-close')
+    flash('Default toast — green (polling fallback)', 'default')
+    return redirect(url_for('advancements.advancements_test'))

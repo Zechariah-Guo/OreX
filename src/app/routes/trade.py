@@ -516,7 +516,7 @@ def short_open(ore_id):
         flash(
             f'Successfully opened short position: {quantity} {ore["name"]} at ${current_price:,.2f}. '
             f'Margin deducted: ${player_margin:,.2f}. Vault locked: ${locked_collateral:,.2f}.',
-            'success'
+            'short-open'
         )
         return redirect(url_for('portfolio.overview'))
 
@@ -587,12 +587,12 @@ def short_close(position_id):
         if net_pnl >= 0:
             flash(
                 f'Successfully closed short position on {ore["name"]}. Net profit: ${net_pnl:,.2f}!',
-                'success'
+                'short-close'
             )
         else:
             flash(
                 f'Closed short position on {ore["name"]}. Net loss: ${abs(net_pnl):,.2f}.',
-                'warning'
+                'short-close'
             )
 
         return redirect(url_for('portfolio.overview'))

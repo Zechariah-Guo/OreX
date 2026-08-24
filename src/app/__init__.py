@@ -122,6 +122,14 @@ def create_app():
             }
         return {'user_avatar_color_hex': '#4a4a4a', 'user_avatar_text_color': '#ffffff'}
 
+    # Context processor: inject notification unread status into all templates
+    @app.context_processor
+    def inject_notification_status():
+        if current_user.is_authenticated:
+            from app.models import has_unread_notifications
+            return {'has_unread': has_unread_notifications(current_user.id)}
+        return {'has_unread': False}
+
     # Register error handlers
     from flask import render_template
 

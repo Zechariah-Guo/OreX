@@ -1,0 +1,31 @@
+{# Single notification toast — used for server-side rendering (htmx partials)
+   and as the structural reference for client-side JS toast injection from poll data.
+
+   Template variables:
+     css_class  — category CSS modifier (e.g. "flash--achievement", "flash--liquidation", "flash--default")
+     icon       — Material Design SVG path data string
+     message    — notification message text
+     action_url — optional URL; when present, the toast becomes a clickable link
+     duration   — auto-dismiss time in milliseconds (e.g. 3000, 5000)
+#}
+{% if action_url %}
+<a href="{{ action_url }}" class="flash {{ css_class }} flash--toast flash--clickable" role="alert" data-toast data-duration="{{ duration }}" aria-label="{{ message }}">
+    <span class="flash__icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor"><path d="{{ icon }}"/></svg>
+    </span>
+    <div class="flash__message">{{ message }}</div>
+    <div class="flash__progress" aria-hidden="true">
+        <span class="flash__progress-fill" data-toast-progress></span>
+    </div>
+</a>
+{% else %}
+<div class="flash {{ css_class }} flash--toast" role="alert" data-toast data-duration="{{ duration }}">
+    <span class="flash__icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor"><path d="{{ icon }}"/></svg>
+    </span>
+    <div class="flash__message">{{ message }}</div>
+    <div class="flash__progress" aria-hidden="true">
+        <span class="flash__progress-fill" data-toast-progress></span>
+    </div>
+</div>
+{% endif %}

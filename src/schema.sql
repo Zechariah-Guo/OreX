@@ -134,6 +134,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id_desc ON notifications(user_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_holdings_user ON holdings(user_id);
 CREATE INDEX IF NOT EXISTS idx_holdings_ore ON holdings(ore_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);

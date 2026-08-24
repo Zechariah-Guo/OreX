@@ -1,0 +1,38 @@
+{# Notification list items — renders inside .inbox__list (role="list") #}
+{% if notifications %}
+    {% for n in notifications %}
+    <div class="inbox__list-item{% if n.is_read %} inbox__list-item--read{% else %} inbox__list-item--unread{% endif %}"
+         role="listitem"
+         tabindex="0"
+         hx-post="{{ url_for('inbox.inbox_mark_read', id=n.id) }}"
+         hx-target=".inbox__detail"
+         hx-swap="innerHTML"
+         hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'>
+        <span class="inbox__list-item-icon {{ n.css_class }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960" fill="currentColor"><path d="{{ n.icon }}"/></svg>
+        </span>
+        <span class="inbox__list-item-message">{{ n.message }}</span>
+        <time class="inbox__list-item-time" datetime="{{ n.created_at }}">{{ n.created_at | timeago }}</time>
+        <button class="inbox__delete-btn"
+                type="button"
+                aria-label="Delete notification"
+                hx-delete="{{ url_for('inbox.inbox_delete', id=n.id) }}"
+                hx-target=".inbox__list"
+                hx-swap="innerHTML"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
+                onclick="event.stopPropagation();">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 -960 960 960" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+        </button>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="inbox__empty-state" role="listitem">
+        {% if current_filter == 'unread' %}
+            <p>No unread notifications.</p>
+        {% elif current_filter == 'read' %}
+            <p>No read notifications.</p>
+        {% else %}
+            <p>No notifications to show.</p>
+        {% endif %}
+    </div>
+{% endif %}

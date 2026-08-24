@@ -42,7 +42,7 @@
 
 ## Beta 2 — "The Progression Update"
 
-*Player identity, progression, and guided onboarding.*
+*Player identity, progression, and notifications.*
 
 ### Progression & Rewards
 - **9 Achievements** — Earn badges for milestones like reaching $1M, completing 100 trades, hitting #1 on the leaderboard, and more
@@ -53,17 +53,24 @@
 - **Profile page** — Your personal hub with stats, achievements, and avatar
 - **Custom profile pictures** — Upload and crop a personalized avatar
 
-### Quality of Life
-- **Interactive tutorials** — Guided walkthroughs for new players and advanced mechanics
-- **Help section** — Reorganized for easier access from the profile menu
+### Notifications
+- **Notification system** — Bell icon, toast notifications, notification tray with history
 
 ---
 
 ## Version 1.0 (Release)
 
-*Coming after deployment and final polish.*
+*Full production deployment with guided onboarding and polish.*
 
-> Beta features plus changes to accomodate a full production deployment
+> Beta features plus changes to accommodate a full production deployment
+
+### Onboarding & Guidance
+- **Interactive tutorials** — Guided walkthroughs for new players and advanced mechanics
+- **Help section** — Reorganized for easier access from the profile menu
+- **In-app changelogs** — Major version notes displayed in the About section
+
+### Quality of Life
+- TBC (additional QoL changes bundled with the release)
 
 ## Version 1.1 
 
@@ -77,7 +84,7 @@
 - Optimise leaderboard and other pages' SQL with CTE
 - Implement celery and redis for background profile picture processing and storage
 - Migrate all images to avif with webp fallback
-- Migrate sqlite3 to prostgres (for practice --> say its for "scalability") (and potentnially switch from rawSQL to SQLAlchemy)
+- Migrate sqlite3 to postgres (for practice --> say its for "scalability") (and potententially switch from rawSQL to SQLAlchemy) (on further considerations, probably not useful at all)
 <blockquote> 
 How to Prepare for Migration
 

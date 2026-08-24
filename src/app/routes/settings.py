@@ -105,7 +105,7 @@ def reset():
             logger.exception("Failed to evaluate post-mortem advancements for user %s", current_user.id)
 
         reset_account(current_user.id)
-        flash('Account has been reset. Your balance has been restored and holdings cleared.', 'success')
+        flash('Account has been reset. Your balance has been restored and holdings cleared.', 'liquidation')
         return redirect(url_for('dashboard.overview'))
 
     return render_template('pages/reset_confirm.html')
@@ -125,7 +125,7 @@ def delete():
         user_id = current_user.id
         logout_user()
         delete_account(user_id)
-        flash('Your account has been permanently deleted.', 'success')
+        flash('Your account has been permanently deleted.', 'liquidation')
         return redirect(url_for('pages.landing'))
 
     return render_template('pages/delete_confirm.html')

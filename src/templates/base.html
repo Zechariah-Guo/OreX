@@ -51,16 +51,8 @@
     {% include 'partials/nav.html' %}
     {% include 'partials/flash.html' %}
 
-    {% if current_user.is_authenticated %}
-    <div id="notification-toasts"
-         class="flash-messages"
-         hx-get="{{ url_for('advancements.poll_notifications') }}"
-         hx-trigger="every 10s"
-         hx-swap="afterbegin"
-         aria-live="polite"
-         data-toast-container>
-    </div>
-    {% endif %}
+    <!-- Persistent notification toast container — driven by JS polling (notifications.js) -->
+    <div id="notification-toasts" class="notification-toasts" aria-live="polite" aria-atomic="false"></div>
 
     <main id="main-content">
         {% block content %}{% endblock %}

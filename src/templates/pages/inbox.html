@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Inbox - OreX{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inbox.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/inbox.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="inbox">
+    <header class="inbox__header">
+        <h1>Inbox</h1>
+        <nav class="inbox__filters" aria-label="Notification filters">
+            <a href="{{ url_for('inbox.inbox_page', filter='all') }}"
+               class="inbox__filter-tab{% if current_filter == 'all' %} inbox__filter-tab--active{% endif %}"
+               aria-current="{% if current_filter == 'all' %}page{% endif %}"
+               hx-get="{{ url_for('inbox.inbox_page', filter='all') }}"
+               hx-target=".inbox__list"
+               hx-select=".inbox__list"
+               hx-swap="outerHTML"
+               hx-push-url="true">All</a>
+            <a href="{{ url_for('inbox.inbox_page', filter='read') }}"
+               class="inbox__filter-tab{% if current_filter == 'read' %} inbox__filter-tab--active{% endif %}"
+               aria-current="{% if current_filter == 'read' %}page{% endif %}"
+               hx-get="{{ url_for('inbox.inbox_page', filter='read') }}"
+               hx-target=".inbox__list"
+               hx-select=".inbox__list"
+               hx-swap="outerHTML"
+               hx-push-url="true">Read</a>
+            <a href="{{ url_for('inbox.inbox_page', filter='unread') }}"
+               class="inbox__filter-tab{% if current_filter == 'unread' %} inbox__filter-tab--active{% endif %}"
+               aria-current="{% if current_filter == 'unread' %}page{% endif %}"
+               hx-get="{{ url_for('inbox.inbox_page', filter='unread') }}"
+               hx-target=".inbox__list"
+               hx-select=".inbox__list"
+               hx-swap="outerHTML"
+               hx-push-url="true">Unread</a>
+        </nav>
+        <form hx-post="{{ url_for('inbox.inbox_mark_all_read') }}"
+              hx-target=".inbox__list"
+              hx-swap="innerHTML"
+              aria-label="Mark all notifications as read">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn--secondary inbox__mark-all-btn">Mark all as read</button>
+        </form>
+    </header>
+
+    <div class="inbox__panels">
+        <section class="inbox__list" aria-label="Notification list" role="list">
+            {% include 'partials/inbox_list.html' %}
+        </section>
+
+        <section class="inbox__detail" aria-label="Notification detail" aria-live="polite">
+            {% if selected_notification %}
+                {% with notification=selected_notification, css_class=selected_css_class, icon=selected_icon %}
+                    {% include 'partials/inbox_detail.html' %}
+                {% endwith %}
+            {% else %}
+                {% include 'partials/inbox_detail.html' %}
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

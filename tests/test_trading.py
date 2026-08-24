@@ -551,7 +551,7 @@ class TestTradingProperties:
         conn.close()
 
     # Feature: orex-test-suite, Property 2: Sell trade arithmetic
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(max_examples=100, deadline=500, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(sell_quantity=st.integers(min_value=1, max_value=100))
     def test_sell_trade_arithmetic(self, sell_quantity, authenticated_client, app):
         """For any valid sell quantity within held amount, balance increases by

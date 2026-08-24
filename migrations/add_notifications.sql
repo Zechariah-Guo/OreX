@@ -1,5 +1,6 @@
--- Migration: Add Notifications table for advancement toast delivery
--- Requirements: 15.1, 15.2, 15.3, 15.4
+-- Migration: Add Notifications table for the Notification System
+-- Requirements: 1.1, 1.2, 1.3, 1.4
+-- Idempotent: safe to re-run on existing databases
 
 CREATE TABLE IF NOT EXISTS notifications (
     id INTEGER PRIMARY KEY,
@@ -13,3 +14,4 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id_desc ON notifications(user_id, id DESC);

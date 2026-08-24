@@ -48,8 +48,8 @@
 | 🔲 | 3-Day Welcome Bonus | One-time $1k/$10k/$100k, no streak required |
 | ✅ | Login Streak Tracking | For Dedicated badge |
 | ✅ | Play Time Tracking | For Budding Enthusiast badge |
-| 🔲 | Tutorial System | Beginner + Advanced tutorials, notification system |
-| 🚧 | Changelogs | Major version notes, in-app display |
+| 🔲 | Notification System | Bell icon, tray, toast delivery, replaces placeholder |
+| 🚧 | Changelogs | Major version notes, in-app display (moved to v1.0) |
 
 ---
 
@@ -60,6 +60,7 @@
 | 🔲 | Oracle Cloud Deployment | Free tier, object storage for PFPs, see deployment/ folder |
 | 🔲 | Alpine.js / Morphdom | Better animations with htmx, React-like transitions |
 | 🔲 | Help/FAQ Relocation | Move FAQ into profile dropdown help section |
+| 🔲 | Tutorial System | Beginner + Advanced tutorials (moved to v1.0) |
 
 ---
 
@@ -114,7 +115,7 @@
 4. ~~**Finances Page** — Depends on advanced mode + shorting~~ ✅ Done
 5. ~~**Resistance & Support** — Chart overlays~~ ✅ Done
 6. ~~**Achievements** — Depends on advanced mode + shorting~~ ✅ Done
-7. **Profile Page** — Depends on achievements <-- Next
-8. **Notification System** — Depends on achievements + shorting (emitters)
-9. **Tutorial System** — Depends on everything being in place
-10. **Changelog** — Add to revamped about section. <-- Ongoing
+7. **Notification System** — Depends on achievements + shorting (emitters) <-- Next
+8. **Profile Page** — Depends on achievements + notifications
+9. **Tutorial System** — Moved to v1.0 (depends on everything being in place)
+10. **Changelog** — Moved to v1.0, add to revamped about section

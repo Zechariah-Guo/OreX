@@ -133,6 +133,11 @@ main {
     display: block;
 }
 
+.advanced__settings__logo {
+        height: 20px;
+        width: 20px;
+}
+
 /* Dark mode: glowing pill behind logo for visibility */
 html[data-theme="dark"] .nav__brand {
     background: linear-gradient(135deg, rgba(100, 60, 150, 0.5), rgba(140, 80, 200, 0.3));
@@ -264,10 +269,13 @@ html[data-theme="dark"] .nav__brand {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+    z-index: 1001;
 }
 
 .nav__dropdown-item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
     padding: var(--spacing-sm) var(--spacing-md);
     color: var(--colour-text);
     transition: background-color 0.15s;
@@ -286,6 +294,42 @@ html[data-theme="dark"] .nav__brand {
     border: none;
     border-top: 1px solid var(--colour-border);
     margin: var(--spacing-xs) 0;
+}
+
+/* --- Dropdown icon row --- */
+.nav__dropdown-icons {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: var(--spacing-sm) var(--spacing-sm);
+}
+
+.nav__dropdown-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    color: var(--colour-text);
+    position: relative;
+    transition: background-color 0.15s;
+}
+
+.nav__dropdown-icon:hover {
+    background-color: var(--colour-surface-hover);
+    text-decoration: none;
+}
+
+.nav__dropdown-icon--unread::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--colour-danger);
 }
 
 /* ===== Footer ===== */
@@ -326,10 +370,31 @@ html[data-theme="dark"] .nav__brand {
         opacity: 0;
         transform: translateX(1rem) translateY(-0.25rem);
         animation: flashToastIn 0.35s ease-out forwards;
+        cursor: grab;
+        touch-action: pan-y;
+        user-select: none;
+}
+
+.flash--toast:active {
+        cursor: grabbing;
 }
 
 .flash--toast.flash--leaving {
         animation: flashToastOut 0.35s ease-in forwards;
+}
+
+.flash__icon {
+        display: inline-flex;
+        align-items: center;
+        padding: var(--spacing-sm) 0 0 var(--spacing-md);
+        flex-shrink: 0;
+}
+
+.flash--clickable {
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+        display: block;
 }
 
 .flash__message {
@@ -350,23 +415,111 @@ html[data-theme="dark"] .nav__brand {
         animation: flashProgress var(--toast-duration, 3000ms) linear forwards;
 }
 
-.flash--success {
-    background-color: rgba(46, 204, 113, 0.15);
-    border: 1px solid var(--colour-success);
+.flash--toast.flash--success {
+    background: linear-gradient(to right, rgba(46, 204, 113, 0.12), rgba(34, 153, 84, 0.18));
+    border-left: 3px solid #2ecc71;
+    border-top: 1px solid rgba(46, 204, 113, 0.3);
+    border-bottom: 1px solid rgba(34, 153, 84, 0.3);
+    border-right: 1px solid rgba(34, 153, 84, 0.3);
     color: var(--colour-success);
 }
 
-.flash--error {
-    background-color: rgba(231, 76, 60, 0.15);
-    border: 1px solid var(--colour-danger);
+.flash--toast.flash--error {
+    background: linear-gradient(to right, rgba(231, 76, 60, 0.12), rgba(192, 57, 43, 0.18));
+    border-left: 3px solid #e74c3c;
+    border-top: 1px solid rgba(231, 76, 60, 0.3);
+    border-bottom: 1px solid rgba(192, 57, 43, 0.3);
+    border-right: 1px solid rgba(192, 57, 43, 0.3);
     color: var(--colour-danger);
 }
 
-.flash--advancement {
-    background-color: rgba(241, 196, 15, 0.15);
-    border: 1px solid #f1c40f;
+.flash--toast.flash--advancement,
+.flash--toast.flash--achievement {
+    background: linear-gradient(to right, rgba(241, 196, 15, 0.12), rgba(243, 156, 18, 0.18));
+    border-left: 3px solid #f1c40f;
+    border-top: 1px solid rgba(241, 196, 15, 0.3);
+    border-bottom: 1px solid rgba(243, 156, 18, 0.3);
+    border-right: 1px solid rgba(243, 156, 18, 0.3);
     color: #f39c12;
     cursor: pointer;
+}
+
+.flash--toast.flash--liquidation {
+    background: linear-gradient(to right, rgba(231, 76, 60, 0.12), rgba(192, 57, 43, 0.18));
+    border-left: 3px solid #e74c3c;
+    border-top: 1px solid rgba(231, 76, 60, 0.3);
+    border-bottom: 1px solid rgba(192, 57, 43, 0.3);
+    border-right: 1px solid rgba(192, 57, 43, 0.3);
+    color: var(--colour-danger);
+}
+
+.flash--toast.flash--stop-loss {
+    background: linear-gradient(to right, rgba(231, 76, 60, 0.12), rgba(192, 57, 43, 0.18));
+    border-left: 3px solid #e74c3c;
+    border-top: 1px solid rgba(231, 76, 60, 0.3);
+    border-bottom: 1px solid rgba(192, 57, 43, 0.3);
+    border-right: 1px solid rgba(192, 57, 43, 0.3);
+    color: var(--colour-danger);
+}
+
+.flash--toast.flash--take-profit {
+    background: linear-gradient(to right, rgba(46, 204, 113, 0.12), rgba(34, 153, 84, 0.18));
+    border-left: 3px solid #2ecc71;
+    border-top: 1px solid rgba(46, 204, 113, 0.3);
+    border-bottom: 1px solid rgba(34, 153, 84, 0.3);
+    border-right: 1px solid rgba(34, 153, 84, 0.3);
+    color: var(--colour-success);
+}
+
+.flash--toast.flash--default {
+    background: linear-gradient(to right, rgba(46, 204, 113, 0.12), rgba(34, 153, 84, 0.18));
+    border-left: 3px solid #2ecc71;
+    border-top: 1px solid rgba(46, 204, 113, 0.3);
+    border-bottom: 1px solid rgba(34, 153, 84, 0.3);
+    border-right: 1px solid rgba(34, 153, 84, 0.3);
+    color: var(--colour-success);
+}
+
+.flash--toast.flash--short-open {
+    background: linear-gradient(to right, rgba(142, 68, 173, 0.12), rgba(106, 27, 154, 0.18));
+    border-left: 3px solid #9b59b6;
+    border-top: 1px solid rgba(142, 68, 173, 0.3);
+    border-bottom: 1px solid rgba(106, 27, 154, 0.3);
+    border-right: 1px solid rgba(106, 27, 154, 0.3);
+    color: #9b59b6;
+}
+
+.flash--toast.flash--short-close {
+    background: linear-gradient(to right, rgba(52, 152, 219, 0.12), rgba(41, 128, 185, 0.18));
+    border-left: 3px solid #3498db;
+    border-top: 1px solid rgba(52, 152, 219, 0.3);
+    border-bottom: 1px solid rgba(41, 128, 185, 0.3);
+    border-right: 1px solid rgba(41, 128, 185, 0.3);
+    color: #3498db;
+}
+
+.flash--toast.flash--info {
+    background: linear-gradient(to right, rgba(52, 152, 219, 0.12), rgba(41, 128, 185, 0.18));
+    border-left: 3px solid #3498db;
+    border-top: 1px solid rgba(52, 152, 219, 0.3);
+    border-bottom: 1px solid rgba(41, 128, 185, 0.3);
+    border-right: 1px solid rgba(41, 128, 185, 0.3);
+    color: #3498db;
+}
+
+.notification-toasts {
+    position: fixed;
+    top: calc(var(--spacing-lg) + 4rem);
+    right: var(--spacing-lg);
+    width: min(360px, calc(100vw - 2rem));
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: flex-end;
+    z-index: 999;
+    pointer-events: none;
 }
 
 @keyframes flashToastIn {
@@ -389,7 +542,7 @@ html[data-theme="dark"] .nav__brand {
 
     to {
         opacity: 0;
-        transform: translateX(1rem) translateY(-0.25rem);
+        transform: translateX(6rem) translateY(0);
     }
 }
 
@@ -1301,6 +1454,7 @@ input::-webkit-inner-spin-button {
     .nav__logo {
         height: 28px;
     }
+
 }
 
 

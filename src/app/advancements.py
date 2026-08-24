@@ -16,6 +16,8 @@ Threshold values correspond to the configuration in app/config.py:
 
 import datetime
 
+from app.models import create_notification as _create_notification
+
 # Ordered list of all nine advancement keys
 ADVANCEMENT_KEYS = [
     "millionaire",
@@ -83,23 +85,6 @@ ADVANCEMENT_METADATA = {
 # --- Core Award & Query Functions ---
 
 
-def create_notification(db, user_id, category, message, action_url):
-    """Insert a notification row directly into the notifications table.
-
-    Wraps in try/except to gracefully handle the case where the
-    notifications table does not yet exist (separate spec dependency).
-    """
-    try:
-        db.execute(
-            """INSERT INTO notifications (user_id, category, message, action_url, created_at)
-               VALUES (?, ?, ?, ?, datetime('now', 'localtime'))""",
-            (user_id, category, message, action_url),
-        )
-    except Exception:
-        # Notifications table may not exist yet — silently skip.
-        pass
-
-
 def evaluate_completionist(db, user_id):
     """Evaluate whether the user qualifies for the completionist advancement.
 
@@ -162,7 +147,11 @@ def award_advancement(db, user_id, key):
     elif key == "completionist":
         message += " Gold theme unlocked!"
 
-    create_notification(db, user_id, "advancement", message, "/advancements")
+    try:
+        _create_notification(user_id, "advancement", message, "/advancements")
+    except Exception:
+        # Notifications should not block advancement awards
+        pass
 
     # Evaluate completionist (avoid infinite recursion)
     if key != "completionist":

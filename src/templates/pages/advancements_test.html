@@ -10,6 +10,18 @@
 
     <!-- Theme Status & Controls -->
     <section style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #444; border-radius: 8px;">
+        <h2 style="margin-top: 0;">Toast Testing</h2>
+        <p style="color: #aaa; font-size: 0.9rem;">Fire all toast categories at once to preview styling and swipe-to-dismiss.</p>
+        <form method="POST" action="{{ url_for('advancements.test_toasts') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" style="padding: 0.5rem 1rem; background: var(--colour-accent, #7c3aed); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                Fire All Toasts
+            </button>
+        </form>
+    </section>
+
+    <!-- Theme Status & Controls -->
+    <section style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #444; border-radius: 8px;">
         <h2 style="margin-top: 0;">Theme Unlocks</h2>
         <p>
             Money Theme: <strong style="color: {{ 'limegreen' if money_theme else '#ff4444' }};">{{ money_theme }}</strong>

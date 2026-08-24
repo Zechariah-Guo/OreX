@@ -387,11 +387,11 @@ def reset_account(user_id):
     )
 
     # Clear all Advanced Mode state and restore default balance (Req 14.3)
-    # Also reset play_time, login_streak, last_streak_date (Req 16.2, 16.3)
+    # NOTE: play_time, login_streak, last_streak_date are NOT reset — profile stats persist
     # NOTE: money_theme_unlocked and gold_theme_unlocked are NOT reset (Req 16.4)
     # NOTE: advancements table is NOT touched — achievements persist across resets (Req 16.1)
     db.execute(
-        "UPDATE users SET advanced_eligible=0, advanced_purchased=0, advanced_active=0, advanced_toggled_at=NULL, play_time=0, login_streak=0, last_streak_date=NULL, balance = ? WHERE id = ?",
+        "UPDATE users SET advanced_eligible=0, advanced_purchased=0, advanced_active=0, advanced_toggled_at=NULL, balance = ? WHERE id = ?",
         (default_balance, user_id)
     )
 
@@ -403,6 +403,7 @@ def reset_account(user_id):
 
     db.execute("DELETE FROM holdings WHERE user_id = ?", (user_id,))
     db.execute("UPDATE transactions SET archived = 1 WHERE user_id = ? AND archived = 0", (user_id,))
+    db.execute("DELETE FROM notifications WHERE user_id = ?", (user_id,))
     db.commit()
 
 
@@ -557,3 +558,234 @@ def get_remaining_backup_code_count(user_id):
         (user_id,)
     ).fetchone()
     return row["cnt"]
+
+
+# --- Notifications Model ---
+
+def create_notification(user_id, category, message, action_url=None):
+    """Create a new notification for a user.
+
+    Validates inputs, inserts a new row with is_read=0, and returns the
+    notification ID. The action_url is always set to the notification's own
+    inbox detail view (/inbox/<id>) so toast clicks open the inbox entry.
+
+    Args:
+        user_id: The target user's ID (must exist in users table).
+        category: Any non-empty string categorizing the notification.
+        message: The notification message (must not be empty or whitespace-only).
+        action_url: Ignored — kept for API compatibility. Always overridden
+            with the inbox detail URL.
+
+    Returns:
+        int: The ID of the newly created notification.
+
+    Raises:
+        ValueError: If message is empty/whitespace-only or user_id does not exist.
+    """
+    # Validate message is not empty or whitespace-only
+    if not message or not message.strip():
+        raise ValueError("Message cannot be empty or whitespace-only")
+
+    # Validate user_id exists in users table
+    db = get_db()
+    user_row = db.execute("SELECT 1 FROM users WHERE id = ?", (user_id,)).fetchone()
+    if user_row is None:
+        raise ValueError("User does not exist")
+
+    # Insert notification with is_read=0 (action_url set after we get the ID)
+    cursor = db.execute(
+        """INSERT INTO notifications (user_id, category, message, action_url, is_read, created_at)
+           VALUES (?, ?, ?, NULL, 0, datetime('now', 'localtime'))""",
+        (user_id, category, message),
+    )
+    notif_id = cursor.lastrowid
+
+    # Set action_url to point to this notification's inbox detail
+    db.execute(
+        "UPDATE notifications SET action_url = ? WHERE id = ?",
+        (f'/inbox?selected={notif_id}', notif_id),
+    )
+    db.commit()
+    return notif_id
+
+
+def get_notifications(user_id, filter='all'):
+    """Return notifications for a user, filtered by read status, newest first.
+
+    Args:
+        user_id: The user's ID.
+        filter: One of 'all', 'read', or 'unread'.
+
+    Returns:
+        list[Row]: Notifications ordered by id DESC.
+    """
+    db = get_db()
+    if filter == 'read':
+        rows = db.execute(
+            "SELECT * FROM notifications WHERE user_id = ? AND is_read = 1 ORDER BY id DESC",
+            (user_id,),
+        ).fetchall()
+    elif filter == 'unread':
+        rows = db.execute(
+            "SELECT * FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY id DESC",
+            (user_id,),
+        ).fetchall()
+    else:
+        rows = db.execute(
+            "SELECT * FROM notifications WHERE user_id = ? ORDER BY id DESC",
+            (user_id,),
+        ).fetchall()
+    return rows
+
+
+def get_notification_detail(notification_id, user_id):
+    """Return a single notification owned by the given user, or None.
+
+    Args:
+        notification_id: The notification's ID.
+        user_id: The user's ID (ownership check).
+
+    Returns:
+        Row or None: The notification row if found and owned by user.
+    """
+    db = get_db()
+    row = db.execute(
+        "SELECT * FROM notifications WHERE id = ? AND user_id = ?",
+        (notification_id, user_id),
+    ).fetchone()
+    return row
+
+
+def has_unread_notifications(user_id):
+    """Check if a user has any unread notifications.
+
+    Args:
+        user_id: The user's ID.
+
+    Returns:
+        bool: True if any is_read=0 notifications exist for the user.
+    """
+    db = get_db()
+    row = db.execute(
+        "SELECT 1 FROM notifications WHERE user_id = ? AND is_read = 0 LIMIT 1",
+        (user_id,),
+    ).fetchone()
+    return row is not None
+
+
+def get_new_notifications_since(user_id, since_id):
+    """Return unread notifications with id greater than since_id for a user.
+
+    Used by the polling endpoint to detect new notifications since the last poll.
+
+    Args:
+        user_id: The user's ID.
+        since_id: The watermark notification ID from the last poll.
+
+    Returns:
+        list[Row]: Unread notifications with id > since_id, ordered by id DESC.
+    """
+    db = get_db()
+    rows = db.execute(
+        "SELECT * FROM notifications WHERE user_id = ? AND is_read = 0 AND id > ? ORDER BY id DESC",
+        (user_id, since_id),
+    ).fetchall()
+    return rows
+
+
+def mark_notification_read(notification_id, user_id):
+    """Mark a single notification as read for the owning user.
+
+    Sets is_read=1 only if the notification belongs to the specified user.
+
+    Args:
+        notification_id: The notification's ID.
+        user_id: The user's ID (ownership check).
+
+    Returns:
+        bool: True if the notification was found, owned by user, and updated.
+    """
+    db = get_db()
+    cursor = db.execute(
+        "UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?",
+        (notification_id, user_id),
+    )
+    db.commit()
+    return cursor.rowcount > 0
+
+
+def mark_all_notifications_read(user_id):
+    """Mark all notifications as read for a user.
+
+    Sets is_read=1 for every notification belonging to the user.
+
+    Args:
+        user_id: The user's ID.
+
+    Returns:
+        int: The number of notifications that were updated.
+    """
+    db = get_db()
+    cursor = db.execute(
+        "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0",
+        (user_id,),
+    )
+    db.commit()
+    return cursor.rowcount
+
+
+def delete_notification(notification_id, user_id):
+    """Delete a single notification owned by the specified user.
+
+    Only deletes if the notification belongs to the user, preventing
+    cross-user manipulation.
+
+    Args:
+        notification_id: The notification's ID.
+        user_id: The user's ID (ownership check).
+
+    Returns:
+        bool: True if the notification was found, owned by user, and deleted.
+    """
+    db = get_db()
+    cursor = db.execute(
+        "DELETE FROM notifications WHERE id = ? AND user_id = ?",
+        (notification_id, user_id),
+    )
+    db.commit()
+    return cursor.rowcount > 0
+
+
+_NOTIFICATION_ICON_PATHS = {
+    "trophy": "M280-120v-80h160v-124q-49-11-87.5-41.5T296-442q-75-9-125.5-65.5T120-640v-40q0-33 23.5-56.5T200-760h80v-80h400v80h80q33 0 56.5 23.5T840-680v40q0 76-50.5 132.5T664-442q-18 46-56.5 76.5T520-324v124h160v80H280Zm0-408v-152h-80v40q0 38 22 68.5t58 43.5Zm285 93q35-35 35-85v-240H360v240q0 50 35 85t85 35q50 0 85-35Zm115-93q36-13 58-43.5t22-68.5v-40h-80v152Zm-200-52Z",
+    "warning": "m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm330.5-51.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Zm40-100Z",
+    "bell": "M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z",
+}
+
+_NOTIFICATION_STYLES = {
+    "achievement": ("flash--achievement", _NOTIFICATION_ICON_PATHS["trophy"], 5000),
+    "advancement": ("flash--achievement", _NOTIFICATION_ICON_PATHS["trophy"], 5000),
+    "liquidation": ("flash--liquidation", _NOTIFICATION_ICON_PATHS["warning"], 5000),
+    "stop_loss": ("flash--stop-loss", _NOTIFICATION_ICON_PATHS["bell"], 3000),
+    "take_profit": ("flash--take-profit", _NOTIFICATION_ICON_PATHS["bell"], 3000),
+}
+
+_DEFAULT_NOTIFICATION_STYLE = ("flash--default", _NOTIFICATION_ICON_PATHS["bell"], 3000)
+
+
+def get_notification_style(category):
+    """Return (css_class, icon, duration) tuple for a notification category.
+
+    Maps category strings to their visual presentation properties:
+    - css_class: CSS modifier class for toast/inbox styling
+    - icon: Material Design icon name
+    - duration: Toast display duration in milliseconds
+
+    Args:
+        category: The notification category string.
+
+    Returns:
+        Tuple of (css_class, icon, duration).
+    """
+    return _NOTIFICATION_STYLES.get(category, _DEFAULT_NOTIFICATION_STYLE)
+

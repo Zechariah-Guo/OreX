@@ -24,7 +24,7 @@ class Config:
     SHORT_MAX_PENALTY = 2.0              # Maximum crowding penalty
     SHORT_STEEPNESS = 3                  # Cubic exponent for penalty curve
     SHORT_BASE_HOURLY_RATE = 0.005       # 0.5% base fee per hour
-    SHORT_MAX_HOURLY_FEE = 0.10          # 10% max fee per hour at peak volatility
+    SHORT_MAX_HOURLY_FEE = 0.10          # Coefficient scaling hourly fee by ore's fixed volatility²
     SHORT_MAX_QUANTITY = 10000           # Max shares per short order
     SHORT_MIN_QUANTITY = 1               # Min shares per short order
 

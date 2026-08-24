@@ -1,4 +1,4 @@
-"""Market engine — background thread running the 30-second tick loop.
+"""Market engine — background thread running the 20-second tick loop.
 
 The engine uses its own database connection (separate from Flask's
 per-request connection) to avoid threading issues with SQLite.
@@ -138,7 +138,7 @@ def evaluate_stop_loss_take_profit(db):
     orders = db.execute("""
         SELECT sltp.id AS sltp_id, sltp.stop_loss, sltp.take_profit,
                sltp.holding_id, h.quantity, h.user_id, h.ore_id,
-               o.current_price
+               o.current_price, o.name AS ore_name
         FROM stop_loss_take_profit sltp
         JOIN holdings h ON sltp.holding_id = h.id
         JOIN ores o ON h.ore_id = o.id
@@ -147,19 +147,20 @@ def evaluate_stop_loss_take_profit(db):
 
     for order in orders:
         try:
-            triggered = False
+            trigger_type = None
             if order['stop_loss'] is not None and order['current_price'] <= order['stop_loss']:
-                triggered = True
+                trigger_type = 'stop_loss'
             elif order['take_profit'] is not None and order['current_price'] >= order['take_profit']:
-                triggered = True
+                trigger_type = 'take_profit'
 
-            if not triggered:
+            if trigger_type is None:
                 continue
 
             # Calculate sell proceeds
             quantity = order['quantity']
             current_price = order['current_price']
             total_value = quantity * current_price
+            ore_name = order['ore_name']
 
             # Credit the user's balance
             db.execute(
@@ -185,6 +186,28 @@ def evaluate_stop_loss_take_profit(db):
                 """INSERT INTO transactions (user_id, ore_id, type, quantity, price_at_trade, total_value, created_at)
                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (order['user_id'], order['ore_id'], 'sell', quantity, current_price, total_value, now)
+            )
+
+            # Create notification for the SL/TP trigger
+            if trigger_type == 'stop_loss':
+                notif_category = 'stop_loss'
+                notif_message = f"Stop Loss triggered: sold {quantity} {ore_name} at ${current_price:.2f}"
+            else:
+                notif_category = 'take_profit'
+                notif_message = f"Take Profit triggered: sold {quantity} {ore_name} at ${current_price:.2f}"
+
+            # Insert notification (action_url set after we get the ID)
+            notif_cursor = db.execute(
+                """INSERT INTO notifications (user_id, category, message, action_url, is_read, created_at)
+                   VALUES (?, ?, ?, NULL, 0, datetime('now', 'localtime'))""",
+                (order['user_id'], notif_category, notif_message)
+            )
+            notif_id = notif_cursor.lastrowid
+
+            # Set action_url to point to this notification's inbox detail
+            db.execute(
+                "UPDATE notifications SET action_url = ? WHERE id = ?",
+                (f'/inbox?selected={notif_id}', notif_id)
             )
 
         except Exception as e:

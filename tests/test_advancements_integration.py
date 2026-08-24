@@ -33,43 +33,43 @@ def test_full_award_lifecycle(app, client):
     Validates: Requirements 4.1
     """
     from app.advancements import award_advancement, has_advancement, get_user_advancements
+    from app.database import get_db
 
     # Register a user
     register_user(client, "lifecycle_user", "Password123!")
 
     with app.app_context():
-        db_path = app.config["DATABASE_PATH"]
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
+        db = get_db()
 
         # Get the user id
-        user_row = conn.execute(
+        user_row = db.execute(
             "SELECT id FROM users WHERE username = ?", ("lifecycle_user",)
         ).fetchone()
         assert user_row is not None
         user_id = user_row["id"]
 
         # Verify no advancements initially
-        assert has_advancement(conn, user_id, "millionaire") is False
-        advs = get_user_advancements(conn, user_id)
+        assert has_advancement(db, user_id, "millionaire") is False
+        advs = get_user_advancements(db, user_id)
         assert len(advs) == 0
 
         # Award a millionaire advancement directly
-        result = award_advancement(conn, user_id, "millionaire")
-        conn.commit()
+        result = award_advancement(db, user_id, "millionaire")
+        db.commit()
 
         # Verify it was newly awarded
         assert result is True
 
         # Verify the advancement row exists
-        assert has_advancement(conn, user_id, "millionaire") is True
-        advs = get_user_advancements(conn, user_id)
+        assert has_advancement(db, user_id, "millionaire") is True
+        advs = get_user_advancements(db, user_id)
         assert len(advs) == 1
         assert advs[0]["key"] == "millionaire"
         assert advs[0]["earned_at"] is not None
 
-        # Verify notification was created
-        notif_row = conn.execute(
+        # Verify notification was created (create_notification uses get_db() internally,
+        # which returns the same connection since we're in the same app context)
+        notif_row = db.execute(
             "SELECT * FROM notifications WHERE user_id = ? AND category = 'advancement'",
             (user_id,),
         ).fetchone()
@@ -77,10 +77,8 @@ def test_full_award_lifecycle(app, client):
         assert "Millionaire" in notif_row["message"]
 
         # Verify idempotency — awarding again returns False
-        result2 = award_advancement(conn, user_id, "millionaire")
+        result2 = award_advancement(db, user_id, "millionaire")
         assert result2 is False
-
-        conn.close()
 
 
 def test_tick_engine_evaluation_millionaire(app, client):
@@ -89,46 +87,43 @@ def test_tick_engine_evaluation_millionaire(app, client):
     Validates: Requirements 4.1, 5.1
     """
     from app.advancements import evaluate_tick_advancements, has_advancement
+    from app.database import get_db
 
     # Register a user
     register_user(client, "tick_user", "Password123!")
 
     with app.app_context():
-        db_path = app.config["DATABASE_PATH"]
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
+        db = get_db()
 
         # Get the user id
-        user_row = conn.execute(
+        user_row = db.execute(
             "SELECT id FROM users WHERE username = ?", ("tick_user",)
         ).fetchone()
         assert user_row is not None
         user_id = user_row["id"]
 
         # Verify no millionaire advancement initially
-        assert has_advancement(conn, user_id, "millionaire") is False
+        assert has_advancement(db, user_id, "millionaire") is False
 
         # Set user balance to $1,000,000 (net worth = balance when no holdings)
-        conn.execute(
+        db.execute(
             "UPDATE users SET balance = ? WHERE id = ?", (1_000_000, user_id)
         )
-        conn.commit()
+        db.commit()
 
         # Run tick evaluation
-        evaluate_tick_advancements(conn)
-        conn.commit()
+        evaluate_tick_advancements(db)
+        db.commit()
 
         # Verify millionaire was awarded
-        assert has_advancement(conn, user_id, "millionaire") is True
+        assert has_advancement(db, user_id, "millionaire") is True
 
         # Verify notification was created
-        notif_row = conn.execute(
+        notif_row = db.execute(
             "SELECT * FROM notifications WHERE user_id = ? AND category = 'advancement' AND message LIKE '%Millionaire%'",
             (user_id,),
         ).fetchone()
         assert notif_row is not None
-
-        conn.close()
 
 
 def test_completionist_cascade(app, client):
@@ -137,17 +132,16 @@ def test_completionist_cascade(app, client):
     Validates: Requirements 10.1
     """
     from app.advancements import award_advancement, has_advancement, ADVANCEMENT_KEYS
+    from app.database import get_db
 
     # Register a user
     register_user(client, "completionist_user", "Password123!")
 
     with app.app_context():
-        db_path = app.config["DATABASE_PATH"]
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
+        db = get_db()
 
         # Get the user id
-        user_row = conn.execute(
+        user_row = db.execute(
             "SELECT id FROM users WHERE username = ?", ("completionist_user",)
         ).fetchone()
         assert user_row is not None
@@ -159,19 +153,19 @@ def test_completionist_cascade(app, client):
 
         # Award 7 of the 8 advancements — completionist should NOT yet be awarded
         for key in non_completionist_keys[:7]:
-            award_advancement(conn, user_id, key)
-            conn.commit()
+            award_advancement(db, user_id, key)
+            db.commit()
 
-        assert has_advancement(conn, user_id, "completionist") is False
+        assert has_advancement(db, user_id, "completionist") is False
 
         # Award the 8th advancement — completionist should auto-trigger
-        award_advancement(conn, user_id, non_completionist_keys[7])
-        conn.commit()
+        award_advancement(db, user_id, non_completionist_keys[7])
+        db.commit()
 
-        assert has_advancement(conn, user_id, "completionist") is True
+        assert has_advancement(db, user_id, "completionist") is True
 
         # Verify completionist notification was created
-        notif_row = conn.execute(
+        notif_row = db.execute(
             "SELECT * FROM notifications WHERE user_id = ? AND category = 'advancement' AND message LIKE '%Completionist%'",
             (user_id,),
         ).fetchone()
@@ -179,12 +173,10 @@ def test_completionist_cascade(app, client):
         assert "Gold theme unlocked" in notif_row["message"]
 
         # Verify gold_theme_unlocked was set
-        theme_row = conn.execute(
+        theme_row = db.execute(
             "SELECT gold_theme_unlocked FROM users WHERE id = ?", (user_id,)
         ).fetchone()
         assert theme_row["gold_theme_unlocked"] == 1
-
-        conn.close()
 
 
 def test_account_reset_preserves_advancements(app, client):
@@ -194,64 +186,56 @@ def test_account_reset_preserves_advancements(app, client):
     """
     from app.advancements import award_advancement, has_advancement, get_user_advancements
     from app.models import reset_account
+    from app.database import get_db
 
     # Register a user
     register_user(client, "reset_user", "Password123!")
 
     with app.app_context():
-        db_path = app.config["DATABASE_PATH"]
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
+        db = get_db()
 
         # Get the user id
-        user_row = conn.execute(
+        user_row = db.execute(
             "SELECT id FROM users WHERE username = ?", ("reset_user",)
         ).fetchone()
         assert user_row is not None
         user_id = user_row["id"]
 
         # Set play_time and login_streak to non-zero values
-        conn.execute(
+        db.execute(
             "UPDATE users SET play_time = 50, login_streak = 5, last_streak_date = '2024-01-15' WHERE id = ?",
             (user_id,),
         )
-        conn.commit()
+        db.commit()
 
         # Award some advancements
-        award_advancement(conn, user_id, "millionaire")
-        award_advancement(conn, user_id, "dedicated")
-        award_advancement(conn, user_id, "the_big_short")
-        conn.commit()
+        award_advancement(db, user_id, "millionaire")
+        award_advancement(db, user_id, "dedicated")
+        award_advancement(db, user_id, "the_big_short")
+        db.commit()
 
         # Verify advancements exist before reset
-        advs_before = get_user_advancements(conn, user_id)
+        advs_before = get_user_advancements(db, user_id)
         assert len(advs_before) == 3
-        conn.close()
 
-        # Perform reset — uses Flask's get_db() so needs app context
+        # Perform reset — uses Flask's get_db() internally (same connection)
         reset_account(user_id)
 
-        # Reconnect and verify
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-
         # Advancements should still be intact
-        advs_after = get_user_advancements(conn, user_id)
+        advs_after = get_user_advancements(db, user_id)
         assert len(advs_after) == 3
-        assert has_advancement(conn, user_id, "millionaire") is True
-        assert has_advancement(conn, user_id, "dedicated") is True
-        assert has_advancement(conn, user_id, "the_big_short") is True
+        assert has_advancement(db, user_id, "millionaire") is True
+        assert has_advancement(db, user_id, "dedicated") is True
+        assert has_advancement(db, user_id, "the_big_short") is True
 
         # play_time and login_streak should be zeroed
-        user_after = conn.execute(
+        user_after = db.execute(
             "SELECT play_time, login_streak, last_streak_date FROM users WHERE id = ?",
             (user_id,),
         ).fetchone()
         assert user_after["play_time"] == 0
         assert user_after["login_streak"] == 0
         assert user_after["last_streak_date"] is None
-
-        conn.close()
 
 
 def test_account_delete_removes_advancements(app, client):
@@ -261,54 +245,46 @@ def test_account_delete_removes_advancements(app, client):
     """
     from app.advancements import award_advancement
     from app.models import delete_account
+    from app.database import get_db
 
     # Register a user
     register_user(client, "delete_user", "Password123!")
 
     with app.app_context():
-        db_path = app.config["DATABASE_PATH"]
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
+        db = get_db()
 
         # Get the user id
-        user_row = conn.execute(
+        user_row = db.execute(
             "SELECT id FROM users WHERE username = ?", ("delete_user",)
         ).fetchone()
         assert user_row is not None
         user_id = user_row["id"]
 
         # Award advancements
-        award_advancement(conn, user_id, "millionaire")
-        award_advancement(conn, user_id, "multimillionaire")
-        award_advancement(conn, user_id, "dedicated")
-        conn.commit()
+        award_advancement(db, user_id, "millionaire")
+        award_advancement(db, user_id, "multimillionaire")
+        award_advancement(db, user_id, "dedicated")
+        db.commit()
 
         # Verify advancements exist
-        count_row = conn.execute(
+        count_row = db.execute(
             "SELECT COUNT(*) as cnt FROM advancements WHERE user_id = ?",
             (user_id,),
         ).fetchone()
         assert count_row["cnt"] == 3
-        conn.close()
 
-        # Delete the account — uses Flask's get_db() internally
+        # Delete the account — uses Flask's get_db() internally (same connection)
         delete_account(user_id)
 
-        # Reconnect and verify advancements are gone
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-
         # User row should be gone
-        user_check = conn.execute(
+        user_check = db.execute(
             "SELECT id FROM users WHERE id = ?", (user_id,)
         ).fetchone()
         assert user_check is None
 
         # Advancements should be gone (CASCADE delete)
-        adv_count = conn.execute(
+        adv_count = db.execute(
             "SELECT COUNT(*) as cnt FROM advancements WHERE user_id = ?",
             (user_id,),
         ).fetchone()
         assert adv_count["cnt"] == 0
-
-        conn.close()
