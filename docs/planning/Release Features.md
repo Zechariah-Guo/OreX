@@ -48,7 +48,7 @@
 | 🔲 | 3-Day Welcome Bonus | One-time $1k/$10k/$100k, no streak required |
 | ✅ | Login Streak Tracking | For Dedicated badge |
 | ✅ | Play Time Tracking | For Budding Enthusiast badge |
-| 🔲 | Notification System | Bell icon, tray, toast delivery, replaces placeholder |
+| ✅ | Notification System | Bell icon, tray, toast delivery, replaces placeholder |
 | 🚧 | Changelogs | Major version notes, in-app display (moved to v1.0) |
 
 ---
@@ -59,20 +59,8 @@
 |--------|---------|-------|
 | 🔲 | Oracle Cloud Deployment | Free tier, object storage for PFPs, see deployment/ folder |
 | 🔲 | Alpine.js / Morphdom | Better animations with htmx, React-like transitions |
-| 🔲 | Help/FAQ Relocation | Move FAQ into profile dropdown help section |
+| ✅ | Help/FAQ Relocation | Move FAQ into profile dropdown help section |
 | 🔲 | Tutorial System | Beginner + Advanced tutorials (moved to v1.0) |
-
----
-
-## Specs Completed (Requirements Phase)
-1. `.kiro/specs/advanced-mode/` — 10 requirements
-2. `.kiro/specs/shorting-system/` — 14 requirements
-3. `.kiro/specs/achievements-system/` — 16 requirements ✅ Implemented
-4. `.kiro/specs/profile-page/` — 10 requirements
-5. `.kiro/specs/finances-page/` — 9 requirements
-6. `.kiro/specs/tutorial-system/` — 12 requirements
-7. `.kiro/specs/two-factor-auth/` — 10 requirements
-8. `.kiro/specs/notification-system/` — Spec completed
 
 ---
 
@@ -90,7 +78,7 @@
 - [x] **Achievement badge icons** — 9 badge images (one per achievement), both locked (greyed) and unlocked versions
 - [x] **Money theme CSS** — Gold/cash-inspired color palette for Multimillionaire unlock
 - [x] **Gold theme CSS** — Gold/prestige color palette for Completionist unlock
-- [ ] **Notification bell icon** — SVG icon for the nav bar notification bell
+- [x] **Notification bell icon** — SVG icon for the nav bar notification bell
 - [ ] **Tutorial step content** — Write the actual text for each tutorial step (beginner 7 steps, advanced 7 steps) in `static/data/tutorials.json`
 
 ### Oracle Cloud Setup (When Ready for Deployment)
@@ -115,7 +103,7 @@
 4. ~~**Finances Page** — Depends on advanced mode + shorting~~ ✅ Done
 5. ~~**Resistance & Support** — Chart overlays~~ ✅ Done
 6. ~~**Achievements** — Depends on advanced mode + shorting~~ ✅ Done
-7. **Notification System** — Depends on achievements + shorting (emitters) <-- Next
-8. **Profile Page** — Depends on achievements + notifications
+7. **Notification System** — Depends on achievements + shorting (emitters) ✅ Done
+8. **Profile Page** — Depends on achievements + notifications <-- Next
 9. **Tutorial System** — Moved to v1.0 (depends on everything being in place)
 10. **Changelog** — Moved to v1.0, add to revamped about section

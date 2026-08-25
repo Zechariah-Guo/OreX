@@ -9,7 +9,7 @@ Complete deployment guide for hosting OreX on Oracle Cloud Free Tier with Cloudf
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                     name.com (GitHub Student Dev Pack)       │
-│                     Domain: mochizou.works (1 year free)   │
+│                     Domain: mochizou.works (1 year free)     │
 └──────────────────────┬───────────────────────────────────────┘
                        │ Nameservers pointed to Cloudflare
                        ▼
@@ -28,10 +28,10 @@ Complete deployment guide for hosting OreX on Oracle Cloud Free Tier with Cloudf
 │              ARM Ampere A1 — 1 OCPU, 1 GB RAM                │
 │                                                              │
 │  cloudflared ──► Nginx (port 80)                             │
-│                    ├── orex.mochizou.works                 │
+│                    ├── orex.mochizou.works                   │
 │                    │     ├── /static/ → served directly      │
 │                    │     └── /* → proxy to Gunicorn :4000    │
-│                    └── redstoneregister.mochizou.works     │
+│                    └── redstoneregister.mochizou.works       │
 │                          └── /* → proxy to localhost :5000   │
 │                                                              │
 │  Gunicorn :4000 — OreX (Flask)                               │

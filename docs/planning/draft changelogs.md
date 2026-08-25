@@ -16,7 +16,7 @@
 - **Market events** — Rare price surges and crashes that shake up the market
 - **Transaction history** — Full trade log with pagination and archiving
 - **Account management** — Register, login, reset, or delete your account
-- **Responsive design** — Play on desktop or mobile with light and dark themes
+- **Responsive design** — Play on desktop with light and dark themes
 
 ---
 
@@ -36,7 +36,7 @@
 - **Two-Factor Authentication** — Optional TOTP-based login security via Google Authenticator
 
 ### Quality of Life
-- **Buy limits in standard mode** — Encourages strategic trading over bulk purchases
+- **Buy limits in standard mode** — Encourages strategic trading over bulk purchases and progression to advanced mode (unlocks limits)
 
 ---
 
@@ -54,7 +54,10 @@
 - **Custom profile pictures** — Upload and crop a personalized avatar
 
 ### Notifications
-- **Notification system** — Bell icon, toast notifications, notification tray with history
+- **Notification system** — Inbox system, interactive toast notifications
+
+### Other
+- **Relocate Help page** — Move to profile dropdown for easier and more obvious access, add tutorial place holder (coming soon)
 
 ---
 
@@ -66,7 +69,7 @@
 
 ### Onboarding & Guidance
 - **Interactive tutorials** — Guided walkthroughs for new players and advanced mechanics
-- **Help section** — Reorganized for easier access from the profile menu
+- **Help section** — Reorganised + tutorial access
 - **In-app changelogs** — Major version notes displayed in the About section
 
 ### Quality of Life
@@ -77,24 +80,12 @@
 *QoL update including mobile support*
 
 ### Mobile Support
-- TBC
+- Change UI basically for mobile sized screens
 
 ### QoL
 - Allow "forgot password" functionality by leveraging the existing 2fa system
 - Optimise leaderboard and other pages' SQL with CTE
+- (Maybe) Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc)
 - Implement celery and redis for background profile picture processing and storage
 - Migrate all images to avif with webp fallback
-- Migrate sqlite3 to postgres (for practice --> say its for "scalability") (and potententially switch from rawSQL to SQLAlchemy) (on further considerations, probably not useful at all)
-<blockquote> 
-How to Prepare for Migration
-
-1. Dump the Data: Export your SQLite database into an SQL text file using the .dump
-command in your terminal.
-
-2. Convert Syntax: SQLite and PostgreSQL have slight syntax differences (e.g., SQLite
-uses AUTOINCREMENT , PostgreSQL uses SERIAL or GENERATED ALWAYS AS IDENTITY ).
-Tools like pgloader can automate this conversion.
-
-3. Update Code: Replace import sqlite3 with import psycopg2, update your
-connection credentials, and swap ? placeholders to %s 
-<blockquote/>
+- Try tailwind css and alpine js
