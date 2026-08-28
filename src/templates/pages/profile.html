@@ -3,8 +3,8 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"
-      integrity="sha512-UtLOu9C7NuThQhuXXrGwx9Jb/z9zPQJctuAgNUBK3Z6kkSYT9wJ+2+dh6klS+TDBCV9kNPBbAxbVD+vCcfGPaA=="
-      crossorigin="anonymous" referrerpolicy="no-referrer" />
+    integrity="sha512-UtLOu9C7NuThQhuXXrGwx9Jb/z9zPQJctuAgNUBK3Z6kkSYT9wJ+2+dh6klS+TDBCV9kNPBbAxbVD+vCcfGPaA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
 <style>
     /* ===== Profile Page Layout ===== */
     .profile {
@@ -48,8 +48,22 @@
         font-weight: 700;
         letter-spacing: 1px;
         border: 3px solid var(--colour-border);
-        background-color: {{ user_avatar_color_hex }};
-        color: {{ user_avatar_text_color }};
+
+        background-color: {
+                {
+                user_avatar_color_hex
+            }
+        }
+
+        ;
+
+        color: {
+                {
+                user_avatar_text_color
+            }
+        }
+
+        ;
     }
 
     .profile__avatar-upload-btn {
@@ -157,9 +171,19 @@
         background-color: rgba(46, 204, 113, 0.06);
     }
 
-    .bonus__card--completed .bonus__card-day { color: var(--colour-accent); }
-    .bonus__card--completed .bonus__card-amount { color: var(--colour-accent); text-decoration: line-through; opacity: 0.7; }
-    .bonus__card-check { color: var(--colour-accent); }
+    .bonus__card--completed .bonus__card-day {
+        color: var(--colour-accent);
+    }
+
+    .bonus__card--completed .bonus__card-amount {
+        color: var(--colour-accent);
+        text-decoration: line-through;
+        opacity: 0.7;
+    }
+
+    .bonus__card-check {
+        color: var(--colour-accent);
+    }
 
     .bonus__card--clickable {
         border-color: var(--colour-accent);
@@ -170,10 +194,23 @@
         box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.15);
     }
 
-    .bonus__card--clickable:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(46, 204, 113, 0.25); }
-    .bonus__card--clickable:active { transform: translateY(0); }
-    .bonus__card--clickable:focus-visible { outline: 2px solid var(--colour-accent); outline-offset: 2px; }
-    .bonus__card--clickable .bonus__card-amount { color: var(--colour-accent); }
+    .bonus__card--clickable:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(46, 204, 113, 0.25);
+    }
+
+    .bonus__card--clickable:active {
+        transform: translateY(0);
+    }
+
+    .bonus__card--clickable:focus-visible {
+        outline: 2px solid var(--colour-accent);
+        outline-offset: 2px;
+    }
+
+    .bonus__card--clickable .bonus__card-amount {
+        color: var(--colour-accent);
+    }
 
     .bonus__card-action {
         font-size: 0.8rem;
@@ -186,10 +223,22 @@
         border-radius: var(--radius-sm);
     }
 
-    .bonus__card-action--waiting { background-color: var(--colour-text-muted); }
-    .bonus__card--waiting { border-color: var(--colour-border); opacity: 0.7; }
-    .bonus__card--upcoming { opacity: 0.5; }
-    .bonus__card-lock { color: var(--colour-text-muted); }
+    .bonus__card-action--waiting {
+        background-color: var(--colour-text-muted);
+    }
+
+    .bonus__card--waiting {
+        border-color: var(--colour-border);
+        opacity: 0.7;
+    }
+
+    .bonus__card--upcoming {
+        opacity: 0.5;
+    }
+
+    .bonus__card-lock {
+        color: var(--colour-text-muted);
+    }
 
     .bonus__status {
         text-align: center;
@@ -219,38 +268,84 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding: var(--spacing-lg) var(--spacing-xl);
+        padding: var(--spacing-xl) var(--spacing-xl);
         position: relative;
+        overflow: hidden;
+    }
+
+    .profile-stat-box__bg-img {
+        position: absolute;
+        width: 130px;
+        height: 130px;
+        object-fit: contain;
+        opacity: 0.18;
+        pointer-events: none;
     }
 
     /* Align text away from centre (outer edges) + custom colours */
+    /* TL: text top-left, image top-left corner (overflowing outward) */
     .profile-stat-box--tl {
         text-align: left;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding-top: var(--spacing-lg);
         background-color: rgba(52, 152, 219, 0.20);
         border-color: rgba(52, 152, 219, 1);
     }
 
+    .profile-stat-box--tl .profile-stat-box__bg-img {
+        top: -20px;
+        left: -20px;
+    }
+
+    /* TR: text top-right, image top-right corner */
     .profile-stat-box--tr {
         text-align: right;
+        align-items: flex-end;
+        justify-content: flex-start;
+        padding-top: var(--spacing-lg);
         background-color: rgba(46, 204, 113, 0.20);
         border-color: rgba(46, 204, 113, 1);
     }
 
+    .profile-stat-box--tr .profile-stat-box__bg-img {
+        top: -20px;
+        right: -20px;
+    }
+
+    /* BL: text bottom-left, image bottom-left corner */
     .profile-stat-box--bl {
         text-align: left;
+        align-items: flex-start;
+        justify-content: flex-end;
+        padding-bottom: var(--spacing-lg);
         background-color: rgba(241, 196, 15, 0.20);
         border-color: rgba(241, 196, 15, 1);
     }
 
+    .profile-stat-box--bl .profile-stat-box__bg-img {
+        bottom: -20px;
+        left: -20px;
+    }
+
+    /* BR: text bottom-right, image bottom-right corner */
     .profile-stat-box--br {
         text-align: right;
+        align-items: flex-end;
+        justify-content: flex-end;
+        padding-bottom: var(--spacing-lg);
         background-color: rgba(231, 76, 60, 0.20);
         border-color: rgba(231, 76, 60, 1);
     }
 
+    .profile-stat-box--br .profile-stat-box__bg-img {
+        bottom: -20px;
+        right: -20px;
+    }
+
     .profile-stat-box__label {
         display: block;
-        font-size: 0.75rem;
+        font-size: 1.5rem;
         color: var(--colour-text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -259,7 +354,7 @@
 
     .profile-stat-box__value {
         display: block;
-        font-size: 1.2rem;
+        font-size: 2.0rem;
         font-weight: 700;
         color: var(--colour-text);
         font-family: var(--font-mono);
@@ -267,7 +362,7 @@
 
     .profile-stat-box__sub {
         display: block;
-        font-size: 0.7rem;
+        font-size: 1.5rem;
         color: var(--colour-text-muted);
         margin-top: 4px;
     }
@@ -281,12 +376,51 @@
         width: 540px;
         height: 540px;
         border-radius: 50%;
-        background-color: var(--colour-bg);
-        border: 2px solid var(--colour-border);
+        border: 2px solid transparent;
         z-index: 5;
         display: flex;
         align-items: center;
         justify-content: center;
+        background:
+            linear-gradient(var(--colour-bg), var(--colour-bg)) padding-box,
+            conic-gradient(from 0deg,
+                /* Start directly at 12 o'clock */
+
+                /* 12 O'CLOCK GAP (Splits Blue and Green panels at top center) */
+                transparent 0deg,
+                transparent 0.80deg,
+
+                /* --- TOP RIGHT COLOURED BORDER (GREEN PANEL) --- */
+                #2ecc71 0.80deg,
+                #2ecc71 89.20deg,
+
+                /* 3 O'CLOCK GAP (Splits Green and Red panels at right center) */
+                transparent 89.20deg,
+                transparent 90.90deg,
+
+                /* --- BOTTOM RIGHT COLOURED BORDER (RED PANEL) --- */
+                #e74c3c 90.90deg,
+                #e74c3c 179.20deg,
+
+                /* 6 O'CLOCK GAP (Splits Red and Yellow panels at bottom center) */
+                transparent 179.20deg,
+                transparent 180.90deg,
+
+                /* --- BOTTOM LEFT COLOURED BORDER (YELLOW PANEL) --- */
+                #f1c40f 180.90deg,
+                #f1c40f 269.10deg,
+
+                /* 9 O'CLOCK GAP (Splits Yellow and Blue panels at left center) */
+                transparent 269.10deg,
+                transparent 270.80deg,
+
+                /* --- TOP LEFT COLOURED BORDER (BLUE PANEL) --- */
+                #3498db 270.80deg,
+                #3498db 359.10deg,
+
+                /* WRAPPING BACK INTO 12 O'CLOCK GAP */
+                transparent 359.10deg,
+                transparent 360deg) border-box;
     }
 
     .achievements-orbit {
@@ -328,9 +462,8 @@
 
     .achievement-badge__img-wrapper {
         position: relative;
-        width: 74px;
-        height: 74px;
-        margin-bottom: 2px;
+        width: 90px;
+        height: 90px;
     }
 
     .achievement-badge__img {
@@ -357,17 +490,7 @@
     }
 
     .achievement-badge__name {
-        display: block;
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: var(--colour-text);
-        line-height: 1.2;
-        max-width: 80px;
-        text-align: center;
-    }
-
-    .achievement-badge--locked .achievement-badge__name {
-        color: var(--colour-text-muted);
+        display: none;
     }
 
     /* Custom tooltip — HIGH z-index, positioned above everything */
@@ -507,8 +630,8 @@
         }
 
         .achievement-badge__img-wrapper {
-            width: 52px;
-            height: 52px;
+            width: 64px;
+            height: 64px;
         }
     }
 
@@ -531,10 +654,21 @@
             grid-row: 3;
         }
 
-        .profile-stat-box--tl { grid-row: 1; }
-        .profile-stat-box--tr { grid-row: 2; }
-        .profile-stat-box--bl { grid-row: 4; }
-        .profile-stat-box--br { grid-row: 5; }
+        .profile-stat-box--tl {
+            grid-row: 1;
+        }
+
+        .profile-stat-box--tr {
+            grid-row: 2;
+        }
+
+        .profile-stat-box--bl {
+            grid-row: 4;
+        }
+
+        .profile-stat-box--br {
+            grid-row: 5;
+        }
 
         .profile-stat-box--tl,
         .profile-stat-box--tr,
@@ -554,13 +688,12 @@
         }
 
         .achievement-badge__img-wrapper {
-            width: 44px;
-            height: 44px;
+            width: 54px;
+            height: 54px;
         }
 
         .achievement-badge__name {
-            font-size: 0.55rem;
-            max-width: 56px;
+            display: none;
         }
 
         .profile__avatar-wrapper {
@@ -590,33 +723,25 @@
     <section class="profile__header" aria-label="Player identity">
         <div class="profile__avatar-wrapper" id="profile-avatar-section">
             {% if user['avatar_path'] %}
-                <img src="{{ url_for('static', filename='uploads/avatars/' ~ current_user.id ~ '.webp') }}"
-                     alt="Profile avatar for {{ user['username'] }}"
-                     class="profile__avatar-img"
-                     id="profile-avatar-img"
-                     width="140" height="140">
+            <img src="{{ url_for('static', filename='uploads/avatars/' ~ current_user.id ~ '.webp') }}"
+                alt="Profile avatar for {{ user['username'] }}" class="profile__avatar-img" id="profile-avatar-img"
+                width="140" height="140">
             {% else %}
-                <div class="profile__avatar-fallback"
-                     id="profile-avatar-img"
-                     role="img"
-                     aria-label="Default avatar showing initials {{ user['username'][:2] | upper }}">
-                    {{ user['username'][:2] | upper }}
-                </div>
+            <div class="profile__avatar-fallback" id="profile-avatar-img" role="img"
+                aria-label="Default avatar showing initials {{ user['username'][:2] | upper }}">
+                {{ user['username'][:2] | upper }}
+            </div>
             {% endif %}
-            <button class="profile__avatar-upload-btn"
-                    id="avatar-upload-trigger"
-                    type="button"
-                    aria-label="Upload profile picture"
-                    title="Upload avatar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960" fill="currentColor">
-                    <path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
+            <button class="profile__avatar-upload-btn" id="avatar-upload-trigger" type="button"
+                aria-label="Upload profile picture" title="Upload avatar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960"
+                    fill="currentColor">
+                    <path
+                        d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
                 </svg>
             </button>
-            <input type="file"
-                   id="avatar-file-input"
-                   class="profile__file-input"
-                   accept="image/png,image/jpeg,image/webp"
-                   aria-label="Select avatar image file">
+            <input type="file" id="avatar-file-input" class="profile__file-input"
+                accept="image/png,image/jpeg,image/webp" aria-label="Select avatar image file">
             <input type="hidden" id="csrf-token" name="csrf_token" value="{{ csrf_token() }}">
         </div>
         <h1 class="profile__username">{{ user['username'] }}</h1>
@@ -633,8 +758,10 @@
     <div class="profile__showcase" x-data="achievementOrbit()" x-init="start()">
         <!-- 4 stat boxes in 2x2 grid -->
         <div class="profile-stat-box profile-stat-box--tl">
+            <img src="{{ url_for('static', filename='images/time.webp') }}" alt="" class="profile-stat-box__bg-img" aria-hidden="true">
             <span class="profile-stat-box__label">Member Since</span>
-            <span class="profile-stat-box__value">{{ user['created_at'][:10] if user['created_at'] else 'Unknown' }}</span>
+            <span class="profile-stat-box__value">{{ user['created_at'][:10] if user['created_at'] else 'Unknown'
+                }}</span>
             <span class="profile-stat-box__sub">
                 {% set play_minutes = user['play_time'] | default(0) | int %}
                 {% set play_hours = play_minutes // 60 %}
@@ -644,18 +771,22 @@
         </div>
 
         <div class="profile-stat-box profile-stat-box--tr">
+            <img src="{{ url_for('static', filename='images/money.webp') }}" alt="" class="profile-stat-box__bg-img" aria-hidden="true">
             <span class="profile-stat-box__label">Peak Net Worth</span>
-            <span class="profile-stat-box__value">${{ "{:,.2f}".format(user['peak_net_worth'] | default(10000)) }}</span>
+            <span class="profile-stat-box__value">${{ "{:,.2f}".format(user['peak_net_worth'] | default(10000))
+                }}</span>
             <span class="profile-stat-box__sub">All-time highest</span>
         </div>
 
         <div class="profile-stat-box profile-stat-box--bl">
+            <img src="{{ url_for('static', filename='images/trade.webp') }}" alt="" class="profile-stat-box__bg-img" aria-hidden="true">
             <span class="profile-stat-box__label">Total Trades</span>
             <span class="profile-stat-box__value">{{ "{:,}".format(trade_count) }}</span>
             <span class="profile-stat-box__sub">Transactions completed</span>
         </div>
 
         <div class="profile-stat-box profile-stat-box--br">
+            <img src="{{ url_for('static', filename='images/streak.webp') }}" alt="" class="profile-stat-box__bg-img" aria-hidden="true">
             <span class="profile-stat-box__label">Login Streak</span>
             <span class="profile-stat-box__value">{{ user['login_streak'] | default(0) }} days</span>
             {% if not bonus_complete %}
@@ -667,28 +798,25 @@
 
         <!-- Orbit circle overlay (covers inner corners of stat boxes) -->
         <div class="profile__showcase-orbit">
-            <div class="achievements-orbit"
-                 @mouseenter="paused = true"
-                 @mouseleave="paused = false">
+            <div class="achievements-orbit" @mouseenter="paused = true" @mouseleave="paused = false">
                 {# Centre badge: Completionist #}
                 {% set centre = achievements | selectattr('key', 'equalto', 'completionist') | first %}
                 <div class="achievements-orbit__centre">
-                    <div class="achievement-badge {% if centre.earned %}achievement-badge--earned{% else %}achievement-badge--locked{% endif %}">
+                    <div
+                        class="achievement-badge {% if centre.earned %}achievement-badge--earned{% else %}achievement-badge--locked{% endif %}">
                         <div class="achievement-badge__img-wrapper">
                             <img src="{{ url_for('static', filename='images/advancements/' ~ centre.image) }}"
-                                 alt="{{ centre.name }}"
-                                 class="achievement-badge__img"
-                                 width="120" height="120"
-                                 loading="lazy">
+                                alt="{{ centre.name }}" class="achievement-badge__img" width="120" height="120"
+                                loading="lazy">
                         </div>
-                        <span class="achievement-badge__name">{{ centre.name }}</span>
                         <div class="achievement-badge__tooltip" role="tooltip">
                             <span class="achievement-badge__tooltip-title">{{ centre.name }}</span>
                             <span class="achievement-badge__tooltip-desc">{{ centre.description }}</span>
                             {% if centre.earned and centre.earned_at %}
                             <span class="achievement-badge__tooltip-date">Earned {{ centre.earned_at[:10] }}</span>
                             {% elif not centre.earned %}
-                            <span class="achievement-badge__tooltip-date" style="color: var(--colour-text-muted);">Locked</span>
+                            <span class="achievement-badge__tooltip-date"
+                                style="color: var(--colour-text-muted);">Locked</span>
                             {% endif %}
                         </div>
                     </div>
@@ -697,24 +825,22 @@
                 {# Orbiting badges #}
                 {% set orbiters = achievements | rejectattr('key', 'equalto', 'completionist') | list %}
                 {% for ach in orbiters %}
-                <div class="achievements-orbit__item"
-                     :style="getOrbiterStyle({{ loop.index0 }})">
-                    <div class="achievement-badge {% if ach.earned %}achievement-badge--earned{% else %}achievement-badge--locked{% endif %}">
+                <div class="achievements-orbit__item" :style="getOrbiterStyle({{ loop.index0 }})">
+                    <div
+                        class="achievement-badge {% if ach.earned %}achievement-badge--earned{% else %}achievement-badge--locked{% endif %}">
                         <div class="achievement-badge__img-wrapper">
                             <img src="{{ url_for('static', filename='images/advancements/' ~ ach.image) }}"
-                                 alt="{{ ach.name }}"
-                                 class="achievement-badge__img"
-                                 width="74" height="74"
-                                 loading="lazy">
+                                alt="{{ ach.name }}" class="achievement-badge__img" width="90" height="90"
+                                loading="lazy">
                         </div>
-                        <span class="achievement-badge__name">{{ ach.name }}</span>
                         <div class="achievement-badge__tooltip" role="tooltip">
                             <span class="achievement-badge__tooltip-title">{{ ach.name }}</span>
                             <span class="achievement-badge__tooltip-desc">{{ ach.description }}</span>
                             {% if ach.earned and ach.earned_at %}
                             <span class="achievement-badge__tooltip-date">Earned {{ ach.earned_at[:10] }}</span>
                             {% elif not ach.earned %}
-                            <span class="achievement-badge__tooltip-date" style="color: var(--colour-text-muted);">Locked</span>
+                            <span class="achievement-badge__tooltip-date"
+                                style="color: var(--colour-text-muted);">Locked</span>
                             {% endif %}
                         </div>
                     </div>
@@ -742,209 +868,209 @@
 
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"
-        integrity="sha512-JyCZjCOZoyeQZSd5+YEAcFgz2fowJ1F1hyJOXgtKu4llIa0KneLcidn5bwfutiehUTiOuK87A986BZJMko0eWQ=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    integrity="sha512-JyCZjCOZoyeQZSd5+YEAcFgz2fowJ1F1hyJOXgtKu4llIa0KneLcidn5bwfutiehUTiOuK87A986BZJMko0eWQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
-function achievementOrbit() {
-    return {
-        angle: 0,
-        count: 8,
-        radius: 190,
-        speed: 0.15,
-        rafId: null,
-        lastTime: 0,
-        paused: false,
+    function achievementOrbit() {
+        return {
+            angle: 0,
+            count: 8,
+            radius: 190,
+            speed: 0.15,
+            rafId: null,
+            lastTime: 0,
+            paused: false,
 
-        start() {
-            if (window.innerWidth <= 600) {
-                this.radius = 110;
-            } else if (window.innerWidth <= 900) {
-                this.radius = 145;
+            start() {
+                if (window.innerWidth <= 600) {
+                    this.radius = 110;
+                } else if (window.innerWidth <= 900) {
+                    this.radius = 145;
+                }
+                this.lastTime = performance.now();
+                this.tick();
+            },
+
+            tick() {
+                var now = performance.now();
+                var delta = (now - this.lastTime) / 16.67;
+                this.lastTime = now;
+                if (!this.paused) {
+                    this.angle += this.speed * delta;
+                    if (this.angle >= 360) this.angle -= 360;
+                }
+                this.rafId = requestAnimationFrame(() => this.tick());
+            },
+
+            getOrbiterStyle(index) {
+                var itemAngle = this.angle + (index * (360 / this.count));
+                var rad = itemAngle * (Math.PI / 180);
+                var x = Math.cos(rad) * this.radius;
+                var y = Math.sin(rad) * this.radius;
+                return 'transform: translate(calc(-50% + ' + x.toFixed(1) + 'px), calc(-50% + ' + y.toFixed(1) + 'px))';
+            },
+
+            destroy() {
+                if (this.rafId) cancelAnimationFrame(this.rafId);
             }
-            this.lastTime = performance.now();
-            this.tick();
-        },
-
-        tick() {
-            var now = performance.now();
-            var delta = (now - this.lastTime) / 16.67;
-            this.lastTime = now;
-            if (!this.paused) {
-                this.angle += this.speed * delta;
-                if (this.angle >= 360) this.angle -= 360;
-            }
-            this.rafId = requestAnimationFrame(() => this.tick());
-        },
-
-        getOrbiterStyle(index) {
-            var itemAngle = this.angle + (index * (360 / this.count));
-            var rad = itemAngle * (Math.PI / 180);
-            var x = Math.cos(rad) * this.radius;
-            var y = Math.sin(rad) * this.radius;
-            return 'transform: translate(calc(-50% + ' + x.toFixed(1) + 'px), calc(-50% + ' + y.toFixed(1) + 'px))';
-        },
-
-        destroy() {
-            if (this.rafId) cancelAnimationFrame(this.rafId);
-        }
-    };
-}
+        };
+    }
 </script>
 <script>
-(function() {
-    'use strict';
+    (function () {
+        'use strict';
 
-    var triggerBtn = document.getElementById('avatar-upload-trigger');
-    var fileInput = document.getElementById('avatar-file-input');
-    var backdrop = document.getElementById('avatar-crop-backdrop');
-    var cropperImage = document.getElementById('cropper-image');
-    var cancelBtn = document.getElementById('cropper-cancel');
-    var confirmBtn = document.getElementById('cropper-confirm');
-    var cropper = null;
+        var triggerBtn = document.getElementById('avatar-upload-trigger');
+        var fileInput = document.getElementById('avatar-file-input');
+        var backdrop = document.getElementById('avatar-crop-backdrop');
+        var cropperImage = document.getElementById('cropper-image');
+        var cancelBtn = document.getElementById('cropper-cancel');
+        var confirmBtn = document.getElementById('cropper-confirm');
+        var cropper = null;
 
-    triggerBtn.addEventListener('click', function() {
-        fileInput.click();
-    });
+        triggerBtn.addEventListener('click', function () {
+            fileInput.click();
+        });
 
-    fileInput.addEventListener('change', function(e) {
-        var file = e.target.files[0];
-        if (!file) return;
+        fileInput.addEventListener('change', function (e) {
+            var file = e.target.files[0];
+            if (!file) return;
 
-        if (file.size > 2 * 1024 * 1024) {
-            alert('File size exceeds 2 MB limit.');
-            fileInput.value = '';
-            return;
-        }
+            if (file.size > 2 * 1024 * 1024) {
+                alert('File size exceeds 2 MB limit.');
+                fileInput.value = '';
+                return;
+            }
 
-        var reader = new FileReader();
-        reader.onload = function(ev) {
-            cropperImage.src = ev.target.result;
-            cropperImage.onload = function() {
-                openCropperModal();
-                cropperImage.onload = null;
+            var reader = new FileReader();
+            reader.onload = function (ev) {
+                cropperImage.src = ev.target.result;
+                cropperImage.onload = function () {
+                    openCropperModal();
+                    cropperImage.onload = null;
+                };
             };
-        };
-        reader.readAsDataURL(file);
-    });
+            reader.readAsDataURL(file);
+        });
 
-    function openCropperModal() {
-        backdrop.classList.add('avatar-crop-backdrop--open');
-        backdrop.setAttribute('aria-hidden', 'false');
-        confirmBtn.disabled = true;
+        function openCropperModal() {
+            backdrop.classList.add('avatar-crop-backdrop--open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            confirmBtn.disabled = true;
 
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+
+            cropper = new Cropper(cropperImage, {
+                aspectRatio: 1,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 0.9,
+                responsive: true,
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+                ready: function () {
+                    confirmBtn.disabled = false;
+                }
+            });
         }
 
-        cropper = new Cropper(cropperImage, {
-            aspectRatio: 1,
-            viewMode: 1,
-            dragMode: 'move',
-            autoCropArea: 0.9,
-            responsive: true,
-            restore: false,
-            guides: true,
-            center: true,
-            highlight: false,
-            cropBoxMovable: true,
-            cropBoxResizable: true,
-            toggleDragModeOnDblclick: false,
-            ready: function() {
-                confirmBtn.disabled = false;
+        function closeCropperModal() {
+            backdrop.classList.remove('avatar-crop-backdrop--open');
+            backdrop.setAttribute('aria-hidden', 'true');
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            fileInput.value = '';
+        }
+
+        cancelBtn.addEventListener('click', closeCropperModal);
+
+        backdrop.addEventListener('click', function (e) {
+            if (e.target === backdrop) {
+                closeCropperModal();
             }
         });
-    }
 
-    function closeCropperModal() {
-        backdrop.classList.remove('avatar-crop-backdrop--open');
-        backdrop.setAttribute('aria-hidden', 'true');
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
-        }
-        fileInput.value = '';
-    }
+        confirmBtn.addEventListener('click', function () {
+            if (!cropper) return;
 
-    cancelBtn.addEventListener('click', closeCropperModal);
+            var canvas = cropper.getCroppedCanvas({
+                width: 300,
+                height: 300,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
 
-    backdrop.addEventListener('click', function(e) {
-        if (e.target === backdrop) {
-            closeCropperModal();
-        }
-    });
+            canvas.toBlob(function (blob) {
+                var formData = new FormData();
+                formData.append('avatar', blob, 'avatar.png');
 
-    confirmBtn.addEventListener('click', function() {
-        if (!cropper) return;
+                fetch('{{ url_for("profile.upload_avatar") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.getElementById('csrf-token').value
+                    }
+                })
+                    .then(function (response) { return response.text(); })
+                    .then(function (html) {
+                        var oldImg = document.getElementById('profile-avatar-img');
+                        var tmp = document.createElement('div');
+                        tmp.innerHTML = html.trim();
+                        var newImg = tmp.querySelector('img');
+                        if (newImg && oldImg) {
+                            newImg.src = newImg.src + '?t=' + Date.now();
+                            newImg.classList.add('profile__avatar-img');
+                            newImg.setAttribute('width', '140');
+                            newImg.setAttribute('height', '140');
+                            newImg.id = 'profile-avatar-img';
+                            oldImg.replaceWith(newImg);
+                        }
 
-        var canvas = cropper.getCroppedCanvas({
-            width: 300,
-            height: 300,
-            imageSmoothingEnabled: true,
-            imageSmoothingQuality: 'high',
+                        var navBtn = document.getElementById('nav-avatar-btn');
+                        if (navBtn && newImg) {
+                            var navImg = document.getElementById('nav-avatar-img');
+                            var navInitials = document.getElementById('nav-avatar-initials');
+                            var imgSrc = newImg.src + '?t=' + Date.now();
+                            if (navImg) {
+                                navImg.src = imgSrc;
+                            } else if (navInitials) {
+                                var img = document.createElement('img');
+                                img.src = imgSrc;
+                                img.alt = navBtn.dataset.username;
+                                img.className = 'nav__avatar-img';
+                                img.id = 'nav-avatar-img';
+                                img.width = 32;
+                                img.height = 32;
+                                navInitials.replaceWith(img);
+                                navBtn.style.backgroundColor = '';
+                                navBtn.style.color = '';
+                            }
+                        }
+
+                        closeCropperModal();
+                    })
+                    .catch(function () {
+                        alert('Failed to upload avatar. Please try again.');
+                        closeCropperModal();
+                    });
+            }, 'image/png');
         });
 
-        canvas.toBlob(function(blob) {
-            var formData = new FormData();
-            formData.append('avatar', blob, 'avatar.png');
-
-            fetch('{{ url_for("profile.upload_avatar") }}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.getElementById('csrf-token').value
-                }
-            })
-            .then(function(response) { return response.text(); })
-            .then(function(html) {
-                var oldImg = document.getElementById('profile-avatar-img');
-                var tmp = document.createElement('div');
-                tmp.innerHTML = html.trim();
-                var newImg = tmp.querySelector('img');
-                if (newImg && oldImg) {
-                    newImg.src = newImg.src + '?t=' + Date.now();
-                    newImg.classList.add('profile__avatar-img');
-                    newImg.setAttribute('width', '140');
-                    newImg.setAttribute('height', '140');
-                    newImg.id = 'profile-avatar-img';
-                    oldImg.replaceWith(newImg);
-                }
-
-                var navBtn = document.getElementById('nav-avatar-btn');
-                if (navBtn && newImg) {
-                    var navImg = document.getElementById('nav-avatar-img');
-                    var navInitials = document.getElementById('nav-avatar-initials');
-                    var imgSrc = newImg.src + '?t=' + Date.now();
-                    if (navImg) {
-                        navImg.src = imgSrc;
-                    } else if (navInitials) {
-                        var img = document.createElement('img');
-                        img.src = imgSrc;
-                        img.alt = navBtn.dataset.username;
-                        img.className = 'nav__avatar-img';
-                        img.id = 'nav-avatar-img';
-                        img.width = 32;
-                        img.height = 32;
-                        navInitials.replaceWith(img);
-                        navBtn.style.backgroundColor = '';
-                        navBtn.style.color = '';
-                    }
-                }
-
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && backdrop.classList.contains('avatar-crop-backdrop--open')) {
                 closeCropperModal();
-            })
-            .catch(function() {
-                alert('Failed to upload avatar. Please try again.');
-                closeCropperModal();
-            });
-        }, 'image/png');
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && backdrop.classList.contains('avatar-crop-backdrop--open')) {
-            closeCropperModal();
-        }
-    });
-})();
+            }
+        });
+    })();
 </script>
 {% endblock %}

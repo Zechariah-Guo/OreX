@@ -220,13 +220,11 @@ html[data-theme="dark"] .nav__brand {
     overflow: visible;
 }
 
-.nav__avatar img,
-.nav__avatar span {
+.nav__avatar {
     transition: transform 0.2s ease;
 }
 
-.nav__avatar:hover img,
-.nav__avatar:hover span {
+.nav__avatar:hover {
     transform: scale(1.15);
 }
 
@@ -1761,7 +1759,9 @@ td.leaderboard-table__rank {
 
 /* ===== Static Pages (About, Help) ===== */
 .static-page {
-    max-width: 800px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
 }
 
 .static-section {
@@ -1786,6 +1786,145 @@ td.leaderboard-table__rank {
 
 .static-list li {
     margin-bottom: var(--spacing-xs);
+}
+
+/* --- Market Mechanics Grid --- */
+.mechanics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.mechanics-card {
+    background-color: var(--colour-surface);
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.mechanics-card__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--colour-surface-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--colour-accent);
+    margin-bottom: var(--spacing-xs);
+}
+
+.mechanics-card__title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.mechanics-card__desc {
+    font-size: 0.85rem;
+    color: var(--colour-text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* --- Changelog Timeline --- */
+.changelog-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.changelog-card {
+    background-color: var(--colour-surface);
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+    padding: var(--spacing-lg);
+    position: relative;
+}
+
+.changelog-card--latest {
+    border-color: var(--colour-accent);
+    box-shadow: 0 0 0 1px var(--colour-accent), 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.changelog-card__header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.changelog-card__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 999px;
+    background-color: var(--colour-accent);
+    color: #fff;
+}
+
+.changelog-card__title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.changelog-card__subtitle {
+    color: var(--colour-text-muted);
+    font-size: 0.9rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.changelog-card__group {
+    margin-bottom: var(--spacing-md);
+}
+
+.changelog-card__group:last-child {
+    margin-bottom: 0;
+}
+
+.changelog-card__group-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--colour-text-muted);
+    margin-bottom: var(--spacing-xs);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--colour-border);
+}
+
+.changelog-card__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.changelog-card__list li {
+    position: relative;
+    padding-left: 1.25rem;
+    margin-bottom: 0.4rem;
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+
+.changelog-card__list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--colour-accent);
 }
 
 /* Ore Info Grid */

@@ -96,58 +96,160 @@
     <section class="static-section">
         <h2>Market Mechanics</h2>
         <p>The market engine uses several factors to determine price movements:</p>
-        <ul class="static-list">
-            <li><strong>Trend effect</strong> — If a price has been rising, it becomes more likely to fall (mean reversion), and vice versa.</li>
-            <li><strong>Gravity effect</strong> — Prices that drift far from their base price are pulled back over time.</li>
-            <li><strong>Bot traders</strong> — 9 simulated traders make decisions each tick, creating market activity.</li>
-            <li><strong>Player influence</strong> — Your trades have a small effect on the next price movement.</li>
-            <li><strong>Market events</strong> — Rare events (0.5% chance per tick) cause sudden 3× price movements.</li>
-            <li><strong>Volatility</strong> — Each ore has a volatility rating that scales price changes.</li>
-        </ul>
+        <div class="mechanics-grid">
+            <div class="mechanics-card">
+                <div class="mechanics-card__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M120-120v-80l80-80v160h-80Zm160 0v-240l80-80v320h-80Zm160 0v-320l80 81v239h-80Zm160 0v-239l80-80v319h-80Zm160 0v-400l80-80v480h-80ZM120-327v-113l280-280 160 160 280-280v113L560-447 400-607 120-327Z"/></svg>
+                </div>
+                <h4 class="mechanics-card__title">Trend Effect</h4>
+                <p class="mechanics-card__desc">If a price has been rising, it becomes more likely to fall (mean reversion), and vice versa.</p>
+            </div>
+            <div class="mechanics-card">
+                <div class="mechanics-card__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Zm-40 200h80v-200h120v-80H520v-120h-80v120H320v80h120v200Z"/></svg>
+                </div>
+                <h4 class="mechanics-card__title">Gravity Effect</h4>
+                <p class="mechanics-card__desc">Prices that drift far from their base price are pulled back over time.</p>
+            </div>
+            <div class="mechanics-card">
+                <div class="mechanics-card__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm80-80h200v-80H240v80Zm382-80 142-142-56-58-86 86-28-28-56 58 84 84ZM240-480h200v-80H240v80Zm0-120h200v-80H240v80Z"/></svg>
+                </div>
+                <h4 class="mechanics-card__title">Bot Traders</h4>
+                <p class="mechanics-card__desc">9 simulated traders make decisions each tick, creating realistic market activity.</p>
+            </div>
+            <div class="mechanics-card">
+                <div class="mechanics-card__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/></svg>
+                </div>
+                <h4 class="mechanics-card__title">Player Influence</h4>
+                <p class="mechanics-card__desc">Your trades have a small effect on the next price movement.</p>
+            </div>
+            <div class="mechanics-card">
+                <div class="mechanics-card__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="m216-160-56-56 464-464H360v-80h400v400h-80v-264L216-160Z"/></svg>
+                </div>
+                <h4 class="mechanics-card__title">Market Events</h4>
+                <p class="mechanics-card__desc">Rare events (0.5% chance per tick) cause sudden 3× price movements.</p>
+            </div>
+            <div class="mechanics-card">
+                <div class="mechanics-card__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-155.5t86-127Q252-817 325-848.5T480-880q83 0 155.5 31.5t127 86q54.5 54.5 86 127T880-480q0 82-31.5 155t-86 127.5q-54.5 54.5-127 86T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Zm-80 160h160v-80H480v-160h-80v240h80Z"/></svg>
+                </div>
+                <h4 class="mechanics-card__title">Volatility</h4>
+                <p class="mechanics-card__desc">Each ore has a volatility rating that scales price changes — from stable Coal (0.5) to wild Netherite (1.4).</p>
+            </div>
+        </div>
     </section>
 
     <section class="static-section">
         <h2>Changelog</h2>
 
-        <div class="changelog-entry">
-            <h3>Alpha — "The Foundation"</h3>
-            <p><em>The foundation of OreX — core trading experience.</em></p>
-            <ul class="static-list">
-                <li><strong>Live ore market</strong> — 9 unique ores with real-time price movements every 20 seconds</li>
-                <li><strong>Portfolio management</strong> — Buy and sell ores, track your holdings, and monitor profit/loss</li>
-                <li><strong>Dynamic price charts</strong> — View price history across multiple timeframes (5m to 5 days)</li>
-                <li><strong>Competitive leaderboard</strong> — Compete with other players and bot traders for the top spot</li>
-                <li><strong>Bot traders</strong> — 9 simulated traders creating realistic market activity</li>
-                <li><strong>Market events</strong> — Rare price surges and crashes that shake up the market</li>
-                <li><strong>Transaction history</strong> — Full trade log with pagination and archiving</li>
-                <li><strong>Account management</strong> — Register, login, reset, or delete your account</li>
-                <li><strong>Responsive design</strong> — Play on desktop with light and dark themes</li>
-            </ul>
-        </div>
-        <br>
-        <div class="changelog-entry">
-            <h3>Beta 1 — "The Advanced Update"</h3>
-            <p><em>Advanced trading mechanics, risk management, and account security.</em></p>
+        <div class="changelog-timeline">
 
-            <h4>Advanced Mode</h4>
-            <ul class="static-list">
-                <li><strong>Advanced Mode</strong> — Unlock a prestige tier with expanded trading mechanics at high net worth</li>
-                <li><strong>Short selling</strong> — Bet against ores and profit when prices fall</li>
-                <li><strong>Stop Loss &amp; Take Profit</strong> — Set automated price triggers to manage risk hands-free</li>
-                <li><strong>Resistance &amp; Support levels</strong> — See key price boundaries on charts to inform your trades</li>
-                <li><strong>Finances dashboard</strong> — A dedicated breakdown of where your capital is allocated</li>
-                <li><strong>Leaderboard indicators</strong> — Advanced players stand out with a red name</li>
-            </ul>
+            <!-- Beta 2 -->
+            <div class="changelog-card changelog-card--latest">
+                <div class="changelog-card__header">
+                    <span class="changelog-card__badge">Beta 2</span>
+                    <h3 class="changelog-card__title">The Identity Update</h3>
+                </div>
+                <p class="changelog-card__subtitle">Player identity, progression, and communication.</p>
 
-            <h4>Security</h4>
-            <ul class="static-list">
-                <li><strong>Two-Factor Authentication</strong> — Optional TOTP-based login security via Google Authenticator</li>
-            </ul>
+                <div class="changelog-card__group">
+                    <h4 class="changelog-card__group-title">Profile &amp; Identity</h4>
+                    <ul class="changelog-card__list">
+                        <li><strong>Profile page</strong> — A dedicated hub displaying your avatar, stats, achievements, and daily bonus</li>
+                        <li><strong>Custom avatar upload</strong> — Upload and crop a profile picture (auto-resized to WebP)</li>
+                        <li><strong>Leaderboard avatars</strong> — Player profile pictures and bot icons shown on the leaderboard</li>
+                        <li><strong>Player statistics</strong> — Track play time, login streak, peak net worth, and total trades</li>
+                    </ul>
+                </div>
 
-            <h4>Quality of Life</h4>
-            <ul class="static-list">
-                <li><strong>Buy limits in standard mode</strong> — Encourages strategic trading over bulk purchases and encourages progression to advanced mode.</li>
-            </ul>
+                <div class="changelog-card__group">
+                    <h4 class="changelog-card__group-title">Achievements</h4>
+                    <ul class="changelog-card__list">
+                        <li><strong>9 advancements</strong> — Earn badges for milestones like Millionaire, The Big Short, and Completionist</li>
+                        <li><strong>Play time &amp; streak tracking</strong> — Session-based playtime and consecutive login tracking</li>
+                        <li><strong>Theme unlocks</strong> — Multimillionaire earns the Money theme; Completionist earns Gold</li>
+                    </ul>
+                </div>
+
+                <div class="changelog-card__group">
+                    <h4 class="changelog-card__group-title">Inbox &amp; Notifications</h4>
+                    <ul class="changelog-card__list">
+                        <li><strong>Notification system</strong> — Real-time toast popups for achievements, liquidations, and SL/TP triggers</li>
+                        <li><strong>Inbox page</strong> — Two-panel layout with filters, read/unread states, and message detail</li>
+                        <li><strong>Unread indicator</strong> — Red dot on the nav inbox icon when you have new notifications</li>
+                    </ul>
+                </div>
+
+                <div class="changelog-card__group">
+                    <h4 class="changelog-card__group-title">Quality of Life</h4>
+                    <ul class="changelog-card__list">
+                        <li><strong>Daily login bonus</strong> — One-time 3-day welcome reward ($1K → $10K → $100K)</li>
+                        <li><strong>Redesigned nav dropdown</strong> — Compact icon row for quick access to Portfolio, Inbox, and History</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Beta 1 -->
+            <div class="changelog-card">
+                <div class="changelog-card__header">
+                    <span class="changelog-card__badge">Beta 1</span>
+                    <h3 class="changelog-card__title">The Advanced Update</h3>
+                </div>
+                <p class="changelog-card__subtitle">Advanced trading mechanics, risk management, and account security.</p>
+
+                <div class="changelog-card__group">
+                    <h4 class="changelog-card__group-title">Advanced Mode</h4>
+                    <ul class="changelog-card__list">
+                        <li><strong>Advanced Mode</strong> — Unlock a prestige tier with expanded trading mechanics at high net worth</li>
+                        <li><strong>Short selling</strong> — Bet against ores and profit when prices fall</li>
+                        <li><strong>Stop Loss &amp; Take Profit</strong> — Set automated price triggers to manage risk hands-free</li>
+                        <li><strong>Resistance &amp; Support levels</strong> — See key price boundaries on charts to inform your trades</li>
+                        <li><strong>Finances dashboard</strong> — A dedicated breakdown of where your capital is allocated</li>
+                        <li><strong>Leaderboard indicators</strong> — Advanced players stand out with a red name</li>
+                    </ul>
+                </div>
+
+                <div class="changelog-card__group">
+                    <h4 class="changelog-card__group-title">Security</h4>
+                    <ul class="changelog-card__list">
+                        <li><strong>Two-Factor Authentication</strong> — Optional TOTP-based login security via Google Authenticator</li>
+                    </ul>
+                </div>
+
+                <div class="changelog-card__group">
+                    <h4 class="changelog-card__group-title">Quality of Life</h4>
+                    <ul class="changelog-card__list">
+                        <li><strong>Buy limits in standard mode</strong> — Encourages strategic trading over bulk purchases and progression to advanced mode</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Alpha -->
+            <div class="changelog-card">
+                <div class="changelog-card__header">
+                    <span class="changelog-card__badge">Alpha</span>
+                    <h3 class="changelog-card__title">The Foundation</h3>
+                </div>
+                <p class="changelog-card__subtitle">The core OreX trading experience — buy, sell, and compete.</p>
+
+                <div class="changelog-card__group">
+                    <ul class="changelog-card__list">
+                        <li><strong>Live ore market</strong> — 9 unique ores with real-time price movements every 20 seconds</li>
+                        <li><strong>Portfolio management</strong> — Buy and sell ores, track your holdings, and monitor profit/loss</li>
+                        <li><strong>Dynamic price charts</strong> — View price history across multiple timeframes (5m to 5 days)</li>
+                        <li><strong>Competitive leaderboard</strong> — Compete with other players and bot traders for the top spot</li>
+                        <li><strong>Bot traders</strong> — 9 simulated traders creating realistic market activity</li>
+                        <li><strong>Market events</strong> — Rare price surges and crashes that shake up the market</li>
+                        <li><strong>Transaction history</strong> — Full trade log with pagination and archiving</li>
+                        <li><strong>Account management</strong> — Register, login, reset, or delete your account</li>
+                        <li><strong>Responsive design</strong> — Play on desktop with light and dark themes</li>
+                    </ul>
+                </div>
+            </div>
+
         </div>
     </section>
 </div>
