@@ -76,6 +76,15 @@ def start_engine(app):
                         pass
 
                 try:
+                    update_peak_net_worths(db)
+                except Exception as e:
+                    print(f"[Market Engine] Error during peak net worth update: {e}")
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
+
+                try:
                     process_short_positions(db)
                 except Exception as e:
                     # Log error but keep the engine running — shorting errors
@@ -122,6 +131,27 @@ def start_engine(app):
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, _signal_handler)
         signal.signal(signal.SIGTERM, _signal_handler)
+
+
+def update_peak_net_worths(db):
+    """Update peak_net_worth for players whose current net worth exceeds their stored peak."""
+    rows = db.execute("""
+        SELECT u.id,
+               u.balance + COALESCE(SUM(h.quantity * o.current_price), 0) AS net_worth,
+               u.peak_net_worth
+        FROM users u
+        LEFT JOIN holdings h ON h.user_id = u.id
+        LEFT JOIN ores o ON h.ore_id = o.id
+        GROUP BY u.id
+        HAVING net_worth > u.peak_net_worth
+    """).fetchall()
+
+    for row in rows:
+        db.execute("UPDATE users SET peak_net_worth = ? WHERE id = ?",
+                   (row['net_worth'], row['id']))
+
+    if rows:
+        db.commit()
 
 
 def evaluate_stop_loss_take_profit(db):

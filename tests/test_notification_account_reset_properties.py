@@ -48,7 +48,12 @@ def _create_test_db():
             login_streak INTEGER NOT NULL DEFAULT 0,
             last_streak_date TEXT DEFAULT NULL,
             money_theme_unlocked INTEGER NOT NULL DEFAULT 0,
-            gold_theme_unlocked INTEGER NOT NULL DEFAULT 0
+            gold_theme_unlocked INTEGER NOT NULL DEFAULT 0,
+            avatar_path TEXT DEFAULT NULL,
+            avatar_color TEXT DEFAULT NULL,
+            peak_net_worth REAL NOT NULL DEFAULT 10000,
+            bonus_cycle_day INTEGER NOT NULL DEFAULT 1,
+            last_bonus_collected_date TEXT DEFAULT NULL
         )
     """)
 
@@ -61,6 +66,7 @@ def _create_test_db():
             message TEXT NOT NULL,
             action_url TEXT DEFAULT NULL,
             is_read INTEGER NOT NULL DEFAULT 0,
+            toasted INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )

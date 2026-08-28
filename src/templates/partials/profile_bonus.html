@@ -1,0 +1,93 @@
+{# Daily bonus partial — returned by POST /profile/bonus/collect for htmx swap #}
+<div id="profile-bonus-section">
+  {% if not bonus_complete %}
+  <div class="bonus" role="region" aria-label="Beginner login bonus progress">
+    <h2 class="bonus__title">Beginner Bonus</h2>
+    <p class="bonus__subtitle">Collect daily rewards to kickstart your portfolio</p>
+
+    <div class="bonus__cards" role="group" aria-label="3-day bonus cycle progress">
+      {% for day in [1, 2, 3] %}
+      {% set is_completed = day < user['bonus_cycle_day'] %}
+      {% set is_current = day == user['bonus_cycle_day'] %}
+      {% set is_upcoming = day > user['bonus_cycle_day'] %}
+      {% set day_amount = {1: 1000, 2: 10000, 3: 100000}[day] %}
+
+      {% if is_current and bonus_available %}
+      {# Current day, available to collect — render as a clickable button #}
+      <button class="bonus__card bonus__card--current bonus__card--clickable"
+              hx-post="{{ url_for('profile.collect_bonus_route') }}"
+              hx-target="#profile-bonus-section"
+              hx-swap="outerHTML"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
+              aria-label="Collect ${{ "{:,}".format(day_amount) }} bonus for day {{ day }}">
+        <span class="bonus__card-day">Day {{ day }}</span>
+        <span class="bonus__card-amount">${{ "{:,}".format(day_amount) }}</span>
+        <span class="bonus__card-action">Collect</span>
+      </button>
+      {% elif is_completed %}
+      <div class="bonus__card bonus__card--completed"
+           aria-label="Day {{ day }} — collected">
+        <span class="bonus__card-day">Day {{ day }}</span>
+        <span class="bonus__card-amount">${{ "{:,}".format(day_amount) }}</span>
+        <span class="bonus__card-check" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg>
+        </span>
+      </div>
+      {% elif is_current and not bonus_available %}
+      <div class="bonus__card bonus__card--current bonus__card--waiting"
+           aria-label="Day {{ day }} — come back tomorrow">
+        <span class="bonus__card-day">Day {{ day }}</span>
+        <span class="bonus__card-amount">${{ "{:,}".format(day_amount) }}</span>
+        <span class="bonus__card-action bonus__card-action--waiting">Tomorrow</span>
+      </div>
+      {% else %}
+      <div class="bonus__card bonus__card--upcoming"
+           aria-label="Day {{ day }} — upcoming">
+        <span class="bonus__card-day">Day {{ day }}</span>
+        <span class="bonus__card-amount">${{ "{:,}".format(day_amount) }}</span>
+        <span class="bonus__card-lock" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"/></svg>
+        </span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if not bonus_available and user['bonus_cycle_day'] <= 3 %}
+    <p class="bonus__status" role="status">Come back tomorrow for your next bonus!</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if request.headers.get('HX-Request') %}
+{# OOB swaps — only included in htmx responses, not initial page render #}
+<div id="flash-container" hx-swap-oob="innerHTML">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages" aria-live="polite" aria-atomic="true" data-toast-container>
+        {% for category, message in messages|reverse %}
+        <div class="flash flash--{{ category }} flash--toast" role="alert" data-toast data-duration="3000">
+            <span class="flash__icon" aria-hidden="true">
+                {% if category in ('error', 'liquidation') %}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor"><path d="m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm330.5-51.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Zm40-100Z"/></svg>
+                {% elif category == 'advancement' %}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor"><path d="M280-120v-80h160v-124q-49-11-87.5-41.5T296-442q-75-9-125.5-65.5T120-640v-40q0-33 23.5-56.5T200-760h80v-80h400v80h80q33 0 56.5 23.5T840-680v40q0 76-50.5 132.5T664-442q-18 46-56.5 76.5T520-324v124h160v80H280Zm0-408v-152h-80v40q0 38 22 68.5t58 43.5Zm285 93q35-35 35-85v-240H360v240q0 50 35 85t85 35q50 0 85-35Zm115-93q36-13 58-43.5t22-68.5v-40h-80v152Zm-200-52Z"/></svg>
+                {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z"/></svg>
+                {% endif %}
+            </span>
+            <div class="flash__message">{{ message }}</div>
+            <div class="flash__progress" aria-hidden="true">
+                <span class="flash__progress-fill" data-toast-progress></span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+</div>
+
+{# OOB: Update nav balance without page reload #}
+{% include 'partials/nav_balance.html' %}
+{% endif %}

@@ -12,6 +12,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.12"
             integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
             crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     {% block extra_css %}{% endblock %}
     <script>
         // Minimal inline script to prevent FOUC
@@ -49,7 +50,9 @@
     <a href="#main-content" class="skip-link">Skip to content</a>
 
     {% include 'partials/nav.html' %}
-    {% include 'partials/flash.html' %}
+    <div id="flash-container">
+        {% include 'partials/flash.html' %}
+    </div>
 
     <!-- Persistent notification toast container — driven by JS polling (notifications.js) -->
     <div id="notification-toasts" class="notification-toasts" aria-live="polite" aria-atomic="false"></div>

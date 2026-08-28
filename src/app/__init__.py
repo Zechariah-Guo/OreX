@@ -34,7 +34,7 @@ def create_app():
     # Register avatar template filters
     from app.avatar import (
         get_avatar_color_hex, get_avatar_text_color,
-        get_bot_avatar_color, is_bot_username
+        get_bot_avatar_color, get_bot_icon_filename, is_bot_username
     )
     app.jinja_env.filters['avatar_color_hex'] = get_avatar_color_hex
     app.jinja_env.filters['avatar_text_color'] = get_avatar_text_color
@@ -42,6 +42,7 @@ def create_app():
     app.jinja_env.globals['is_bot_username'] = is_bot_username
     app.jinja_env.globals['get_avatar_color_hex'] = get_avatar_color_hex
     app.jinja_env.globals['get_avatar_text_color'] = get_avatar_text_color
+    app.jinja_env.globals['get_bot_icon_filename'] = get_bot_icon_filename
 
     # Register blueprints
     from app.routes import register_blueprints
@@ -102,10 +103,11 @@ def create_app():
             )
             db = get_db()
             row = db.execute(
-                "SELECT avatar_color FROM users WHERE id = ?",
+                "SELECT avatar_color, avatar_path FROM users WHERE id = ?",
                 (current_user.id,)
             ).fetchone()
             color_key = row['avatar_color'] if row and row['avatar_color'] else None
+            avatar_path = row['avatar_path'] if row and row['avatar_path'] else None
 
             # Lazy assignment: if user has no color yet, assign one now
             if color_key is None:
@@ -119,8 +121,9 @@ def create_app():
             return {
                 'user_avatar_color_hex': get_avatar_color_hex(color_key),
                 'user_avatar_text_color': get_avatar_text_color(color_key),
+                'user_avatar_path': avatar_path,
             }
-        return {'user_avatar_color_hex': '#4a4a4a', 'user_avatar_text_color': '#ffffff'}
+        return {'user_avatar_color_hex': '#4a4a4a', 'user_avatar_text_color': '#ffffff', 'user_avatar_path': None}
 
     # Context processor: inject notification unread status into all templates
     @app.context_processor
@@ -147,8 +150,8 @@ def create_app():
         # Content Security Policy
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
             "img-src 'self' data:; "
             "font-src 'self'; "
             "connect-src 'self'; "

@@ -4,7 +4,7 @@ A hidden, no-frills testing page with NO navigation links anywhere in the app.
 Only accessible by manually typing /advancements in the URL bar.
 """
 
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, render_template, redirect, url_for, request
 from flask_login import login_required, current_user
 
 from app.database import get_db
@@ -40,11 +40,21 @@ def advancements_test():
     money_theme = bool(row['money_theme_unlocked']) if row else False
     gold_theme = bool(row['gold_theme_unlocked']) if row else False
 
+    # Get bonus state
+    bonus_row = db.execute(
+        "SELECT bonus_cycle_day, last_bonus_collected_date FROM users WHERE id = ?",
+        (current_user.id,)
+    ).fetchone()
+    bonus_cycle_day = bonus_row['bonus_cycle_day'] if bonus_row else 1
+    last_bonus_date = bonus_row['last_bonus_collected_date'] if bonus_row else None
+
     return render_template(
         'pages/advancements_test.html',
         advancements=advancements_data,
         money_theme=money_theme,
         gold_theme=gold_theme,
+        bonus_cycle_day=bonus_cycle_day,
+        last_bonus_date=last_bonus_date,
     )
 
 
@@ -73,6 +83,18 @@ def reset_all_advancements():
         "DELETE FROM advancements WHERE user_id = ?",
         (current_user.id,)
     )
+    db.commit()
+    return redirect(url_for('advancements.advancements_test'))
+
+
+@advancements_bp.route('/advancements/grant-all', methods=['POST'])
+@login_required
+def grant_all_advancements():
+    """Award all advancements to the current player (for visual testing)."""
+    from app.advancements import award_advancement
+    db = get_db()
+    for key in ADVANCEMENT_KEYS:
+        award_advancement(db, current_user.id, key)
     db.commit()
     return redirect(url_for('advancements.advancements_test'))
 
@@ -131,4 +153,61 @@ def test_toasts():
     flash('Short open toast — purple theme', 'short-open')
     flash('Short close toast — blue theme', 'short-close')
     flash('Default toast — green (polling fallback)', 'default')
+    return redirect(url_for('advancements.advancements_test'))
+
+
+@advancements_bp.route('/advancements/bonus/set-day', methods=['POST'])
+@login_required
+def set_bonus_day():
+    """Set bonus_cycle_day to a specific value for testing."""
+    day = int(request.form.get('day', 1))
+    if day < 1:
+        day = 1
+    if day > 4:
+        day = 4
+    db = get_db()
+    db.execute(
+        "UPDATE users SET bonus_cycle_day = ? WHERE id = ?",
+        (day, current_user.id)
+    )
+    db.commit()
+    return redirect(url_for('advancements.advancements_test'))
+
+
+@advancements_bp.route('/advancements/bonus/reset', methods=['POST'])
+@login_required
+def reset_bonus():
+    """Reset bonus to day 1, clear last_bonus_collected_date."""
+    db = get_db()
+    db.execute(
+        "UPDATE users SET bonus_cycle_day = 1, last_bonus_collected_date = NULL WHERE id = ?",
+        (current_user.id,)
+    )
+    db.commit()
+    return redirect(url_for('advancements.advancements_test'))
+
+
+@advancements_bp.route('/advancements/bonus/clear-today', methods=['POST'])
+@login_required
+def clear_bonus_today():
+    """Clear last_bonus_collected_date so the bonus becomes available again today."""
+    db = get_db()
+    db.execute(
+        "UPDATE users SET last_bonus_collected_date = NULL WHERE id = ?",
+        (current_user.id,)
+    )
+    db.commit()
+    return redirect(url_for('advancements.advancements_test'))
+
+
+@advancements_bp.route('/advancements/bonus/complete', methods=['POST'])
+@login_required
+def complete_bonus():
+    """Set bonus_cycle_day to 4 (mark cycle as complete)."""
+    db = get_db()
+    db.execute(
+        "UPDATE users SET bonus_cycle_day = 4 WHERE id = ?",
+        (current_user.id,)
+    )
+    db.commit()
     return redirect(url_for('advancements.advancements_test'))

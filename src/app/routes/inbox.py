@@ -9,9 +9,11 @@ from app.models import (
     get_notification_detail,
     get_notification_style,
     get_notifications,
+    get_pending_toasts,
     has_unread_notifications,
     mark_all_notifications_read,
     mark_notification_read,
+    mark_notifications_toasted,
 )
 
 inbox_bp = Blueprint("inbox", __name__, url_prefix="/inbox")
@@ -20,23 +22,20 @@ inbox_bp = Blueprint("inbox", __name__, url_prefix="/inbox")
 @inbox_bp.route("/poll")
 @login_required
 def poll():
-    """Poll for new notifications since a given watermark ID.
+    """Poll for pending toast notifications.
 
-    Query params:
-        since: The last notification ID seen by the client (default 0).
+    Returns notifications that haven't been toasted yet (toasted=0),
+    marks them as toasted, and returns the has_unread flag for the red dot.
+    Each notification fires as a toast exactly once.
 
     Returns:
-        JSON with notifications list, has_unread flag, and last_id watermark.
+        JSON with notifications list and has_unread flag.
     """
-    try:
-        since = int(request.args.get("since", 0))
-    except (TypeError, ValueError):
-        since = 0
-
-    rows = get_new_notifications_since(current_user.id, since)
+    rows = get_pending_toasts(current_user.id)
     unread = has_unread_notifications(current_user.id)
 
     notifications = []
+    ids_to_mark = []
     for row in rows:
         css_class, icon, duration = get_notification_style(row["category"])
         notifications.append(
@@ -51,19 +50,19 @@ def poll():
                 "duration": duration,
             }
         )
+        ids_to_mark.append(row["id"])
 
-    last_id = notifications[0]["id"] if notifications else since
+    # Mark as toasted so they never fire again
+    mark_notifications_toasted(ids_to_mark)
 
     return jsonify(
         {
             "notifications": notifications,
             "has_unread": unread,
-            "last_id": last_id,
         }
     )
 
 _VALID_FILTERS = ("all", "read", "unread")
-
 
 def _enrich_notifications(rows):
     """Attach style data (css_class, icon) to each notification row.

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Profile Page is a dedicated player identity hub for OreX that consolidates avatar customization, gameplay statistics, the daily login bonus system, and achievement display into a single page. It introduces a custom profile picture (PFP) upload system with client-side cropping, a 3-day cycling login bonus mechanic, peak net worth tracking, and a reorganized navigation that relocates the FAQ into a "Help" section accessible from the profile menu. The page serves as the primary "player card" — a place to view stats, collect rewards, and showcase progress.
+The Profile Page is a dedicated player identity hub for OreX that consolidates avatar customization, gameplay statistics, the daily login bonus system, and achievement display into a single page. It introduces a custom profile picture (PFP) upload system with client-side cropping, a 3-day login bonus mechanic, peak net worth tracking, and a reorganized navigation that relocates the FAQ into a "Help" section accessible from the profile menu. The page serves as the primary "player card" — a place to view stats, collect rewards, and showcase progress.
 
 ## Glossary
 

@@ -1,12 +1,16 @@
-"""Avatar colour utilities for OreX.
+"""Avatar utilities for OreX.
 
-Provides a palette of 9 ore-themed colours used for default avatar backgrounds.
-Players get a random colour assigned at registration; bots get a deterministic
-colour derived from their username.
+Provides:
+- A palette of 9 ore-themed colours for default avatar backgrounds.
+- Avatar upload validation (size, format).
+- Avatar image processing (resize to square WebP output).
 """
 
 import hashlib
+import io
 import random
+
+from PIL import Image
 
 # Ore-themed avatar background colours
 AVATAR_COLORS = {
@@ -50,6 +54,25 @@ def is_bot_username(username):
     return any(identifier in username for identifier in BOT_IDENTIFIERS)
 
 
+def get_bot_icon_filename(username):
+    """Return the icon filename for a bot based on its username.
+
+    Strips the bot-type suffix (Bot, Trader, Investor, etc.) from the username
+    and returns the corresponding icon filename in images/bots/.
+
+    Examples:
+        'CreeperTrader' -> 'images/bots/creeper_icon.png'
+        'SteveBot' -> 'images/bots/steve_icon.png'
+    """
+    # Strip the bot identifier suffix to get the character name
+    for identifier in BOT_IDENTIFIERS:
+        if username.endswith(identifier):
+            character = username[:-len(identifier)].lower()
+            return f'images/bots/{character}_icon.png'
+    # Fallback: use full username lowercased
+    return f'images/bots/{username.lower()}_icon.png'
+
+
 def get_avatar_color_hex(color_key):
     """Resolve a colour key to its hex value. Returns a default if key is unknown."""
     return AVATAR_COLORS.get(color_key, '#4a4a4a')
@@ -60,3 +83,58 @@ def get_avatar_text_color(color_key):
     if color_key in _LIGHT_COLORS:
         return '#1a1a2e'
     return '#ffffff'
+
+
+# --- Avatar Upload Validation & Processing ---
+
+ALLOWED_FORMATS = {'PNG', 'JPEG', 'WEBP'}
+MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB
+OUTPUT_SIZE = (300, 300)
+
+
+def validate_avatar(file_data: bytes) -> tuple[bool, str]:
+    """Validate uploaded avatar data.
+
+    Checks that the file is within the size limit and is a supported image
+    format (PNG, JPEG, or WebP).
+
+    Args:
+        file_data: Raw bytes of the uploaded file.
+
+    Returns:
+        A tuple of (is_valid, error_message). If valid, error_message is "".
+    """
+    if len(file_data) > MAX_FILE_SIZE:
+        return False, "File size exceeds 2 MB limit."
+
+    try:
+        img = Image.open(io.BytesIO(file_data))
+        if img.format not in ALLOWED_FORMATS:
+            return False, "Unsupported format. Accepted: PNG, JPEG, WebP."
+    except Exception:
+        return False, "Invalid image file."
+
+    return True, ""
+
+
+def process_avatar(file_data: bytes, output_size: int = 300) -> bytes:
+    """Resize the validated image to a square WebP output.
+
+    Converts the image to RGBA mode and resizes it to output_size × output_size
+    pixels using Lanczos resampling for high quality. Outputs WebP format.
+
+    Args:
+        file_data: Raw bytes of a validated image file.
+        output_size: The width and height in pixels for the output square image.
+                     Defaults to 300.
+
+    Returns:
+        WebP-encoded bytes ready for storage.
+    """
+    img = Image.open(io.BytesIO(file_data))
+    img = img.convert('RGBA')
+    img = img.resize((output_size, output_size), Image.LANCZOS)
+
+    output = io.BytesIO()
+    img.save(output, format='WEBP', quality=85, method=6)
+    return output.getvalue()

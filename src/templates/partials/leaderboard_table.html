@@ -22,11 +22,13 @@
             <td class="leaderboard-table__username">
                 {% set is_bot = 'Bot' in user['username'] or 'Trader' in user['username'] or 'Investor' in user['username'] or 'Miner' in user['username'] or 'Broker' in user['username'] or 'Dealer' in user['username'] or 'Merchant' in user['username'] %}
                 {% if is_bot %}
-                    {% set lb_color_key = get_bot_avatar_color(user['username']) %}
+                    <img src="{{ url_for('static', filename=get_bot_icon_filename(user['username'])) }}" alt="Bot" class="leaderboard-avatar leaderboard-avatar--bot" width="32" height="32">
+                {% elif user['avatar_path'] %}
+                    <img src="{{ url_for('static', filename=user['avatar_path'].replace('static/', '', 1)) }}" alt="" class="leaderboard-avatar" width="32" height="32">
                 {% else %}
                     {% set lb_color_key = user['avatar_color'] or 'coal' %}
+                    <span class="avatar-circle" style="background-color: {{ get_avatar_color_hex(lb_color_key) }}; color: {{ get_avatar_text_color(lb_color_key) }};">{{ user['username'][:2] | upper }}</span>
                 {% endif %}
-                <span class="avatar-circle" style="background-color: {{ get_avatar_color_hex(lb_color_key) }}; color: {{ get_avatar_text_color(lb_color_key) }};">{{ user['username'][:2] | upper }}</span>
                 <span class="leaderboard__username {% if user['advanced_active'] %}leaderboard__username--advanced{% endif %}">{{ user['username'] }}</span>
                 {% if user['id'] == current_user_id %}<span class="leaderboard-you">(you)</span>
                 {% elif is_bot %}<span class="leaderboard-bot">🤖</span>

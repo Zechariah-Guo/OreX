@@ -228,14 +228,14 @@ def test_account_reset_preserves_advancements(app, client):
         assert has_advancement(db, user_id, "dedicated") is True
         assert has_advancement(db, user_id, "the_big_short") is True
 
-        # play_time and login_streak should be zeroed
+        # play_time and login_streak should be PRESERVED (player is still playing)
         user_after = db.execute(
             "SELECT play_time, login_streak, last_streak_date FROM users WHERE id = ?",
             (user_id,),
         ).fetchone()
-        assert user_after["play_time"] == 0
-        assert user_after["login_streak"] == 0
-        assert user_after["last_streak_date"] is None
+        assert user_after["play_time"] == 50
+        assert user_after["login_streak"] == 5
+        assert user_after["last_streak_date"] == "2024-01-15"
 
 
 def test_account_delete_removes_advancements(app, client):

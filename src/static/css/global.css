@@ -215,18 +215,38 @@ html[data-theme="dark"] .nav__brand {
     font-size: 0.8rem;
     letter-spacing: 0.5px;
     cursor: pointer;
-    transition: transform 0.2s ease;
     line-height: 1;
     font-family: var(--font-main);
+    overflow: visible;
 }
 
-.nav__avatar:hover {
+.nav__avatar img,
+.nav__avatar span {
+    transition: transform 0.2s ease;
+}
+
+.nav__avatar:hover img,
+.nav__avatar:hover span {
     transform: scale(1.15);
 }
 
 .nav__avatar:focus-visible {
-    outline: 2px solid var(--colour-accent);
-    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--colour-accent);
+}
+
+.nav__avatar:has(.nav__avatar-img) {
+    background-color: transparent !important;
+}
+
+.nav__avatar-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    outline: 2px solid var(--colour-border);
+    outline-offset: 0px;
+    background-color: var(--colour-surface);
 }
 
 /* Avatar circle (leaderboard & reusable) */
@@ -245,6 +265,21 @@ html[data-theme="dark"] .nav__brand {
     flex-shrink: 0;
     vertical-align: middle;
     margin-right: 0.5rem;
+}
+
+/* Leaderboard avatar images (profile pictures, bot icons) */
+.leaderboard-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    margin-right: 0.5rem;
+    border: 2px solid var(--colour-border);
+}
+
+.leaderboard-avatar--bot {
+    border-radius: 50%;
 }
 
 /* --- Dropdown menu --- */
@@ -1325,6 +1360,21 @@ input::-webkit-inner-spin-button {
     color: var(--colour-danger);
 }
 
+.activity-item__type--short_open {
+    background-color: rgba(155, 89, 182, 0.2);
+    color: #9b59b6;
+}
+
+.activity-item__type--short_close {
+    background-color: rgba(52, 152, 219, 0.2);
+    color: #3498db;
+}
+
+.activity-item__type--short_liquidated {
+    background-color: rgba(231, 76, 60, 0.35);
+    color: #c0392b;
+}
+
 .activity-item__detail {
     flex: 1;
 }
@@ -1471,7 +1521,6 @@ input::-webkit-inner-spin-button {
     width: 100%;
     border-collapse: collapse;
     background-color: var(--colour-surface);
-    border-radius: var(--radius);
     overflow: hidden;
 }
 
@@ -1649,7 +1698,6 @@ input::-webkit-inner-spin-button {
     width: 100%;
     border-collapse: collapse;
     background-color: var(--colour-surface);
-    border-radius: var(--radius);
     overflow: hidden;
 }
 
@@ -1673,7 +1721,7 @@ input::-webkit-inner-spin-button {
     font-size: 0.9rem;
 }
 
-.leaderboard-table__rank {
+td.leaderboard-table__rank {
     font-size: 1.2rem;
     text-align: center;
     width: 60px;
@@ -1682,8 +1730,12 @@ input::-webkit-inner-spin-button {
 .leaderboard-table__username {
     font-family: var(--font-main);
     font-weight: 600;
-    display: flex;
-    align-items: center;
+}
+
+.leaderboard-table__username img,
+.leaderboard-table__username .avatar-circle,
+.leaderboard-table__username span {
+    vertical-align: middle;
 }
 
 .leaderboard-table__total {

@@ -37,7 +37,7 @@
                     <td>{{ t['ore_name'] }}</td>
                     <td>
                         <span class="trade-badge trade-badge--{{ t['type'] }}">
-                            {{ t['type'] | upper }}
+                            {% if t['type'] == 'short_open' %}OPEN SHORT{% elif t['type'] == 'short_close' %}CLOSE SHORT{% elif t['type'] == 'short_liquidated' %}LIQUIDATED{% else %}{{ t['type'] | upper }}{% endif %}
                         </span>
                     </td>
                     <td>{{ t['quantity'] }}</td>

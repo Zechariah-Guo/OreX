@@ -69,7 +69,7 @@
             {% for t in recent_transactions %}
             <div class="activity-item">
                 <span class="activity-item__type activity-item__type--{{ t['type'] }}">
-                    {{ t['type'] | upper }}
+                    {% if t['type'] == 'short_open' %}OPEN SHORT{% elif t['type'] == 'short_close' %}CLOSE SHORT{% elif t['type'] == 'short_liquidated' %}LIQUIDATED{% else %}{{ t['type'] | upper }}{% endif %}
                 </span>
                 <span class="activity-item__detail">
                     {{ t['quantity'] }} {{ t['ore_name'] }}

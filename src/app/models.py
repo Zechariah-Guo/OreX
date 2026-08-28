@@ -11,6 +11,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.database import get_db
+from app.storage import get_storage_backend
 
 
 # --- User Model ---
@@ -390,8 +391,16 @@ def reset_account(user_id):
     # NOTE: play_time, login_streak, last_streak_date are NOT reset — profile stats persist
     # NOTE: money_theme_unlocked and gold_theme_unlocked are NOT reset (Req 16.4)
     # NOTE: advancements table is NOT touched — achievements persist across resets (Req 16.1)
+    # NOTE: avatar_path is NOT cleared — PFP persists across resets (Req 10.1)
+    # NOTE: created_at is NOT cleared — account creation date persists (Req 10.4)
+    # NOTE: peak_net_worth is NOT cleared — lifetime high persists across resets
     db.execute(
-        "UPDATE users SET advanced_eligible=0, advanced_purchased=0, advanced_active=0, advanced_toggled_at=NULL, balance = ? WHERE id = ?",
+        """UPDATE users
+           SET advanced_eligible=0, advanced_purchased=0, advanced_active=0, advanced_toggled_at=NULL,
+               balance = ?,
+               bonus_cycle_day = 1,
+               last_bonus_collected_date = NULL
+           WHERE id = ?""",
         (default_balance, user_id)
     )
 
@@ -410,6 +419,17 @@ def reset_account(user_id):
 def delete_account(user_id):
     """Permanently delete a user account and all associated data."""
     db = get_db()
+
+    # Clean up avatar file from storage before deleting the user row
+    try:
+        user_row = db.execute(
+            "SELECT avatar_path FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+        if user_row and user_row['avatar_path']:
+            storage = get_storage_backend(current_app)
+            storage.delete(f"{user_id}.webp")
+    except Exception:
+        pass
 
     # Delete short positions before the user row (FK uses ON DELETE RESTRICT)
     db.execute("DELETE FROM short_positions WHERE user_id = ?", (user_id,))
@@ -490,6 +510,7 @@ def get_leaderboard():
     db = get_db()
     return db.execute(
         """SELECT u.id, u.username,
+                  u.avatar_path,
                   u.balance,
                   u.advanced_active,
                   u.avatar_color,
@@ -692,6 +713,40 @@ def get_new_notifications_since(user_id, since_id):
     ).fetchall()
     return rows
 
+def get_pending_toasts(user_id):
+    """Return notifications that haven't been toasted yet.
+
+    Returns notifications with toasted=0 for the given user, ordered by id ASC
+    (oldest first so toasts appear in chronological order).
+
+    Args:
+        user_id: The user's ID.
+
+    Returns:
+        list[Row]: Notifications with toasted=0, ordered by id ASC.
+    """
+    db = get_db()
+    rows = db.execute(
+        "SELECT * FROM notifications WHERE user_id = ? AND toasted = 0 ORDER BY id ASC",
+        (user_id,),
+    ).fetchall()
+    return rows
+
+def mark_notifications_toasted(notification_ids):
+    """Mark notifications as toasted so they won't fire again.
+
+    Args:
+        notification_ids: List of notification IDs to mark as toasted.
+    """
+    if not notification_ids:
+        return
+    db = get_db()
+    placeholders = ",".join("?" * len(notification_ids))
+    db.execute(
+        f"UPDATE notifications SET toasted = 1 WHERE id IN ({placeholders})",
+        notification_ids,
+    )
+    db.commit()
 
 def mark_notification_read(notification_id, user_id):
     """Mark a single notification as read for the owning user.

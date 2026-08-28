@@ -113,9 +113,9 @@
         toasts.forEach(initToast);
     });
 
-    // Handle toasts injected by htmx (notification polling)
-    document.addEventListener('htmx:afterSwap', (event) => {
-        const target = event.detail.target;
+    // Handle toasts injected by htmx (notification polling + OOB swaps)
+    function handleNewToasts(event) {
+        const target = event.detail.target || event.detail.elt;
         if (!target) {
             return;
         }
@@ -133,12 +133,20 @@
                 // Audio playback not available — silently skip
             }
         }
-    });
+    }
+
+    // After OOB swaps settle, scan entire document for uninitialised toasts
+    function handleOobToasts() {
+        const allToasts = Array.from(document.querySelectorAll('[data-toast]:not([data-toast-init])'));
+        allToasts.forEach(initToast);
+    }
+
+    document.addEventListener('htmx:afterSwap', handleNewToasts);
+    document.addEventListener('htmx:afterSettle', handleOobToasts);
 
     // ─── Notification Polling Loop ───────────────────────────────────────────────
 
     var POLL_INTERVAL = 20000; // 20 seconds
-    var lastId = 0;           // Watermark: last notification ID seen
 
     /**
      * Determine if the user is authenticated by checking for the inbox icon
@@ -336,12 +344,11 @@
     function pollNotifications() {
         var inboxIcon = getInboxIcon();
 
-        // Only poll when user is authenticated (inbox icon present)
         if (!inboxIcon) {
             return;
         }
 
-        fetch('/inbox/poll?since=' + lastId, {
+        fetch('/inbox/poll', {
             method: 'GET',
             credentials: 'same-origin',
             headers: {
@@ -359,11 +366,6 @@
                 return;
             }
 
-            // Update the watermark
-            if (data.last_id && data.last_id > lastId) {
-                lastId = data.last_id;
-            }
-
             // Toggle red dot based on has_unread
             updateUnreadDot(inboxIcon, data.has_unread);
 
@@ -376,10 +378,8 @@
             // Network error — silently skip this poll cycle
         });
     }
-
-    // Start the polling loop after DOM is ready
+        // Start the polling loop after DOM is ready
     document.addEventListener('DOMContentLoaded', function () {
-        // Only start polling if user is authenticated
         if (getInboxIcon()) {
             setInterval(pollNotifications, POLL_INTERVAL);
         }

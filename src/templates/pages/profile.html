@@ -1,0 +1,950 @@
+{% extends 'base.html' %}
+{% block title %}Profile - OreX{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"
+      integrity="sha512-UtLOu9C7NuThQhuXXrGwx9Jb/z9zPQJctuAgNUBK3Z6kkSYT9wJ+2+dh6klS+TDBCV9kNPBbAxbVD+vCcfGPaA=="
+      crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    /* ===== Profile Page Layout ===== */
+    .profile {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: var(--spacing-md) 0;
+    }
+
+    /* --- Header: Avatar + Username --- */
+    .profile__header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .profile__avatar-wrapper {
+        position: relative;
+        width: 140px;
+        height: 140px;
+    }
+
+    .profile__avatar-img {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--colour-border);
+        background-color: var(--colour-surface);
+    }
+
+    .profile__avatar-fallback {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        border: 3px solid var(--colour-border);
+        background-color: {{ user_avatar_color_hex }};
+        color: {{ user_avatar_text_color }};
+    }
+
+    .profile__avatar-upload-btn {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid var(--colour-surface);
+        background-color: var(--colour-accent);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.2s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .profile__avatar-upload-btn:hover {
+        background-color: var(--colour-accent-hover);
+        transform: scale(1.1);
+    }
+
+    .profile__avatar-upload-btn:focus-visible {
+        outline: 2px solid var(--colour-accent);
+        outline-offset: 2px;
+    }
+
+    .profile__username {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--colour-text);
+    }
+
+    .profile__file-input {
+        display: none;
+    }
+
+    /* --- Daily Bonus Section --- */
+    .bonus {
+        background-color: transparent;
+        border: none;
+        border-radius: 0;
+        padding: var(--spacing-md) 0;
+        margin-bottom: var(--spacing-lg);
+        text-align: center;
+        max-width: 1100px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .bonus__title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--colour-text);
+        margin-bottom: var(--spacing-xs);
+    }
+
+    .bonus__subtitle {
+        font-size: 0.85rem;
+        color: var(--colour-text-muted);
+        margin-bottom: var(--spacing-md);
+    }
+
+    .bonus__cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+
+    .bonus__card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-md) var(--spacing-sm);
+        border-radius: var(--radius);
+        border: 2px solid var(--colour-border);
+        background-color: var(--colour-bg);
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        min-height: 100px;
+    }
+
+    .bonus__card-day {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--colour-text-muted);
+    }
+
+    .bonus__card-amount {
+        font-size: 1.1rem;
+        font-weight: 700;
+        font-family: var(--font-mono);
+        color: var(--colour-text);
+    }
+
+    .bonus__card--completed {
+        border-color: var(--colour-accent);
+        background-color: rgba(46, 204, 113, 0.06);
+    }
+
+    .bonus__card--completed .bonus__card-day { color: var(--colour-accent); }
+    .bonus__card--completed .bonus__card-amount { color: var(--colour-accent); text-decoration: line-through; opacity: 0.7; }
+    .bonus__card-check { color: var(--colour-accent); }
+
+    .bonus__card--clickable {
+        border-color: var(--colour-accent);
+        background-color: var(--colour-surface);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: inherit;
+        box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.15);
+    }
+
+    .bonus__card--clickable:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(46, 204, 113, 0.25); }
+    .bonus__card--clickable:active { transform: translateY(0); }
+    .bonus__card--clickable:focus-visible { outline: 2px solid var(--colour-accent); outline-offset: 2px; }
+    .bonus__card--clickable .bonus__card-amount { color: var(--colour-accent); }
+
+    .bonus__card-action {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #ffffff;
+        background-color: var(--colour-accent);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: var(--radius-sm);
+    }
+
+    .bonus__card-action--waiting { background-color: var(--colour-text-muted); }
+    .bonus__card--waiting { border-color: var(--colour-border); opacity: 0.7; }
+    .bonus__card--upcoming { opacity: 0.5; }
+    .bonus__card-lock { color: var(--colour-text-muted); }
+
+    .bonus__status {
+        text-align: center;
+        color: var(--colour-text-muted);
+        font-size: 0.9rem;
+        margin: 0;
+        padding: var(--spacing-xs) 0;
+    }
+
+    /* --- Combined Stats + Achievements Layout --- */
+    .profile__showcase {
+        position: relative;
+        max-width: 1100px;
+        margin: 0 auto var(--spacing-xl);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: var(--spacing-sm);
+        min-height: 580px;
+    }
+
+    /* Stat boxes - simple rectangles */
+    .profile-stat-box {
+        background-color: transparent;
+        border: 2px solid var(--colour-border);
+        border-radius: var(--radius);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: var(--spacing-lg) var(--spacing-xl);
+        position: relative;
+    }
+
+    /* Align text away from centre (outer edges) + custom colours */
+    .profile-stat-box--tl {
+        text-align: left;
+        background-color: rgba(52, 152, 219, 0.20);
+        border-color: rgba(52, 152, 219, 1);
+    }
+
+    .profile-stat-box--tr {
+        text-align: right;
+        background-color: rgba(46, 204, 113, 0.20);
+        border-color: rgba(46, 204, 113, 1);
+    }
+
+    .profile-stat-box--bl {
+        text-align: left;
+        background-color: rgba(241, 196, 15, 0.20);
+        border-color: rgba(241, 196, 15, 1);
+    }
+
+    .profile-stat-box--br {
+        text-align: right;
+        background-color: rgba(231, 76, 60, 0.20);
+        border-color: rgba(231, 76, 60, 1);
+    }
+
+    .profile-stat-box__label {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--colour-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .profile-stat-box__value {
+        display: block;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--colour-text);
+        font-family: var(--font-mono);
+    }
+
+    .profile-stat-box__sub {
+        display: block;
+        font-size: 0.7rem;
+        color: var(--colour-text-muted);
+        margin-top: 4px;
+    }
+
+    /* Orbit overlay - centred circle on top of the grid */
+    .profile__showcase-orbit {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 540px;
+        height: 540px;
+        border-radius: 50%;
+        background-color: var(--colour-bg);
+        border: 2px solid var(--colour-border);
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .achievements-orbit {
+        position: relative;
+        width: 500px;
+        height: 500px;
+    }
+
+    /* Centre badge (Completionist) */
+    .achievements-orbit__centre {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+    }
+
+    .achievements-orbit__centre .achievement-badge__img-wrapper {
+        width: 120px;
+        height: 120px;
+    }
+
+    /* Orbiting badge — NO z-index here to avoid creating stacking context */
+    .achievements-orbit__item {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+    }
+
+    /* Badge base styles */
+    .achievement-badge {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        cursor: default;
+    }
+
+    .achievement-badge__img-wrapper {
+        position: relative;
+        width: 74px;
+        height: 74px;
+        margin-bottom: 2px;
+    }
+
+    .achievement-badge__img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: transform 0.2s, filter 0.2s;
+    }
+
+    /* Locked: grayscale + reduced opacity */
+    .achievement-badge--locked .achievement-badge__img {
+        filter: grayscale(1) brightness(0.7);
+        opacity: 0.5;
+    }
+
+    /* Earned: full colour */
+    .achievement-badge--earned .achievement-badge__img {
+        filter: none;
+        opacity: 1;
+    }
+
+    .achievement-badge--earned:hover .achievement-badge__img {
+        transform: scale(1.12);
+    }
+
+    .achievement-badge__name {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--colour-text);
+        line-height: 1.2;
+        max-width: 80px;
+        text-align: center;
+    }
+
+    .achievement-badge--locked .achievement-badge__name {
+        color: var(--colour-text-muted);
+    }
+
+    /* Custom tooltip — HIGH z-index, positioned above everything */
+    .achievement-badge__tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-4px);
+        background-color: var(--colour-surface);
+        border: 1px solid var(--colour-border);
+        border-radius: var(--radius-sm);
+        padding: var(--spacing-sm) var(--spacing-md);
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.15s, visibility 0.15s, transform 0.15s;
+        z-index: 9999;
+        pointer-events: none;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .achievement-badge:hover .achievement-badge__tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(-8px);
+    }
+
+    /* Hovered badge gets elevated above siblings */
+    .achievements-orbit__item:hover {
+        z-index: 100;
+    }
+
+    .achievement-badge__tooltip-title {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--colour-text);
+        margin-bottom: 2px;
+    }
+
+    .achievement-badge__tooltip-desc {
+        display: block;
+        font-size: 0.7rem;
+        color: var(--colour-text-muted);
+    }
+
+    .achievement-badge__tooltip-date {
+        display: block;
+        font-size: 0.65rem;
+        color: var(--colour-accent);
+        margin-top: 2px;
+    }
+
+    .achievement-badge--earned .achievement-badge__tooltip {
+        border-color: var(--colour-accent);
+    }
+
+    /* --- Avatar Crop Dialog --- */
+    .avatar-crop-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .avatar-crop-backdrop--open {
+        display: flex;
+    }
+
+    .avatar-crop-dialog {
+        background: var(--colour-surface);
+        border-radius: 12px;
+        padding: var(--spacing-lg);
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .avatar-crop-dialog__title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: var(--spacing-md);
+        color: var(--colour-text);
+    }
+
+    .avatar-crop-dialog__preview {
+        width: 100%;
+        height: 400px;
+        overflow: hidden;
+        margin-bottom: var(--spacing-md);
+        background-color: var(--colour-bg);
+    }
+
+    .avatar-crop-dialog__preview img {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    .cropper-container img {
+        max-width: none !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+
+    .avatar-crop-dialog__actions {
+        display: flex;
+        gap: var(--spacing-sm);
+        justify-content: flex-end;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 900px) {
+        .profile__showcase {
+            min-height: 380px;
+        }
+
+        .profile__showcase-orbit {
+            width: 380px;
+            height: 380px;
+        }
+
+        .achievements-orbit {
+            width: 340px;
+            height: 340px;
+        }
+
+        .achievements-orbit__centre .achievement-badge__img-wrapper {
+            width: 80px;
+            height: 80px;
+        }
+
+        .achievement-badge__img-wrapper {
+            width: 52px;
+            height: 52px;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .profile__showcase {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto auto auto;
+            min-height: auto;
+        }
+
+        .profile__showcase-orbit {
+            position: relative;
+            top: auto;
+            left: auto;
+            transform: none;
+            width: 300px;
+            height: 300px;
+            margin: var(--spacing-md) auto;
+            grid-column: 1;
+            grid-row: 3;
+        }
+
+        .profile-stat-box--tl { grid-row: 1; }
+        .profile-stat-box--tr { grid-row: 2; }
+        .profile-stat-box--bl { grid-row: 4; }
+        .profile-stat-box--br { grid-row: 5; }
+
+        .profile-stat-box--tl,
+        .profile-stat-box--tr,
+        .profile-stat-box--bl,
+        .profile-stat-box--br {
+            text-align: center;
+        }
+
+        .achievements-orbit {
+            width: 280px;
+            height: 280px;
+        }
+
+        .achievements-orbit__centre .achievement-badge__img-wrapper {
+            width: 70px;
+            height: 70px;
+        }
+
+        .achievement-badge__img-wrapper {
+            width: 44px;
+            height: 44px;
+        }
+
+        .achievement-badge__name {
+            font-size: 0.55rem;
+            max-width: 56px;
+        }
+
+        .profile__avatar-wrapper {
+            width: 110px;
+            height: 110px;
+        }
+
+        .profile__avatar-img,
+        .profile__avatar-fallback {
+            width: 110px;
+            height: 110px;
+            font-size: 2rem;
+        }
+
+        .bonus__cards {
+            grid-template-columns: 1fr;
+            max-width: 280px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="profile">
+    <!-- Header: Avatar + Username -->
+    <section class="profile__header" aria-label="Player identity">
+        <div class="profile__avatar-wrapper" id="profile-avatar-section">
+            {% if user['avatar_path'] %}
+                <img src="{{ url_for('static', filename='uploads/avatars/' ~ current_user.id ~ '.webp') }}"
+                     alt="Profile avatar for {{ user['username'] }}"
+                     class="profile__avatar-img"
+                     id="profile-avatar-img"
+                     width="140" height="140">
+            {% else %}
+                <div class="profile__avatar-fallback"
+                     id="profile-avatar-img"
+                     role="img"
+                     aria-label="Default avatar showing initials {{ user['username'][:2] | upper }}">
+                    {{ user['username'][:2] | upper }}
+                </div>
+            {% endif %}
+            <button class="profile__avatar-upload-btn"
+                    id="avatar-upload-trigger"
+                    type="button"
+                    aria-label="Upload profile picture"
+                    title="Upload avatar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960" fill="currentColor">
+                    <path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
+                </svg>
+            </button>
+            <input type="file"
+                   id="avatar-file-input"
+                   class="profile__file-input"
+                   accept="image/png,image/jpeg,image/webp"
+                   aria-label="Select avatar image file">
+            <input type="hidden" id="csrf-token" name="csrf_token" value="{{ csrf_token() }}">
+        </div>
+        <h1 class="profile__username">{{ user['username'] }}</h1>
+    </section>
+
+    <!-- Daily Bonus Section -->
+    {% if not bonus_complete %}
+    <section aria-label="Daily login bonus">
+        {% include 'partials/profile_bonus.html' %}
+    </section>
+    {% endif %}
+
+    <!-- Stats + Achievements Showcase -->
+    <div class="profile__showcase" x-data="achievementOrbit()" x-init="start()">
+        <!-- 4 stat boxes in 2x2 grid -->
+        <div class="profile-stat-box profile-stat-box--tl">
+            <span class="profile-stat-box__label">Member Since</span>
+            <span class="profile-stat-box__value">{{ user['created_at'][:10] if user['created_at'] else 'Unknown' }}</span>
+            <span class="profile-stat-box__sub">
+                {% set play_minutes = user['play_time'] | default(0) | int %}
+                {% set play_hours = play_minutes // 60 %}
+                {% set play_mins = play_minutes % 60 %}
+                {{ play_hours }}h {{ play_mins }}m played
+            </span>
+        </div>
+
+        <div class="profile-stat-box profile-stat-box--tr">
+            <span class="profile-stat-box__label">Peak Net Worth</span>
+            <span class="profile-stat-box__value">${{ "{:,.2f}".format(user['peak_net_worth'] | default(10000)) }}</span>
+            <span class="profile-stat-box__sub">All-time highest</span>
+        </div>
+
+        <div class="profile-stat-box profile-stat-box--bl">
+            <span class="profile-stat-box__label">Total Trades</span>
+            <span class="profile-stat-box__value">{{ "{:,}".format(trade_count) }}</span>
+            <span class="profile-stat-box__sub">Transactions completed</span>
+        </div>
+
+        <div class="profile-stat-box profile-stat-box--br">
+            <span class="profile-stat-box__label">Login Streak</span>
+            <span class="profile-stat-box__value">{{ user['login_streak'] | default(0) }} days</span>
+            {% if not bonus_complete %}
+            <span class="profile-stat-box__sub">Bonus active</span>
+            {% else %}
+            <span class="profile-stat-box__sub">Welcome bonus completed</span>
+            {% endif %}
+        </div>
+
+        <!-- Orbit circle overlay (covers inner corners of stat boxes) -->
+        <div class="profile__showcase-orbit">
+            <div class="achievements-orbit"
+                 @mouseenter="paused = true"
+                 @mouseleave="paused = false">
+                {# Centre badge: Completionist #}
+                {% set centre = achievements | selectattr('key', 'equalto', 'completionist') | first %}
+                <div class="achievements-orbit__centre">
+                    <div class="achievement-badge {% if centre.earned %}achievement-badge--earned{% else %}achievement-badge--locked{% endif %}">
+                        <div class="achievement-badge__img-wrapper">
+                            <img src="{{ url_for('static', filename='images/advancements/' ~ centre.image) }}"
+                                 alt="{{ centre.name }}"
+                                 class="achievement-badge__img"
+                                 width="120" height="120"
+                                 loading="lazy">
+                        </div>
+                        <span class="achievement-badge__name">{{ centre.name }}</span>
+                        <div class="achievement-badge__tooltip" role="tooltip">
+                            <span class="achievement-badge__tooltip-title">{{ centre.name }}</span>
+                            <span class="achievement-badge__tooltip-desc">{{ centre.description }}</span>
+                            {% if centre.earned and centre.earned_at %}
+                            <span class="achievement-badge__tooltip-date">Earned {{ centre.earned_at[:10] }}</span>
+                            {% elif not centre.earned %}
+                            <span class="achievement-badge__tooltip-date" style="color: var(--colour-text-muted);">Locked</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {# Orbiting badges #}
+                {% set orbiters = achievements | rejectattr('key', 'equalto', 'completionist') | list %}
+                {% for ach in orbiters %}
+                <div class="achievements-orbit__item"
+                     :style="getOrbiterStyle({{ loop.index0 }})">
+                    <div class="achievement-badge {% if ach.earned %}achievement-badge--earned{% else %}achievement-badge--locked{% endif %}">
+                        <div class="achievement-badge__img-wrapper">
+                            <img src="{{ url_for('static', filename='images/advancements/' ~ ach.image) }}"
+                                 alt="{{ ach.name }}"
+                                 class="achievement-badge__img"
+                                 width="74" height="74"
+                                 loading="lazy">
+                        </div>
+                        <span class="achievement-badge__name">{{ ach.name }}</span>
+                        <div class="achievement-badge__tooltip" role="tooltip">
+                            <span class="achievement-badge__tooltip-title">{{ ach.name }}</span>
+                            <span class="achievement-badge__tooltip-desc">{{ ach.description }}</span>
+                            {% if ach.earned and ach.earned_at %}
+                            <span class="achievement-badge__tooltip-date">Earned {{ ach.earned_at[:10] }}</span>
+                            {% elif not ach.earned %}
+                            <span class="achievement-badge__tooltip-date" style="color: var(--colour-text-muted);">Locked</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Avatar Crop Dialog -->
+<div class="avatar-crop-backdrop" id="avatar-crop-backdrop" aria-hidden="true">
+    <div class="avatar-crop-dialog" role="dialog" aria-labelledby="avatar-crop-title" aria-modal="true">
+        <h2 class="avatar-crop-dialog__title" id="avatar-crop-title">Crop Avatar</h2>
+        <div class="avatar-crop-dialog__preview">
+            <img id="cropper-image" src="" alt="Image to crop">
+        </div>
+        <div class="avatar-crop-dialog__actions">
+            <button type="button" class="btn btn--secondary" id="cropper-cancel">Cancel</button>
+            <button type="button" class="btn btn--primary" id="cropper-confirm">Upload</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"
+        integrity="sha512-JyCZjCOZoyeQZSd5+YEAcFgz2fowJ1F1hyJOXgtKu4llIa0KneLcidn5bwfutiehUTiOuK87A986BZJMko0eWQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+function achievementOrbit() {
+    return {
+        angle: 0,
+        count: 8,
+        radius: 190,
+        speed: 0.15,
+        rafId: null,
+        lastTime: 0,
+        paused: false,
+
+        start() {
+            if (window.innerWidth <= 600) {
+                this.radius = 110;
+            } else if (window.innerWidth <= 900) {
+                this.radius = 145;
+            }
+            this.lastTime = performance.now();
+            this.tick();
+        },
+
+        tick() {
+            var now = performance.now();
+            var delta = (now - this.lastTime) / 16.67;
+            this.lastTime = now;
+            if (!this.paused) {
+                this.angle += this.speed * delta;
+                if (this.angle >= 360) this.angle -= 360;
+            }
+            this.rafId = requestAnimationFrame(() => this.tick());
+        },
+
+        getOrbiterStyle(index) {
+            var itemAngle = this.angle + (index * (360 / this.count));
+            var rad = itemAngle * (Math.PI / 180);
+            var x = Math.cos(rad) * this.radius;
+            var y = Math.sin(rad) * this.radius;
+            return 'transform: translate(calc(-50% + ' + x.toFixed(1) + 'px), calc(-50% + ' + y.toFixed(1) + 'px))';
+        },
+
+        destroy() {
+            if (this.rafId) cancelAnimationFrame(this.rafId);
+        }
+    };
+}
+</script>
+<script>
+(function() {
+    'use strict';
+
+    var triggerBtn = document.getElementById('avatar-upload-trigger');
+    var fileInput = document.getElementById('avatar-file-input');
+    var backdrop = document.getElementById('avatar-crop-backdrop');
+    var cropperImage = document.getElementById('cropper-image');
+    var cancelBtn = document.getElementById('cropper-cancel');
+    var confirmBtn = document.getElementById('cropper-confirm');
+    var cropper = null;
+
+    triggerBtn.addEventListener('click', function() {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) {
+            alert('File size exceeds 2 MB limit.');
+            fileInput.value = '';
+            return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+            cropperImage.src = ev.target.result;
+            cropperImage.onload = function() {
+                openCropperModal();
+                cropperImage.onload = null;
+            };
+        };
+        reader.readAsDataURL(file);
+    });
+
+    function openCropperModal() {
+        backdrop.classList.add('avatar-crop-backdrop--open');
+        backdrop.setAttribute('aria-hidden', 'false');
+        confirmBtn.disabled = true;
+
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+
+        cropper = new Cropper(cropperImage, {
+            aspectRatio: 1,
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.9,
+            responsive: true,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            ready: function() {
+                confirmBtn.disabled = false;
+            }
+        });
+    }
+
+    function closeCropperModal() {
+        backdrop.classList.remove('avatar-crop-backdrop--open');
+        backdrop.setAttribute('aria-hidden', 'true');
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        fileInput.value = '';
+    }
+
+    cancelBtn.addEventListener('click', closeCropperModal);
+
+    backdrop.addEventListener('click', function(e) {
+        if (e.target === backdrop) {
+            closeCropperModal();
+        }
+    });
+
+    confirmBtn.addEventListener('click', function() {
+        if (!cropper) return;
+
+        var canvas = cropper.getCroppedCanvas({
+            width: 300,
+            height: 300,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+
+        canvas.toBlob(function(blob) {
+            var formData = new FormData();
+            formData.append('avatar', blob, 'avatar.png');
+
+            fetch('{{ url_for("profile.upload_avatar") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.getElementById('csrf-token').value
+                }
+            })
+            .then(function(response) { return response.text(); })
+            .then(function(html) {
+                var oldImg = document.getElementById('profile-avatar-img');
+                var tmp = document.createElement('div');
+                tmp.innerHTML = html.trim();
+                var newImg = tmp.querySelector('img');
+                if (newImg && oldImg) {
+                    newImg.src = newImg.src + '?t=' + Date.now();
+                    newImg.classList.add('profile__avatar-img');
+                    newImg.setAttribute('width', '140');
+                    newImg.setAttribute('height', '140');
+                    newImg.id = 'profile-avatar-img';
+                    oldImg.replaceWith(newImg);
+                }
+
+                var navBtn = document.getElementById('nav-avatar-btn');
+                if (navBtn && newImg) {
+                    var navImg = document.getElementById('nav-avatar-img');
+                    var navInitials = document.getElementById('nav-avatar-initials');
+                    var imgSrc = newImg.src + '?t=' + Date.now();
+                    if (navImg) {
+                        navImg.src = imgSrc;
+                    } else if (navInitials) {
+                        var img = document.createElement('img');
+                        img.src = imgSrc;
+                        img.alt = navBtn.dataset.username;
+                        img.className = 'nav__avatar-img';
+                        img.id = 'nav-avatar-img';
+                        img.width = 32;
+                        img.height = 32;
+                        navInitials.replaceWith(img);
+                        navBtn.style.backgroundColor = '';
+                        navBtn.style.color = '';
+                    }
+                }
+
+                closeCropperModal();
+            })
+            .catch(function() {
+                alert('Failed to upload avatar. Please try again.');
+                closeCropperModal();
+            });
+        }, 'image/png');
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && backdrop.classList.contains('avatar-crop-backdrop--open')) {
+            closeCropperModal();
+        }
+    });
+})();
+</script>
+{% endblock %}

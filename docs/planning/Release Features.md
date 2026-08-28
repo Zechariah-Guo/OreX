@@ -13,7 +13,7 @@
 |--------|---------|-------|
 | ✅ | Advanced Mode | Unlock at 100k NW, purchase for 50k, feature flags, theme/logo swap |
 | ✅ | Achievements (9 badges) | Millionaire, Multimillionaire, The Big Short, Dedicated, Day Trader, Budding Enthusiast, Completionist, Tragedy, Best of the Rest |
-| 🚧 | Profile Page | PFP, stats, daily bonus, achievement display, help relocation |
+| ✅ | Profile Page | PFP, stats, daily bonus, achievement display, help relocation |
 | ✅ | Hard cap on stocks (simple mode) | Max 500 per buy order in standard mode, implemented |
 
 ---
@@ -34,7 +34,7 @@
 
 | Status | Feature | Notes |
 |--------|---------|-------|
-| 🔲 | Custom PFP | Cropper.js, Oracle-compatible storage, leaderboard integration |
+| ✅ | Custom PFP | WebP conversion, Oracle-compatible storage, leaderboard integration |
 | ✅ | Leaderboard Indicators | Red name (advanced), bot icons |
 | ✅ | Money & Gold Themes | Multimillionaire → Money theme, Completionist → Gold theme |
 | ✅ | 2FA (Google Authenticator) | TOTP setup, backup codes, login challenge, rate limited |
@@ -45,7 +45,7 @@
 
 | Status | Feature | Notes |
 |--------|---------|-------|
-| 🔲 | 3-Day Welcome Bonus | One-time $1k/$10k/$100k, no streak required |
+| ✅ | 3-Day Welcome Bonus | One-time $1k/$10k/$100k, no streak required |
 | ✅ | Login Streak Tracking | For Dedicated badge |
 | ✅ | Play Time Tracking | For Budding Enthusiast badge |
 | ✅ | Notification System | Bell icon, tray, toast delivery, replaces placeholder |
@@ -58,7 +58,7 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | 🔲 | Oracle Cloud Deployment | Free tier, object storage for PFPs, see deployment/ folder |
-| 🔲 | Alpine.js / Morphdom | Better animations with htmx, React-like transitions |
+| 🚧 | Alpine.js / Morphdom | Better animations with htmx, React-like transitions |
 | ✅ | Help/FAQ Relocation | Move FAQ into profile dropdown help section |
 | 🔲 | Tutorial System | Beginner + Advanced tutorials (moved to v1.0) |
 
@@ -70,7 +70,7 @@
 - [x] `pip install pyotp==2.9.0` — TOTP generation/verification for 2FA
 - [x] `pip install qrcode==8.0` — QR code generation for 2FA setup (uses Pillow which is already installed)
 - [x] Update `requirements.txt` with pyotp and qrcode after install
-- [ ] Alpine.js will be loaded from CDN (no pip install needed, already allowed in CSP)
+- [x] Alpine.js will be loaded from CDN (no pip install needed, already allowed in CSP)
 
 ### Assets to Create/Source
 - [x] **Default avatar image** — `static/images/default-avatar.png` (generic user silhouette, used when no PFP uploaded)
@@ -103,7 +103,7 @@
 4. ~~**Finances Page** — Depends on advanced mode + shorting~~ ✅ Done
 5. ~~**Resistance & Support** — Chart overlays~~ ✅ Done
 6. ~~**Achievements** — Depends on advanced mode + shorting~~ ✅ Done
-7. **Notification System** — Depends on achievements + shorting (emitters) ✅ Done
-8. **Profile Page** — Depends on achievements + notifications <-- Next
-9. **Tutorial System** — Moved to v1.0 (depends on everything being in place)
+7. ~~**Notification System** — Depends on achievements + shorting (emitters)~~ ✅ Done
+8. ~~**Profile Page** — Depends on achievements + notifications~~ ✅ Done
+9. **Tutorial System** — Moved to v1.0 (depends on everything being in place) <-- Next
 10. **Changelog** — Moved to v1.0, add to revamped about section

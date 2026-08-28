@@ -43,3 +43,17 @@ class Config:
     ADVANCEMENT_POST_MORTEM_THRESHOLD = 10_000           # Net worth below which Tragedy triggers
     PLAYTIME_HEARTBEAT_INTERVAL = 60                     # Seconds between play time heartbeats
     PLAYTIME_MAX_INCREMENT = 5                           # Max minutes to add per heartbeat
+
+    # Profile / Avatar
+    STORAGE_BACKEND = os.environ.get('STORAGE_BACKEND', 'local')  # 'local' or 'oci'
+    MAX_AVATAR_SIZE = 2 * 1024 * 1024  # 2 MB
+    AVATAR_OUTPUT_SIZE = 300           # pixels (square)
+    AVATAR_FORMAT = 'WEBP'             # output format
+
+    # Oracle Object Storage (production only)
+    OCI_NAMESPACE = os.environ.get('OCI_NAMESPACE', '')
+    OCI_BUCKET = os.environ.get('OCI_BUCKET', 'orex-avatars')
+    OCI_CONFIG_PATH = os.environ.get('OCI_CONFIG_PATH', '~/.oci/config')
+
+    # Daily Bonus
+    BONUS_AMOUNTS = {1: 1000, 2: 10000, 3: 100000}

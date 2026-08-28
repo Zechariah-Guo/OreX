@@ -85,7 +85,7 @@
 ### QoL
 - Allow "forgot password" functionality by leveraging the existing 2fa system
 - Optimise leaderboard and other pages' SQL with CTE
-- (Maybe) Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc)
+- (Maybe) Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc) (use python uv library)
 - Implement celery and redis for background profile picture processing and storage
 - Migrate all images to avif with webp fallback
-- Try tailwind css and alpine js
+- Try tailwind css (no, not enough benefit and too invasive of an update) and alpine js (already tried in profile page)

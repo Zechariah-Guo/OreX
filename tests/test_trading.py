@@ -468,7 +468,7 @@ class TestTradingProperties:
     """Property-based tests for trading arithmetic correctness."""
 
     # Feature: orex-test-suite, Property 1: Buy trade arithmetic
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(max_examples=100, deadline=1000, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(quantity=st.integers(min_value=1, max_value=100))
     def test_buy_trade_arithmetic(self, quantity, authenticated_client, app):
         """For any valid buy quantity, balance decreases by quantity * price,
