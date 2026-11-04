@@ -6,29 +6,29 @@ Implement a guided tutorial overlay system for OreX using Alpine.js, Flask bluep
 
 ## Tasks
 
-- [ ] 1. Database schema and configuration
-  - [ ] 1.1 Add `tutorial_progress` table to `src/schema.sql`
+- [x] 1. Database schema and configuration
+  - [x] 1.1 Add `tutorial_progress` table to `src/schema.sql`
     - Create table with columns: id (INTEGER PRIMARY KEY), user_id (INTEGER NOT NULL FK to users ON DELETE CASCADE), track_id (TEXT NOT NULL), current_step_index (INTEGER NOT NULL DEFAULT 0), status (TEXT NOT NULL DEFAULT 'not_started' CHECK IN ('not_started','in_progress','completed','dismissed')), last_updated (TEXT NOT NULL DEFAULT datetime('now','localtime'))
     - Add UNIQUE constraint on (user_id, track_id)
     - Create index `idx_tutorial_progress_user` on user_id
     - Create index `idx_tutorial_progress_user_status` on (user_id, status)
     - _Requirements: 11.1, 11.2_
 
-  - [ ] 1.2 Add tutorial configuration constants to `src/app/config.py`
+  - [x] 1.2 Add tutorial configuration constants to `src/app/config.py`
     - Add `TUTORIAL_HIGHLIGHT_PADDING = 8`
     - Add `TUTORIAL_TRANSITION_DURATION = 400`
     - Add `TUTORIAL_BACKDROP_OPACITY = 0.5`
     - Add `TUTORIAL_DATA_PATH = 'static/data/tutorials.json'`
     - _Requirements: 9.6, 3.2_
 
-  - [ ] 1.3 Create tutorial step definitions JSON at `src/static/data/tutorials.json`
+  - [x] 1.3 Create tutorial step definitions JSON at `src/static/data/tutorials.json`
     - Define "beginner" track with trigger "first_login" and steps covering: welcome intro, dashboard overview (balance/net worth), market page navigation, ore detail (price chart), executing a buy/sell trade, portfolio holdings overview, leaderboard explanation
     - Define "advanced" track with trigger "first_advanced_activation" and steps covering: Advanced Mode welcome, finances page capital breakdown, opening a short position, collateral/fee mechanics, setting SL/TP, resistance/support chart overlays, cash runway risk indicator
     - Each step has: index, selector, route, title, description, position, action
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 2. Tutorial data loader module
-  - [ ] 2.1 Create `src/app/tutorial/data.py` with track loading functions
+- [x] 2. Tutorial data loader module
+  - [x] 2.1 Create `src/app/tutorial/data.py` with track loading functions
     - Implement `load_track(track_id)` — load and return a track dict from tutorials.json, or None if unknown
     - Implement `load_all_tracks()` — return list of all track metadata (id, name, trigger)
     - Implement `get_step(track_id, step_index)` — return a single step dict or None if out of bounds
@@ -36,14 +36,14 @@ Implement a guided tutorial overlay system for OreX using Alpine.js, Flask bluep
     - Create `src/app/tutorial/__init__.py` for the package
     - _Requirements: 1.1, 1.2, 1.5_
 
-  - [ ]* 2.2 Write property test for tutorial data serialization round-trip
+  - [x]* 2.2 Write property test for tutorial data serialization round-trip
     - **Property 1: Tutorial Data Serialization Round-Trip**
     - Generate random tracks with valid step fields (index, selector, route, title, description, position from ['top','bottom','left','right','center'], optional action)
     - Serialize to JSON and deserialize back, verify identical structure
     - **Validates: Requirements 1.1, 1.2**
 
-- [ ] 3. Tutorial state model functions
-  - [ ] 3.1 Create `src/app/tutorial/models.py` with database access functions
+- [x] 3. Tutorial state model functions
+  - [x] 3.1 Create `src/app/tutorial/models.py` with database access functions
     - Implement `get_tutorial_state(user_id, track_id)` — return tutorial_progress row as dict or None
     - Implement `get_all_tutorial_states(user_id)` — return all tutorial_progress rows for a user
     - Implement `create_or_update_tutorial_state(user_id, track_id, status, step_index)` — upsert record, return row ID
@@ -55,34 +55,34 @@ Implement a guided tutorial overlay system for OreX using Alpine.js, Flask bluep
     - Implement `should_auto_trigger(user_id, track_id)` — return True if no record exists or status='not_started'
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 11.1, 11.2, 11.5, 11.6_
 
-  - [ ]* 3.2 Write property test for auto-trigger correctness
+  - [x]* 3.2 Write property test for auto-trigger correctness
     - **Property 2: Auto-Trigger Correctness**
     - Generate random statuses (None, 'not_started', 'in_progress', 'completed', 'dismissed')
     - Verify auto-trigger returns True only when no record exists OR status='not_started'
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
 
-  - [ ]* 3.3 Write property test for tutorial state persistence round-trip
+  - [x]* 3.3 Write property test for tutorial state persistence round-trip
     - **Property 7: Tutorial State Persistence Round-Trip**
     - Generate random (user_id, track_id, status, step_index) tuples
     - Write to DB and read back, verify identical values
     - **Validates: Requirements 5.2, 6.1, 6.2**
 
-  - [ ]* 3.4 Write property test for UNIQUE constraint on user-track pair
+  - [x]* 3.4 Write property test for UNIQUE constraint on user-track pair
     - **Property 12: UNIQUE Constraint on User-Track Pair**
     - Insert a record, attempt second insert with same (user_id, track_id), verify IntegrityError raised
     - **Validates: Requirements 11.2**
 
-  - [ ]* 3.5 Write property test for upsert behavior
+  - [x]* 3.5 Write property test for upsert behavior
     - **Property 14: Tutorial State Upsert Behavior**
     - Generate (user_id, track_id) pairs, call create_or_update when no record exists (verify creation), call again (verify update without duplicate)
     - **Validates: Requirements 11.5**
 
-  - [ ]* 3.6 Write property test for replay resetting state
+  - [x]* 3.6 Write property test for replay resetting state
     - **Property 10: Replay Resets Tutorial State to Beginning**
     - Generate tracks with status 'completed' or 'dismissed' and random step_index, invoke replay, verify status='in_progress' and step_index=0
     - **Validates: Requirements 7.3, 11.6**
 
-- [ ] 4. Checkpoint - Data layer verification
+- [x] 4. Checkpoint - Data layer verification
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 5. Tutorial Flask blueprint

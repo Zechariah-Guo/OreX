@@ -57,3 +57,9 @@ class Config:
 
     # Daily Bonus
     BONUS_AMOUNTS = {1: 1000, 2: 10000, 3: 100000}
+
+    # Tutorial System
+    TUTORIAL_HIGHLIGHT_PADDING = 8       # pixels around target element
+    TUTORIAL_TRANSITION_DURATION = 400   # ms for highlight animation
+    TUTORIAL_BACKDROP_OPACITY = 0.5      # backdrop darkness (0.4-0.6)
+    TUTORIAL_DATA_PATH = 'static/data/tutorials.json'
