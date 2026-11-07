@@ -112,6 +112,10 @@ CREATE TABLE IF NOT EXISTS short_positions (
     opened_at TEXT NOT NULL DEFAULT (datetime('now')),
     closed_at TEXT DEFAULT NULL,
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'closed')),
+    -- 1 for a throwaway short opened by the Advanced tutorial so its pages show
+    -- live data. Excluded from fees, P/L, advancements and leaderboard money, and
+    -- always cleaned up by the tutorial; see app/tutorial/demo.py.
+    is_demo INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
     FOREIGN KEY (ore_id) REFERENCES ores(id) ON DELETE RESTRICT
 );

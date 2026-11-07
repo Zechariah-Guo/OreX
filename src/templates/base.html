@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="OreX - A Minecraft-themed stock market simulation. Trade ores, watch prices fluctuate, and build your fortune.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}OreX{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
@@ -12,7 +13,15 @@
     <script src="https://unpkg.com/htmx.org@1.9.12"
             integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
             crossorigin="anonymous"></script>
+    {% if tutorial_should_load_alpine %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tutorial.css') }}">
+    {# tutorial.js registers its component on alpine:init, so it must load BEFORE Alpine #}
+    <script defer src="{{ url_for('static', filename='js/tutorial.js') }}"></script>
+    {% endif %}
+    {# Alpine is only loaded where needed: an active/possible tutorial, or a page that sets needs_alpine #}
+    {% if tutorial_should_load_alpine or needs_alpine %}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {% endif %}
     {% block extra_css %}{% endblock %}
     <script>
         // Minimal inline script to prevent FOUC
@@ -50,12 +59,16 @@
     <a href="#main-content" class="skip-link">Skip to content</a>
 
     {% include 'partials/nav.html' %}
-    <div id="flash-container">
-        {% include 'partials/flash.html' %}
-    </div>
+    {# Single fixed stack so flash messages and notification/resume toasts never
+       overlap — flash messages sit on top, notification toasts below them. #}
+    <div class="toast-stack">
+        <div id="flash-container">
+            {% include 'partials/flash.html' %}
+        </div>
 
-    <!-- Persistent notification toast container — driven by JS polling (notifications.js) -->
-    <div id="notification-toasts" class="notification-toasts" aria-live="polite" aria-atomic="false"></div>
+        <!-- Persistent notification toast container — driven by JS polling (notifications.js) -->
+        <div id="notification-toasts" class="notification-toasts" aria-live="polite" aria-atomic="false"></div>
+    </div>
 
     <main id="main-content">
         {% block content %}{% endblock %}
@@ -66,5 +79,9 @@
     <script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/falling-ores.js') }}" defer></script>
     {% block extra_js %}{% endblock %}
+
+    {% if tutorial_should_load_alpine %}
+    {% include 'partials/tutorial_overlay.html' %}
+    {% endif %}
 </body>
 </html>

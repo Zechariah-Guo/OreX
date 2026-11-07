@@ -1,6 +1,6 @@
 <!-- Dashboard Summary Stats -->
 {% if advanced_active %}
-<div class="dashboard-summary">
+<div class="dashboard-summary" id="dashboard-summary">
     <div class="stat-card">
         <span class="stat-card__label">Free Cash</span>
         <span class="stat-card__value">${{ "%.2f" | format(user.balance) }}</span>
@@ -17,7 +17,7 @@
     </div>
 </div>
 {% else %}
-<div class="dashboard-summary">
+<div class="dashboard-summary" id="dashboard-summary">
     <div class="stat-card">
         <span class="stat-card__label">Cash Balance</span>
         <span class="stat-card__value">${{ "%.2f" | format(user.balance) }}</span>
@@ -86,7 +86,7 @@
 
 {% if advanced_active %}
 <!-- Longs / Shorts Summary (Advanced Mode) -->
-<div class="dashboard-grid dashboard-grid--positions">
+<div class="dashboard-grid dashboard-grid--positions" id="dashboard-positions">
     <!-- Longs Box -->
     <div class="dashboard-card dashboard-card--longs">
         <h2 class="dashboard-card__title">Longs</h2>

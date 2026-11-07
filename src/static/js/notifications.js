@@ -144,6 +144,10 @@
     document.addEventListener('htmx:afterSwap', handleNewToasts);
     document.addEventListener('htmx:afterSettle', handleOobToasts);
 
+    // Expose the toast initialiser so other scripts (e.g. the tutorial resume
+    // prompt) can reuse the swipe + timer + styling of a .flash--toast.
+    window.OreXToasts = { init: initToast };
+
     // ─── Notification Polling Loop ───────────────────────────────────────────────
 
     var POLL_INTERVAL = 20000; // 20 seconds

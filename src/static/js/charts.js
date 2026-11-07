@@ -24,6 +24,8 @@
 
     var currentRange = '5m';
     var chart = null;
+    var chartSeriesCount = 0;   // how many series the current chart was built with
+    var renderSeq = 0;          // guards against overlapping async renders racing
 
     // Expose chart instance for external use (e.g., R/S annotations)
     window.getOreChart = function () { return chart; };
@@ -138,7 +140,7 @@
         var options = {
             chart: {
                 type: 'line',
-                height: 400,
+                height: (chartContainer.clientHeight || 380),
                 background: 'transparent',
                 toolbar: { show: false },
                 zoom: { enabled: false },
@@ -192,14 +194,37 @@
             }
         };
 
+        // Update the existing chart in place when the series SHAPE is unchanged
+        // (same number of series). Destroying + recreating on every range change
+        // and every 20s auto-refresh raced the async render() against the next
+        // destroy(), which left the chart blank or made range clicks look dead.
+        // We only tear down when the series count changes (gaps appearing/vanishing
+        // adds/removes the "Inactive" series), which ApexCharts cannot do via update.
+        if (chart && chartSeriesCount === chartSeries.length) {
+            chart.updateOptions({
+                colors: chartColors,
+                series: chartSeries,
+                stroke: strokeConfig
+            }, false, false).then(function () {
+                window.dispatchEvent(new CustomEvent('oreChartRendered'));
+            }).catch(function () {});
+            return;
+        }
+
+        // Shape changed (or first render): rebuild. A render sequence number makes
+        // a late-resolving old render bail out instead of clobbering a newer chart.
+        var seq = ++renderSeq;
         if (chart) {
             chart.destroy();
+            chart = null;
         }
-        chart = new ApexCharts(chartContainer, options);
-        chart.render();
-
-        // Notify external scripts (e.g., R/S annotations) that chart was re-rendered
-        window.dispatchEvent(new CustomEvent('oreChartRendered'));
+        var instance = new ApexCharts(chartContainer, options);
+        chart = instance;
+        chartSeriesCount = chartSeries.length;
+        instance.render().then(function () {
+            if (seq !== renderSeq) return;   // superseded by a newer render
+            window.dispatchEvent(new CustomEvent('oreChartRendered'));
+        }).catch(function () {});
     }
 
     // Initial render — fetch 5m data from API if available, otherwise use embedded data

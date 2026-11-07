@@ -1,50 +1,58 @@
 <div class="short-preview short-preview--horizontal" id="short-preview">
     {% if quantity_zero %}
-    <div class="confirm-row">
-        <span class="confirm-row__label">Position</span>
-        <span class="confirm-row__value">$0.00</span>
+    <div class="short-preview__group short-preview__group--collateral" id="short-preview-collateral">
+        <div class="confirm-row">
+            <span class="confirm-row__label">Position</span>
+            <span class="confirm-row__value">$0.00</span>
+        </div>
+        <div class="confirm-row">
+            <span class="confirm-row__label">Margin</span>
+            <span class="confirm-row__value">$0.00</span>
+        </div>
+        <div class="confirm-row">
+            <span class="confirm-row__label">Surcharge</span>
+            <span class="confirm-row__value">0.0%</span>
+        </div>
     </div>
-    <div class="confirm-row">
-        <span class="confirm-row__label">Margin</span>
-        <span class="confirm-row__value">$0.00</span>
-    </div>
-    <div class="confirm-row">
-        <span class="confirm-row__label">Surcharge</span>
-        <span class="confirm-row__value">0.0%</span>
-    </div>
-    <div class="confirm-row">
-        <span class="confirm-row__label">Tick Fee</span>
-        <span class="confirm-row__value">-$0.00</span>
-    </div>
-    <div class="confirm-row">
-        <span class="confirm-row__label">Squeeze</span>
-        <span class="confirm-row__value">—</span>
+    <div class="short-preview__group short-preview__group--fees" id="short-preview-fees">
+        <div class="confirm-row">
+            <span class="confirm-row__label">Tick Fee</span>
+            <span class="confirm-row__value">-$0.00</span>
+        </div>
+        <div class="confirm-row">
+            <span class="confirm-row__label">Squeeze</span>
+            <span class="confirm-row__value">—</span>
+        </div>
     </div>
     <button type="submit" class="btn btn--primary" disabled>Open Short</button>
     {% else %}
-    <div class="confirm-row">
-        <span class="confirm-row__label">Position</span>
-        <span class="confirm-row__value">${{ "%.2f" | format(position_size) }}</span>
+    <div class="short-preview__group short-preview__group--collateral" id="short-preview-collateral">
+        <div class="confirm-row">
+            <span class="confirm-row__label">Position</span>
+            <span class="confirm-row__value">${{ "%.2f" | format(position_size) }}</span>
+        </div>
+        <div class="confirm-row{% if insufficient %} confirm-row--danger{% endif %}">
+            <span class="confirm-row__label">Margin</span>
+            <span class="confirm-row__value {% if insufficient %}confirm-row__value--danger{% endif %}">
+                ${{ "%.2f" | format(player_margin) }}
+            </span>
+        </div>
+        <div class="confirm-row">
+            <span class="confirm-row__label">Surcharge</span>
+            <span class="confirm-row__value">{{ "%.1f" | format(crowding_surcharge) }}%</span>
+        </div>
     </div>
-    <div class="confirm-row{% if insufficient %} confirm-row--danger{% endif %}">
-        <span class="confirm-row__label">Margin</span>
-        <span class="confirm-row__value {% if insufficient %}confirm-row__value--danger{% endif %}">
-            ${{ "%.2f" | format(player_margin) }}
-        </span>
-    </div>
-    <div class="confirm-row">
-        <span class="confirm-row__label">Surcharge</span>
-        <span class="confirm-row__value">{{ "%.1f" | format(crowding_surcharge) }}%</span>
-    </div>
-    <div class="confirm-row">
-        <span class="confirm-row__label">Tick Fee</span>
-        <span class="confirm-row__value">-${{ "%.2f" | format(tick_fee) }}</span>
-    </div>
-    <div class="confirm-row">
-        <span class="confirm-row__label">Squeeze</span>
-        <span class="confirm-row__value">
-            {% if squeeze_price is none %}—{% else %}${{ "%.2f" | format(squeeze_price) }}{% endif %}
-        </span>
+    <div class="short-preview__group short-preview__group--fees" id="short-preview-fees">
+        <div class="confirm-row">
+            <span class="confirm-row__label">Tick Fee</span>
+            <span class="confirm-row__value">-${{ "%.2f" | format(tick_fee) }}</span>
+        </div>
+        <div class="confirm-row">
+            <span class="confirm-row__label">Squeeze</span>
+            <span class="confirm-row__value">
+                {% if squeeze_price is none %}—{% else %}${{ "%.2f" | format(squeeze_price) }}{% endif %}
+            </span>
+        </div>
     </div>
     {% if insufficient %}
     <span class="short-preview__warning" title="You need ${{ '%.2f' | format(player_margin) }} margin but only have ${{ '%.2f' | format(user_balance) }} free cash.">

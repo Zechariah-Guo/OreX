@@ -17,6 +17,7 @@ def register_blueprints(app):
     from app.routes.advancements import advancements_bp
     from app.routes.inbox import inbox_bp
     from app.routes.profile import profile_bp
+    from app.routes.tutorial import tutorial_bp
 
     app.register_blueprint(pages_bp)
     app.register_blueprint(auth_bp)
@@ -32,3 +33,4 @@ def register_blueprints(app):
     app.register_blueprint(advancements_bp)
     app.register_blueprint(inbox_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(tutorial_bp)

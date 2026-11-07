@@ -78,6 +78,9 @@ def overview():
         bonus_available=bonus_available,
         bonus_amount=bonus_amount,
         bonus_complete=bonus_complete,
+        # The achievement-orbit animation on this page uses Alpine.js directly,
+        # independent of the tutorial system, so it must load it unconditionally.
+        needs_alpine=True,
     )
 
 

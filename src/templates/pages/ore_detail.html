@@ -61,8 +61,8 @@
         flex-direction: column;
     }
     .chart-container h2 { font-size: 1rem; margin-bottom: var(--spacing-sm); }
-    #price-chart { height: 300px; }
-    .ore-detail-body--advanced #price-chart { height: 380px; }
+    #price-chart { height: 400px; }
+    .ore-detail-body--advanced #price-chart { height: 400px; }
 
     /* Standard sidebar */
     .trade-sidebar {
@@ -135,6 +135,20 @@
         flex: 1;
         min-width: 0;
     }
+    /* Two targetable groups inside the preview (collateral vs fees) so the
+       tutorial can spotlight each set of rows. They are transparent flex
+       sub-containers: the rows inside keep the same even spacing as before,
+       and each group has a real bounding box for the overlay to highlight. */
+    .short-preview--horizontal .short-preview__group {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+        flex: 3 1 auto;
+        min-width: 0;
+    }
+    .short-preview--horizontal .short-preview__group--fees {
+        flex: 2 1 auto;
+    }
     .short-preview--horizontal .confirm-row {
         display: flex;
         flex-direction: column;
@@ -194,7 +208,15 @@
         border-bottom-color: var(--color-primary, #7c3aed);
     }
     .trade-tab-content { display: none; }
-    .trade-tab-content--active { display: flex; flex-direction: column; gap: var(--spacing-sm); }
+    /* Both tabs reserve the same height so switching Long<->Short doesn't grow or
+       shrink the page (which also caused a visual jump on the tutorial's step 3/4). */
+    .trade-tab-content--active {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        min-height: 150px;
+        justify-content: center;
+    }
 
     @media (max-width: 768px) {
         .ore-detail-page { max-height: none; }
@@ -354,7 +376,7 @@
         </div>
         {% endif %}
 
-        <div class="trade-sidebar">
+        <div class="trade-sidebar" id="trade-panel">
             <div class="trade-form">
                 <h2>Buy {{ ore['name'] }}</h2>
                 <form method="POST" action="{{ url_for('trade.buy', ore_id=ore['id']) }}">

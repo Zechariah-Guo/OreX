@@ -31,9 +31,10 @@ def _calculate_short_ratio(db, ore_id: int) -> float:
     Returns:
         A float between 0.0 and 1.0 representing the short crowding ratio.
     """
-    # Count active short positions for this ore
+    # Count active short positions for this ore (tutorial demo shorts are inert
+    # and must not nudge the crowding ratio for real positions)
     shorts = db.execute(
-        "SELECT COUNT(*) FROM short_positions WHERE ore_id = ? AND status = 'active'",
+        "SELECT COUNT(*) FROM short_positions WHERE ore_id = ? AND status = 'active' AND is_demo = 0",
         (ore_id,)
     ).fetchone()[0]
 
@@ -212,7 +213,7 @@ def _apply_time_bleed_fees(db, ores_map: dict, closed_ids: set):
                sp.entry_price, sp.locked_collateral, sp.cumulative_fees_paid,
                sp.opened_at
         FROM short_positions sp
-        WHERE sp.status = 'active'
+        WHERE sp.status = 'active' AND sp.is_demo = 0
         {exclude_clause}
         ORDER BY sp.user_id ASC, sp.opened_at ASC
     """
@@ -364,8 +365,9 @@ def _rebalance_margin(db, ores_map: dict, closed_ids: set):
         closed_ids: Set of position IDs already closed in Phase 1 (SL/TP), to skip.
     """
     # Fetch all active positions not already closed this tick
+    # (is_demo shorts belong to the tutorial and are inert to the engine)
     positions = db.execute(
-        "SELECT * FROM short_positions WHERE status = 'active'"
+        "SELECT * FROM short_positions WHERE status = 'active' AND is_demo = 0"
     ).fetchall()
 
     # Filter out positions closed in Phase 1
@@ -499,7 +501,7 @@ def _evaluate_sltp_triggers(db, ores_map: dict) -> set:
     # Query active positions that have at least one of SL or TP set
     positions = db.execute(
         """SELECT * FROM short_positions
-           WHERE status = 'active'
+           WHERE status = 'active' AND is_demo = 0
            AND (stop_loss_price IS NOT NULL OR take_profit_price IS NOT NULL)"""
     ).fetchall()
 
@@ -571,7 +573,7 @@ def _check_forced_liquidation(db, ores_map: dict, closed_ids: set):
 
         # Get this user's active positions that haven't been closed this tick
         positions = db.execute(
-            "SELECT * FROM short_positions WHERE user_id = ? AND status = 'active'",
+            "SELECT * FROM short_positions WHERE user_id = ? AND status = 'active' AND is_demo = 0",
             (user_id,)
         ).fetchall()
 

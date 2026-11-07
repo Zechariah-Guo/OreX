@@ -62,4 +62,5 @@ class Config:
     TUTORIAL_HIGHLIGHT_PADDING = 8       # pixels around target element
     TUTORIAL_TRANSITION_DURATION = 400   # ms for highlight animation
     TUTORIAL_BACKDROP_OPACITY = 0.5      # backdrop darkness (0.4-0.6)
+    TUTORIAL_RESUME_TOAST_MS = 10000     # how long the "resume tutorial?" toast stays before auto-hiding
     TUTORIAL_DATA_PATH = 'static/data/tutorials.json'

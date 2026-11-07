@@ -1,0 +1,131 @@
+{#
+  Tutorial overlay (guided walkthrough). Included from base.html only when
+  `tutorial_should_load_alpine` is true. Driven by static/js/tutorial.js; see the
+  header of that file for the contract between this markup and the component.
+  Styles: static/css/tutorial.css
+#}
+<div class="tutorial-root"
+     x-data="tutorial"
+     data-active-track="{{ tutorial_active.track_id if tutorial_active else '' }}"
+     data-active-step="{{ tutorial_active.current_step_index if tutorial_active else '' }}"
+     data-auto-track="{{ tutorial_auto_track or '' }}"
+     data-padding="{{ config.TUTORIAL_HIGHLIGHT_PADDING }}"
+     data-transition-ms="{{ config.TUTORIAL_TRANSITION_DURATION }}"
+     data-resume-ms="{{ config.TUTORIAL_RESUME_TOAST_MS }}"
+     style="--tutorial-transition: {{ config.TUTORIAL_TRANSITION_DURATION }}ms; --tutorial-backdrop-opacity: {{ config.TUTORIAL_BACKDROP_OPACITY }};">
+
+    {# ===== Overlay: backdrop + highlight box + step card ===== #}
+    <div class="tutorial-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tutorial-step-title"
+         x-show="showOverlay"
+         x-cloak>
+
+        {# Full-screen transparent click-catcher. It covers the WHOLE viewport,
+           including the spotlight hole, so a click/tap anywhere (except the card)
+           advances the tour and the highlighted element itself is NOT interactive
+           during the tour. This prevents the user from triggering underlying
+           controls (e.g. opening an un-closable SL/TP menu, or navigating away via
+           a highlighted link). Sits below the dim panels, highlight and card. #}
+        <div class="tutorial-catcher"
+             @click="advanceFromBackdrop()"
+             aria-hidden="true"></div>
+
+        {# Four dim panels around the target provide the visual dimming, leaving an
+           undimmed (but still click-catching, via the catcher above) hole over the
+           target. They also advance on click for the dimmed area. #}
+        <template x-for="side in ['top', 'bottom', 'left', 'right']" :key="side">
+            <div class="tutorial-panel"
+                 :class="{ 'tutorial-no-transition': tracking }"
+                 :style="panelStyles[side]"
+                 @click="advanceFromBackdrop()"
+                 aria-hidden="true"></div>
+        </template>
+
+        {# Animated frame around the target element (purely decorative, not clickable) #}
+        <div class="tutorial-highlight"
+             :class="{ 'tutorial-no-transition': tracking }"
+             :style="highlightStyle"
+             aria-hidden="true"></div>
+
+        {# Step card. Clicks here must NOT bubble to the backdrop's advance handler. #}
+        <div class="tutorial-card"
+             x-ref="card"
+             x-show="showCard"
+             x-cloak
+             @click.stop
+             :style="cardStyle"
+             :data-side="cardSide"
+             x-effect="$el.toggleAttribute('inert', showConfirmSkip)"
+             x-transition:enter="tutorial-fade"
+             x-transition:enter-start="tutorial-fade--out"
+             x-transition:enter-end="tutorial-fade--in"
+             x-transition:leave="tutorial-fade"
+             x-transition:leave-start="tutorial-fade--in"
+             x-transition:leave-end="tutorial-fade--out">
+
+            <div class="tutorial-card__progress" aria-hidden="true">
+                <span class="tutorial-card__progress-fill"
+                      :style="{ width: (steps.length ? ((currentIndex + 1) / steps.length * 100) : 0) + '%' }"></span>
+            </div>
+
+            <p class="tutorial-card__counter" x-text="stepCounter"></p>
+
+            {# Announced to screen readers whenever the step changes #}
+            <div aria-live="polite" aria-atomic="true">
+                <h2 id="tutorial-step-title" class="tutorial-card__title"
+                    x-text="currentStep ? currentStep.title : ''"></h2>
+                <p class="tutorial-card__description"
+                   x-text="currentStep ? currentStep.description : ''"></p>
+            </div>
+
+            {# DOM order = Tab order: Back, Next/Finish, Skip (Skip is shown first via CSS) #}
+            <div class="tutorial-card__actions">
+                <button type="button" class="tutorial-btn tutorial-btn--secondary"
+                        @click="back()"
+                        :disabled="backDisabled">Back</button>
+                <button type="button" class="tutorial-btn tutorial-btn--primary"
+                        data-tutorial-primary
+                        @click="next()"
+                        x-text="forwardLabel">Next</button>
+                <button type="button" class="tutorial-btn tutorial-btn--link tutorial-card__skip"
+                        @click="skip()">Skip</button>
+            </div>
+        </div>
+
+        {# Skip confirmation. Its own backdrop swallows clicks so they never advance. #}
+        <div class="tutorial-confirm"
+             x-ref="confirm"
+             x-show="showConfirmSkip"
+             x-cloak
+             @click.stop
+             role="alertdialog"
+             aria-modal="true"
+             aria-labelledby="tutorial-confirm-title"
+             aria-describedby="tutorial-confirm-desc"
+             x-transition:enter="tutorial-fade"
+             x-transition:enter-start="tutorial-fade--out"
+             x-transition:enter-end="tutorial-fade--in"
+             x-transition:leave="tutorial-fade"
+             x-transition:leave-start="tutorial-fade--in"
+             x-transition:leave-end="tutorial-fade--out">
+            <div class="tutorial-confirm__box">
+                <h2 id="tutorial-confirm-title" class="tutorial-confirm__title">End the tutorial?</h2>
+                <p id="tutorial-confirm-desc" class="tutorial-confirm__text">
+                    You can replay it any time from the Help page.
+                </p>
+                <div class="tutorial-confirm__actions">
+                    <button type="button" class="tutorial-btn tutorial-btn--primary"
+                            @click="cancelSkip()">Continue</button>
+                    <button type="button" class="tutorial-btn tutorial-btn--secondary"
+                            @click="confirmSkip()">End Tutorial</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# The "resume your tutorial?" prompt is rendered as a standard .flash--toast
+       in #notification-toasts by tutorial.js (offerResume), reusing the shared
+       swipe + timer behaviour from notifications.js. No markup is needed here. #}
+</div>

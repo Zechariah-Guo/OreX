@@ -6,93 +6,111 @@
             "trigger": "first_login",
             "steps": [
                 {
-                    "index": 0,
                     "selector": "#main-content",
                     "route": "/dashboard",
                     "title": "Welcome to OreX",
-                    "description": "Welcome to OreX! This quick tour will show you around the dashboard, the market, and how to make your first trade.",
+                    "description": "This short tour covers trading, your portfolio, and where to find everything. Tap anywhere to continue, or use the Skip button to skip this tutorial.",
                     "position": "center",
+                    "highlight": "none",
                     "action": null
                 },
                 {
-                    "index": 1,
-                    "selector": "#nav-balance",
+                    "selector": "#dashboard-summary",
                     "route": "/dashboard",
                     "title": "Your Balance",
-                    "description": "This is your current cash balance. You start with a set amount of cash to invest in ores.",
+                    "description": "You start with $10,000 in cash. Holdings Value is what your ores are worth right now, Total Value combines the two, and Profit / Loss tracks how you are doing.",
                     "position": "bottom",
                     "action": null
                 },
                 {
-                    "index": 2,
-                    "selector": "#net-worth-card",
+                    "selector": ".nav__profile-pill",
                     "route": "/dashboard",
-                    "title": "Net Worth",
-                    "description": "Your net worth combines your cash balance and the current market value of everything you hold.",
+                    "title": "Account Menu",
+                    "description": "Your cash balance is always shown here. Your avatar beside it opens the account menu.",
                     "position": "bottom",
                     "action": null
                 },
                 {
-                    "index": 3,
-                    "selector": "#nav-market",
+                    "selector": ".nav__dropdown-icons",
                     "route": "/dashboard",
-                    "title": "The Market",
-                    "description": "Head to the Market page to see every ore available to trade and how its price is moving.",
-                    "position": "bottom",
-                    "action": null
+                    "title": "Portfolio, Inbox & History",
+                    "description": "These icons open your holdings, your notifications, and your trade history. The inbox shows a red dot when something is unread.",
+                    "position": "left",
+                    "action": null,
+                    "reveal": "menu"
                 },
                 {
-                    "index": 4,
-                    "selector": "#market-ore-list",
+                    "selector": ".nav__dropdown-items",
+                    "route": "/dashboard",
+                    "title": "Profile, Settings & Help",
+                    "description": "Profile holds your stats, achievements, and daily bonus. Settings covers themes, security, and Advanced Mode, while Help has the FAQ and these tutorials.",
+                    "position": "left",
+                    "action": null,
+                    "reveal": "menu"
+                },
+                {
+                    "selector": "#ore-price-grid",
                     "route": "/market",
-                    "title": "Browse Ores",
-                    "description": "Each row is an ore you can trade. Click on one to see its detailed price chart.",
+                    "title": "The Market",
+                    "description": "Every ore trades here with its current price. The arrow shows its last move, Vol is how sharply it can swing, and Base is its starting price.",
                     "position": "top",
                     "action": null
                 },
                 {
-                    "index": 5,
-                    "selector": "#ore-price-chart",
+                    "selector": "#qt-1",
+                    "route": "/market",
+                    "title": "Quick Trade",
+                    "description": "Enter a quantity and use Buy or Sell right on the card. In Standard Mode a single buy order is capped at 500 units.",
+                    "position": "left",
+                    "action": null
+                },
+                {
+                    "selector": ".chart-container",
                     "route": "/market/1",
                     "title": "Price Chart",
-                    "description": "This chart shows how the ore's price has moved over time, helping you decide when to buy or sell.",
-                    "position": "bottom",
-                    "action": null
-                },
-                {
-                    "index": 6,
-                    "selector": "#trade-buy-button",
-                    "route": "/market/1",
-                    "title": "Buy or Sell",
-                    "description": "Use the Buy and Sell buttons here to trade this ore at the current market price.",
+                    "description": "Each ore has a detail page with its price history. Use the range buttons, from 5 minutes up to Max, to study the trend before trading.",
                     "position": "top",
                     "action": null
                 },
                 {
-                    "index": 7,
-                    "selector": "#nav-portfolio",
+                    "selector": "#trade-panel",
                     "route": "/market/1",
-                    "title": "Your Portfolio",
-                    "description": "Everything you buy shows up in your Portfolio, where you can track quantity, value, and profit.",
-                    "position": "bottom",
+                    "title": "Buy & Sell",
+                    "description": "Enter a quantity and confirm to trade at the current price. You can only sell ores you already hold.",
+                    "position": "left",
                     "action": null
                 },
                 {
-                    "index": 8,
-                    "selector": "#portfolio-holdings-table",
+                    "selector": "#portfolio-summary",
                     "route": "/portfolio",
-                    "title": "Holdings Overview",
-                    "description": "Here you can see every ore you own, how much you paid, and its current value.",
+                    "title": "Your Portfolio",
+                    "description": "Everything you own appears here with your average buy price and running profit or loss. It fills in after your first purchase.",
+                    "position": "bottom",
+                    "action": null
+                },
+                {
+                    "selector": "#leaderboard-live",
+                    "route": "/leaderboard",
+                    "title": "The Leaderboard",
+                    "description": "Players and bot traders are ranked by total value: cash plus holdings plus any short equity. See where you stand and climb the ranks.",
                     "position": "top",
                     "action": null
                 },
                 {
-                    "index": 9,
-                    "selector": "#leaderboard-table",
-                    "route": "/leaderboard",
-                    "title": "Leaderboard",
-                    "description": "Compare your net worth against other players on the leaderboard. Climb the ranks by trading smart!",
+                    "selector": "#advanced-mode-card",
+                    "route": "/settings",
+                    "title": "Advanced Mode Awaits",
+                    "description": "Reach $100,000 net worth to become eligible, then unlock Advanced Mode for $50,000. It adds short selling, stop-loss and take-profit orders, and more, so keep it in your sights.",
                     "position": "top",
+                    "action": null
+                },
+                {
+                    "selector": "#main-content",
+                    "route": "/profile",
+                    "title": "You're All Set",
+                    "description": "That's the tour. If a daily login bonus is waiting, you'll find it here on your profile. Happy trading, and remember you can replay this tutorial any time from Help in your profile menu.",
+                    "position": "center",
+                    "highlight": "none",
                     "action": null
                 }
             ]
@@ -103,75 +121,105 @@
             "trigger": "first_advanced_activation",
             "steps": [
                 {
-                    "index": 0,
                     "selector": "#main-content",
                     "route": "/dashboard",
                     "title": "Welcome to Advanced Mode",
-                    "description": "You've unlocked Advanced Mode! This tour covers the new tools available to you: shorting, stop-loss/take-profit, and more.",
+                    "description": "You've unlocked Advanced Mode. This tour walks through the new tools using a sample short position, so you can see every screen with live data. Tap anywhere to continue, or Skip to leave the tour.",
                     "position": "center",
+                    "highlight": "none",
                     "action": null
                 },
                 {
-                    "index": 1,
-                    "selector": "#nav-finances",
-                    "route": "/dashboard",
-                    "title": "Finances Page",
-                    "description": "The Finances page breaks down your capital: cash, collateral in use, and equity tied up in open positions.",
+                    "selector": "#rs-info-box",
+                    "route": "/market/1",
+                    "title": "Resistance & Support",
+                    "description": "Advanced Mode tracks resistance and support, the prices an ore has tended to stall below or rebound from. They're shown here, and drawn as dashed lines on the chart below so you can see them against the live price.",
                     "position": "bottom",
                     "action": null
                 },
                 {
-                    "index": 2,
-                    "selector": "#capital-breakdown-card",
+                    "selector": ".trade-tabs__tab[data-tab=\"short\"]",
+                    "route": "/market/1",
+                    "title": "Short Selling",
+                    "description": "Alongside the usual Buy and Sell, a new Short tab lets you profit when an ore's price falls. We'll open the tab and explore it next. To demonstrate, we've opened a one-unit sample short for you, it costs you nothing and is removed automatically when the tour ends.",
+                    "position": "bottom",
+                    "action": "demo-short-open",
+                    "reveal": "long-tab"
+                },
+                {
+                    "selector": "#short-preview-collateral",
+                    "route": "/market/1",
+                    "title": "Collateral & Surcharge",
+                    "description": "Opening a short locks up collateral: the Position is the value you're shorting, and the Margin is the cash held against it. The Surcharge rises when an ore is already heavily shorted, so crowded shorts cost more to hold.",
+                    "position": "top",
+                    "action": null,
+                    "reveal": "short-tab"
+                },
+                {
+                    "selector": "#short-preview-fees",
+                    "route": "/market/1",
+                    "title": "Fees & Squeeze",
+                    "description": "A small Tick Fee is charged every market tick until you close the position. The Squeeze price is the level at which rising prices would force a liquidation, so the closer the price gets, the more urgent it is to act.",
+                    "position": "top",
+                    "action": null,
+                    "reveal": "short-tab"
+                },
+                {
+                    "selector": "#portfolio-tab-shorts",
+                    "route": "/portfolio",
+                    "title": "Managing Your Shorts",
+                    "description": "Your open shorts live in the Shorts tab of your portfolio. Each row shows net P/L, the squeeze price, and its stop-loss / take-profit. Use Edit SL/TP to have a position close automatically at prices you choose, no watching required.",
+                    "position": "top",
+                    "action": null,
+                    "reveal": "portfolio-shorts"
+                },
+                {
+                    "selector": "#nav-balance",
+                    "route": "/portfolio",
+                    "title": "The Finances Page",
+                    "description": "Your balance pill is now a link. Select it any time to open the Finances page, a full breakdown of where your capital sits and how your shorts are trending.",
+                    "position": "bottom",
+                    "action": null
+                },
+                {
+                    "selector": "#finances-capital",
                     "route": "/finances",
                     "title": "Capital Breakdown",
-                    "description": "This shows exactly how your capital is allocated across cash, long holdings, and short collateral.",
+                    "description": "Finances splits your capital into free cash, locked collateral, short equity, and long holdings, adding up to your net worth. It's the quickest way to see how much of your money is tied up in open positions.",
                     "position": "bottom",
                     "action": null
                 },
                 {
-                    "index": 3,
-                    "selector": "#short-open-button",
-                    "route": "/market/1",
-                    "title": "Opening a Short",
-                    "description": "Think an ore's price will fall? Open a short position here to profit from the decline.",
+                    "selector": "#finances-cashflow-section",
+                    "route": "/finances",
+                    "title": "Cash Flow & Runway",
+                    "description": "Short fees burn cash every tick. The cash-flow projection turns that burn rate into a runway, how long your free cash lasts if prices hold. Keep a buffer here to avoid a forced liquidation.",
                     "position": "top",
                     "action": null
                 },
                 {
-                    "index": 4,
-                    "selector": "#short-collateral-info",
-                    "route": "/market/1",
-                    "title": "Collateral & Fees",
-                    "description": "Shorting requires collateral and accrues an hourly fee. Keep an eye on both to avoid liquidation.",
-                    "position": "right",
+                    "selector": "#dashboard-positions",
+                    "route": "/dashboard",
+                    "title": "Positions at a Glance",
+                    "description": "Your dashboard now carries Longs and Shorts summary boxes. The Threat indicator is a quick read on liquidation risk, an at-a-glance version of the cash-flow runway from the Finances page.",
+                    "position": "top",
                     "action": null
                 },
                 {
-                    "index": 5,
-                    "selector": "#sltp-form",
-                    "route": "/market/1",
-                    "title": "Stop-Loss / Take-Profit",
-                    "description": "Set automatic stop-loss and take-profit levels so your positions close themselves at the price you choose.",
-                    "position": "left",
+                    "selector": "#leaderboard-live",
+                    "route": "/leaderboard",
+                    "title": "Standing Out",
+                    "description": "Advanced players show a red name on the leaderboard, and bot traders carry an icon. Short equity counts toward total value, so your demo short is ranked here too, for now. Bots also short crowded, falling ores, which can push up the collateral you need.",
+                    "position": "top",
                     "action": null
                 },
                 {
-                    "index": 6,
-                    "selector": "#ore-price-chart",
-                    "route": "/market/1",
-                    "title": "Resistance & Support",
-                    "description": "Advanced Mode overlays resistance and support levels on the chart to help you spot likely turning points.",
-                    "position": "bottom",
-                    "action": null
-                },
-                {
-                    "index": 7,
-                    "selector": "#cash-runway-indicator",
-                    "route": "/finances",
-                    "title": "Cash Runway",
-                    "description": "This indicator warns you when your available cash is running low relative to your open risk.",
-                    "position": "bottom",
+                    "selector": "#main-content",
+                    "route": "/dashboard",
+                    "title": "You're All Set",
+                    "description": "That's Advanced Mode. The demo short is being closed now and your account is exactly as it was, no fees, no profit or loss. Open your own shorts whenever you're ready, and replay this tour any time from Help in your profile menu.",
+                    "position": "center",
+                    "highlight": "none",
                     "action": null
                 }
             ]

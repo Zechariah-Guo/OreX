@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 _SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Tracks that only exist for players who have purchased Advanced Mode
+ADVANCED_ONLY_TRACKS = frozenset({'advanced'})
+
 
 def _data_path():
     return os.path.join(_SRC_DIR, Config.TUTORIAL_DATA_PATH)
@@ -32,7 +35,13 @@ def _load_tracks():
         logger.error('Could not load tutorial data from %s: %s', _data_path(), exc)
         return []
     # A track with zero steps is treated as non-existent
-    return [t for t in tracks if isinstance(t, dict) and t.get('steps')]
+    usable = [t for t in tracks if isinstance(t, dict) and t.get('steps')]
+    # Assign each step's index from its position, so authors never renumber by hand
+    for track in usable:
+        for i, step in enumerate(track['steps']):
+            if isinstance(step, dict):
+                step['index'] = i
+    return usable
 
 
 def load_track(track_id):

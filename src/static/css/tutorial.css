@@ -1,0 +1,294 @@
+/* ===== Tutorial System ===== */
+
+/*
+ * Styles for the guided tutorial overlay (templates/partials/tutorial_overlay.html,
+ * driven by static/js/tutorial.js).
+ *
+ * Theming: colours come from the active theme's custom properties
+ * (--colour-surface, --colour-text, --colour-border, --colour-accent), so the
+ * standard, dark, Advanced, Money and Gold themes all apply automatically.
+ *
+ * Contrast: the card uses --colour-surface / --colour-text (and
+ * --colour-text-muted), which are high-contrast in every theme. The primary
+ * button is --colour-text on --colour-surface (inverted) rather than white on
+ * the accent colour, because the accent colours vary (green, purple, gold) and
+ * white-on-green would fail WCAG AA. The accent is used for the border/glow.
+ *
+ * Layers (global.css/advanced.css top out at z-index 2000):
+ *   backdrop 3000 < highlight 3001 < card 3002 < confirm 3003
+ * The resume prompt is a normal .flash--toast and uses the notification layer.
+ */
+
+/* Hide Alpine-controlled elements until Alpine has initialised */
+[x-cloak] {
+    display: none !important;
+}
+
+.tutorial-root {
+    --tutorial-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --tutorial-glow: rgba(46, 204, 113, 0.55);
+}
+
+@supports (color: color-mix(in srgb, red 50%, transparent)) {
+    .tutorial-root {
+        --tutorial-glow: color-mix(in srgb, var(--colour-accent) 60%, transparent);
+    }
+}
+
+/* ----- Full-screen click-catcher. Covers the entire viewport (including the
+   spotlight hole) so a click anywhere but the card advances the tour and the
+   highlighted element stays non-interactive. Below the dim panels so the panels'
+   dimming shows on top; transparent itself. ----- */
+.tutorial-catcher {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2999;
+    background: transparent;
+    cursor: pointer;   /* signals "tap to continue" */
+}
+
+/* ----- Dim panels (four around the target; the gap between them is the undimmed
+   spotlight). A click on any panel advances the tour. ----- */
+.tutorial-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 3000;
+    background-color: rgba(10, 6, 18, var(--tutorial-backdrop-opacity, 0.5));
+    cursor: pointer;   /* signals "tap to continue" */
+    transition:
+        top var(--tutorial-transition, 400ms) var(--tutorial-ease),
+        left var(--tutorial-transition, 400ms) var(--tutorial-ease),
+        width var(--tutorial-transition, 400ms) var(--tutorial-ease),
+        height var(--tutorial-transition, 400ms) var(--tutorial-ease);
+}
+
+/* ----- Highlight frame around the target ----- */
+.tutorial-highlight {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 3001;
+    pointer-events: none;   /* clicks fall through to the backdrop, which advances */
+    border: 3px solid var(--colour-accent);
+    border-radius: var(--radius);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35), 0 0 16px 4px var(--tutorial-glow);
+    transition:
+        transform var(--tutorial-transition, 400ms) var(--tutorial-ease),
+        width var(--tutorial-transition, 400ms) var(--tutorial-ease),
+        height var(--tutorial-transition, 400ms) var(--tutorial-ease),
+        opacity 250ms ease;
+    animation: tutorial-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tutorial-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35), 0 0 10px 2px var(--tutorial-glow);
+    }
+    50% {
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55), 0 0 22px 8px var(--tutorial-glow);
+    }
+}
+
+/* While the page scrolls the box must follow the target exactly, not ease toward it */
+.tutorial-no-transition {
+    transition: none !important;
+}
+
+/* ----- Fade used by the card, confirmation and toast (x-transition classes) ----- */
+.tutorial-fade {
+    transition: opacity 250ms ease, transform 250ms ease;
+}
+
+.tutorial-fade--out {
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+.tutorial-fade--in {
+    opacity: 1;
+    transform: none;
+}
+
+/* ----- Step card ----- */
+.tutorial-card {
+    position: fixed;
+    z-index: 3002;
+    width: min(380px, calc(100vw - 24px));
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    padding: var(--spacing-md);
+    background-color: var(--colour-surface);
+    color: var(--colour-text);
+    border: 2px solid var(--colour-accent);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    font-family: var(--font-main);
+}
+
+.tutorial-card__progress {
+    height: 4px;
+    margin-bottom: var(--spacing-sm);
+    background-color: var(--colour-border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.tutorial-card__progress-fill {
+    display: block;
+    height: 100%;
+    background-color: var(--colour-accent);
+    transition: width var(--tutorial-transition, 400ms) var(--tutorial-ease);
+}
+
+.tutorial-card__counter {
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--colour-text-muted);
+}
+
+.tutorial-card__title {
+    margin-bottom: var(--spacing-sm);
+    font-size: 1.25rem;
+}
+
+.tutorial-card__description {
+    margin-bottom: var(--spacing-md);
+    line-height: 1.5;
+}
+
+.tutorial-card__action {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background-color: var(--colour-surface-hover);
+    border-left: 4px solid var(--colour-accent);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+}
+
+.tutorial-card__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+/* Skip sits at the left; it is last in the DOM so Tab order is Back, Next, Skip */
+.tutorial-card__skip {
+    order: -1;
+    margin-right: auto;
+}
+
+/* ----- Buttons ----- */
+.tutorial-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--colour-border);
+    border-radius: var(--radius);
+    font-family: var(--font-main);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.tutorial-btn:focus-visible {
+    outline: 3px solid var(--colour-text);
+    outline-offset: 2px;
+}
+
+.tutorial-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.tutorial-btn--primary {
+    background-color: var(--colour-text);
+    border-color: var(--colour-text);
+    color: var(--colour-surface);
+}
+
+.tutorial-btn--primary:hover:not(:disabled) {
+    border-color: var(--colour-accent);
+}
+
+.tutorial-btn--secondary {
+    background-color: transparent;
+    color: var(--colour-text);
+}
+
+.tutorial-btn--secondary:hover:not(:disabled) {
+    background-color: var(--colour-surface-hover);
+    border-color: var(--colour-text-muted);
+}
+
+.tutorial-btn--link {
+    padding-left: 0;
+    padding-right: 0;
+    background: none;
+    border-color: transparent;
+    color: var(--colour-text-muted);
+    text-decoration: underline;
+}
+
+.tutorial-btn--link:hover:not(:disabled) {
+    color: var(--colour-text);
+}
+
+/* ----- Skip confirmation ----- */
+.tutorial-confirm {
+    position: fixed;
+    inset: 0;
+    z-index: 3003;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+    background-color: rgba(10, 6, 18, 0.6);
+}
+
+.tutorial-confirm__box {
+    width: min(360px, 100%);
+    padding: var(--spacing-md);
+    background-color: var(--colour-surface);
+    color: var(--colour-text);
+    border: 2px solid var(--colour-accent);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.tutorial-confirm__title {
+    font-size: 1.15rem;
+}
+
+.tutorial-confirm__text {
+    margin-bottom: var(--spacing-md);
+    color: var(--colour-text-muted);
+}
+
+.tutorial-confirm__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+/* The resume prompt reuses the shared .flash--toast styles (see global.css /
+   notifications.js); no tutorial-specific toast styling is needed here. */
+
+/* ----- Reduced motion: no pulsing or easing ----- */
+@media (prefers-reduced-motion: reduce) {
+    .tutorial-highlight {
+        animation: none;
+    }
+
+    .tutorial-panel,
+    .tutorial-highlight,
+    .tutorial-fade,
+    .tutorial-card__progress-fill {
+        transition: none !important;
+    }
+}

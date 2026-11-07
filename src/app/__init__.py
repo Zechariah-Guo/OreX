@@ -48,6 +48,13 @@ def create_app():
     from app.routes import register_blueprints
     register_blueprints(app)
 
+    # The demo-short clear is fired by sendBeacon on page unload (tab close /
+    # navigate away), which cannot attach the CSRF header. Exempt just this one
+    # endpoint: it only ever removes the caller's OWN tutorial demo short and
+    # refunds its exact margin (net-zero), so a forged call is harmless and
+    # self-healing (resume re-opens the demo short).
+    csrf.exempt(app.view_functions['tutorial.demo_short_clear'])
+
     # Context processor: inject Advanced Mode status into all templates
     @app.context_processor
     def inject_advanced_mode():
@@ -132,6 +139,91 @@ def create_app():
             from app.models import has_unread_notifications
             return {'has_unread': has_unread_notifications(current_user.id)}
         return {'has_unread': False}
+
+    # Backstop for the Advanced tutorial's demo short: it must exist only while
+    # the tour is live. The client clears it on Finish/Skip and on page unload
+    # (sendBeacon), but a hard process crash can leave one dangling. On any normal
+    # page load where the Advanced track is NOT in progress, sweep it away. This is
+    # the one guarantee that does not rely on the client having run on exit.
+    @app.before_request
+    def _reconcile_tutorial_demo_short():
+        from flask import request
+        # Only GET page loads. Skip the tutorial's own API calls (they manage the
+        # demo short deliberately) and static assets.
+        if request.method != 'GET' or (request.endpoint or '').startswith('tutorial.'):
+            return
+        if not current_user.is_authenticated:
+            return
+        try:
+            from app.tutorial.demo import has_demo_short, clear_demo_short
+            from app.tutorial.models import get_tutorial_state
+            if not has_demo_short(current_user.id):
+                return
+            state = get_tutorial_state(current_user.id, 'advanced')
+            # While the Advanced tour is in progress the short is legitimate (the
+            # overlay re-opens it on each page). Any other status (completed,
+            # dismissed, not_started, or no record) means the tour is not live, so
+            # a lingering demo short is a crash remnant: refund its margin and drop it.
+            if state is None or state['status'] != 'in_progress':
+                clear_demo_short(current_user.id)
+        except Exception:
+            # Never break a page load over tutorial bookkeeping.
+            app.logger.exception('Failed to reconcile tutorial demo short')
+
+    # Context processor: inject tutorial state into all templates
+    @app.context_processor
+    def inject_tutorial_state():
+        empty = {
+            'tutorial_active': None,
+            'tutorial_auto_track': None,
+            'tutorial_should_load_alpine': False,
+        }
+        if not current_user.is_authenticated:
+            return empty
+        try:
+            from flask import request
+            from app.tutorial.data import load_all_tracks
+            from app.tutorial.models import (
+                get_all_tutorial_states, pick_active_state, should_auto_trigger,
+            )
+            from app.advanced import get_advanced_status
+
+            active = pick_active_state(get_all_tutorial_states(current_user.id))
+
+            # The Advanced tour opens a demo short and walks several pages, so it
+            # must begin from a clean, known starting point: the dashboard. Advanced
+            # Mode is activated on the Settings page, so auto-triggering there would
+            # start the tour mid-flow. Only offer it once the player is on (or has
+            # returned to) the dashboard.
+            on_dashboard = request.endpoint == 'dashboard.overview'
+
+            # Only look for a new auto-trigger when nothing is already running
+            auto_track = None
+            if active is None:
+                advanced_active = None  # looked up lazily, only if needed
+                for track in load_all_tracks():
+                    if track['trigger'] == 'first_advanced_activation':
+                        if not on_dashboard:
+                            continue
+                        if advanced_active is None:
+                            advanced_active = get_advanced_status(current_user.id)['active']
+                        if not advanced_active:
+                            continue
+                    elif track['trigger'] != 'first_login':
+                        continue
+                    if should_auto_trigger(current_user.id, track['id']):
+                        auto_track = track['id']
+                        break
+
+            return {
+                'tutorial_active': active,
+                'tutorial_auto_track': auto_track,
+                'tutorial_should_load_alpine': active is not None or auto_track is not None,
+            }
+        except Exception:
+            # Tutorials are non-essential: never break page rendering
+            app.logger.exception('Failed to compute tutorial state')
+            return empty
 
     # Register error handlers
     from flask import render_template

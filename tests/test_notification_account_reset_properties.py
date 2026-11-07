@@ -113,6 +113,15 @@ def _create_test_db():
         )
     """)
 
+    # Create tutorial_progress table (referenced by reset_account)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS tutorial_progress (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
     # Create indexes
     conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user_id_desc ON notifications(user_id, id DESC)")

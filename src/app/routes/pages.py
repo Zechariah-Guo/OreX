@@ -22,5 +22,19 @@ def about():
 
 @pages_bp.route('/help')
 def help_page():
-    """Help / FAQ page."""
-    return render_template('pages/help.html')
+    """Help / FAQ page, with the tutorial list for logged-in players."""
+    tutorials = None  # None = logged out: the page shows a login hint instead
+    if current_user.is_authenticated:
+        from app.advanced import get_advanced_status
+        from app.tutorial.data import load_all_tracks
+        from app.tutorial.models import get_all_tutorial_states
+        from app.tutorial.view import build_tutorial_list
+
+        status = get_advanced_status(current_user.id)
+        tutorials = build_tutorial_list(
+            load_all_tracks(),
+            get_all_tutorial_states(current_user.id),
+            status['purchased'],
+            status['active'],
+        )
+    return render_template('pages/help.html', tutorials=tutorials)

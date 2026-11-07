@@ -375,19 +375,34 @@ html[data-theme="dark"] .nav__brand {
     color: var(--colour-text-muted);
 }
 
+/* ===== Toast stack (shared fixed column for flash + notification toasts) ===== */
+/* One fixed container owns the top-right corner so the two toast systems stack
+   instead of overlapping. Flash messages render first (on top); notification and
+   resume toasts stack beneath them. */
+.toast-stack {
+    position: fixed;
+    top: calc(var(--spacing-lg) + 4rem);
+    right: var(--spacing-lg);
+    width: min(360px, calc(100vw - 2rem));
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    /* stretch so every toast fills the fixed 360px column (text wraps inside
+       rather than shrinking the box to fit short messages) */
+    align-items: stretch;
+    z-index: 1000;
+    pointer-events: none;
+}
+
 /* ===== Flash Messages ===== */
 .flash-messages {
-    position: fixed;
-        top: calc(var(--spacing-lg) + 4rem);
-        right: var(--spacing-lg);
-        width: min(360px, calc(100vw - 2rem));
+    width: 100%;
     padding: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-        align-items: flex-end;
-    z-index: 1000;
+    align-items: stretch;
     pointer-events: none;
 }
 
@@ -541,18 +556,19 @@ html[data-theme="dark"] .nav__brand {
 }
 
 .notification-toasts {
-    position: fixed;
-    top: calc(var(--spacing-lg) + 4rem);
-    right: var(--spacing-lg);
-    width: min(360px, calc(100vw - 2rem));
+    width: 100%;
     padding: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    align-items: flex-end;
-    z-index: 999;
+    align-items: stretch;
     pointer-events: none;
+}
+
+/* Keep a gap between the two toast groups only when both have content */
+.notification-toasts:not(:empty) {
+    margin-top: var(--spacing-sm);
 }
 
 @keyframes flashToastIn {
@@ -2466,4 +2482,114 @@ details summary:focus-visible {
     display: flex;
     justify-content: center;
     margin: var(--spacing-md) 0;
+}
+
+/* ===== Help Page: Tutorials ===== */
+.tutorial-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.tutorial-list__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: var(--colour-surface);
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+}
+
+.tutorial-list__main {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm) var(--spacing-md);
+}
+
+.tutorial-list__name {
+    font-weight: 600;
+}
+
+/* Text stays --colour-text on a neutral fill (always readable); the status shows in the border */
+.tutorial-badge {
+    padding: 2px 10px;
+    background-color: var(--colour-surface-hover);
+    border: 2px solid var(--colour-border);
+    border-radius: 999px;
+    color: var(--colour-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.tutorial-badge--completed {
+    border-color: var(--colour-accent);
+}
+
+.tutorial-badge--in_progress {
+    border-color: #f1c40f;
+}
+
+.tutorial-badge--dismissed {
+    border-style: dashed;
+}
+
+.tutorial-list__actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+/* Resume = filled accent (primary action); Replay = accent outline (secondary).
+   Both use the theme accent so they read as active, distinct from a disabled grey. */
+.tutorial-btn-resume {
+    background-color: var(--colour-accent);
+    color: #ffffff;
+    border: 2px solid var(--colour-accent);
+}
+
+.tutorial-btn-resume:hover {
+    background-color: var(--colour-accent-hover);
+    border-color: var(--colour-accent-hover);
+}
+
+.tutorial-btn-replay {
+    background-color: transparent;
+    color: var(--colour-accent);
+    border: 2px solid var(--colour-accent);
+}
+
+.tutorial-btn-replay:hover {
+    background-color: var(--colour-surface-hover);
+}
+
+/* Disabled (e.g. Advanced tutorial while Advanced Mode is off): greyed, no hover lift */
+.tutorial-btn-resume:disabled,
+.tutorial-btn-replay:disabled {
+    background-color: var(--colour-bg);
+    color: var(--colour-text-muted);
+    border-color: var(--colour-border);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.tutorial-btn-resume:disabled:hover,
+.tutorial-btn-replay:disabled:hover {
+    background-color: var(--colour-bg);
+    border-color: var(--colour-border);
+    transform: none;
+}
+
+.tutorial-list__hint {
+    color: var(--colour-text-muted);
+}
+
+.tutorial-list__error {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-left: 4px solid var(--colour-danger);
+    background-color: var(--colour-surface-hover);
 }

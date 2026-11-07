@@ -94,6 +94,18 @@ def delete_tutorial_progress(user_id):
     return cur.rowcount
 
 
+def pick_active_state(states):
+    """From a list of tutorial_progress dicts, return the in-progress one to show, or None.
+
+    If more than one track is in progress (e.g. a paused Beginner tutorial and a
+    just-replayed Advanced one), the most recently updated wins.
+    """
+    in_progress = [s for s in states if s['status'] == 'in_progress']
+    if not in_progress:
+        return None
+    return max(in_progress, key=lambda s: (s['last_updated'], s['id']))
+
+
 def should_auto_trigger(user_id, track_id):
     """True if the track should auto-start: no record exists or status is 'not_started'."""
     state = get_tutorial_state(user_id, track_id)

@@ -29,8 +29,47 @@
         </ul>
     </section>
 
-    <section class="static-section">
-        <h2>Tutorials (Coming Soon)</h2>
+    <section class="static-section" id="tutorials">
+        <h2>Tutorials</h2>
+        {% if tutorials is none %}
+        <p class="tutorial-list__hint">
+            The interactive tutorials are for logged-in players.
+            <a href="{{ url_for('auth.login') }}">Log in</a> to take them.
+        </p>
+        {% elif tutorials %}
+        <ul class="tutorial-list">
+            {% for tutorial in tutorials %}
+            <li class="tutorial-list__item">
+                <div class="tutorial-list__main">
+                    <span class="tutorial-list__name">{{ tutorial.name }}</span>
+                    <span class="tutorial-badge tutorial-badge--{{ tutorial.status }}">{{ tutorial.status_label }}</span>
+                </div>
+                {% if tutorial.actions %}
+                <div class="tutorial-list__actions"
+                     {% if tutorial.disabled %}title="{{ tutorial.disabled_reason }}"{% endif %}>
+                    {% for action in tutorial.actions %}
+                    <button type="button"
+                            class="btn btn--small tutorial-btn-{{ action.id }}"
+                            data-tutorial-replay="{{ tutorial.id }}"
+                            data-tutorial-restart="{{ 'true' if action.restart else 'false' }}"
+                            {% if tutorial.disabled %}disabled aria-disabled="true"
+                            title="{{ tutorial.disabled_reason }}"
+                            aria-label="{{ action.label }} the {{ tutorial.name }} tutorial ({{ tutorial.disabled_reason }})"
+                            {% else %}
+                            aria-label="{{ action.label }} the {{ tutorial.name }} tutorial"
+                            {% endif %}>{{ action.label }}</button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        <p id="tutorial-replay-error" class="tutorial-list__error" role="alert" hidden>
+            Couldn't start the tutorial. Please try again.
+        </p>
+        {% else %}
+        <p class="tutorial-list__hint">No tutorials are available right now.</p>
+        {% endif %}
     </section>
 
     <section class="static-section">
@@ -135,4 +174,60 @@
         <p>Check the <a href="{{ url_for('pages.about') }}">About page</a> for detailed information about the ores, market mechanics, and changelog.</p>
     </section>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if tutorials %}
+<script>
+    // Replay buttons: restart the track on the server, then hand off to the tutorial
+    // overlay on the destination page. tutorial.js is not loaded on this page (nothing
+    // is active yet), so the hand-off flag below must match the format it reads
+    // (see the header of static/js/tutorial.js).
+    (function () {
+        var buttons = document.querySelectorAll('[data-tutorial-replay]');
+        if (!buttons.length) return;
+        var errorBox = document.getElementById('tutorial-replay-error');
+        var meta = document.querySelector('meta[name="csrf-token"]');
+
+        buttons.forEach(function (button) {
+            button.addEventListener('click', async function () {
+                if (button.disabled) return;   // Advanced tutorial while Advanced Mode is off
+                var trackId = button.getAttribute('data-tutorial-replay');
+                var restart = button.getAttribute('data-tutorial-restart') === 'true';
+                button.disabled = true;
+                if (errorBox) errorBox.hidden = true;
+                try {
+                    var resp = await fetch('/tutorial/replay', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRFToken': meta ? meta.getAttribute('content') : ''
+                        },
+                        body: JSON.stringify({ track_id: trackId, restart: restart })
+                    });
+                    var data = await resp.json().catch(function () { return null; });
+                    if (!resp.ok || !data || data.ok !== true || !data.redirect) {
+                        throw new Error('replay failed');
+                    }
+                    try {
+                        // Use the server's step index so Resume continues from the
+                        // saved step and Replay starts at 0. The flag must match the
+                        // in-progress step or the overlay falls back to the toast.
+                        var stepIndex = (typeof data.step_index === 'number') ? data.step_index : 0;
+                        sessionStorage.setItem('orex-tutorial-nav', JSON.stringify({
+                            track_id: trackId, step_index: stepIndex, ts: Date.now()
+                        }));
+                    } catch (e) { /* storage unavailable: the page will offer the resume toast instead */ }
+                    window.location.assign(data.redirect);
+                } catch (e) {
+                    button.disabled = false;
+                    if (errorBox) errorBox.hidden = false;
+                }
+            });
+        });
+    })();
+</script>
+{% endif %}
 {% endblock %}

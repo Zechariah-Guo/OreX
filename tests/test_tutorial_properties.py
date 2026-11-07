@@ -1,15 +1,20 @@
-"""Property-based tests for the Tutorial System data layer.
+"""Property-based tests for the Tutorial System data layer and view logic.
 
-Covers the tutorial data loader and the tutorial_progress model functions.
-Model tests run against an in-memory SQLite DB built from the canonical
-src/schema.sql, with ``get_db`` patched to return that connection.
+Covers the tutorial data loader, the tutorial_progress model functions, account
+lifecycle cleanup, and the Help page track list. Model tests run against an
+in-memory SQLite DB built from the canonical src/schema.sql, with ``get_db``
+patched to return that connection.
+
+Properties of the browser-side logic (card position, button state, route
+comparison, highlight geometry) live in test_tutorial_js_properties.py.
 """
 
 import json
 import os
 import sqlite3
+import string
 import sys
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 # Add src/ to the Python path so that `from app.tutorial import ...` works
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
@@ -279,3 +284,150 @@ def test_advance_and_delete():
         assert tm.get_all_tutorial_states(1) == []
         assert len(tm.get_all_tutorial_states(2)) == 1
     conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Property 8: Resume Prompt Triggers Only for In-Progress State
+# ---------------------------------------------------------------------------
+
+TIMESTAMPS = ['2026-01-01 10:00:00', '2026-01-01 10:00:01', '2026-06-01 09:30:00']
+
+
+@st.composite
+def progress_rows(draw):
+    """A player's tutorial_progress rows with arbitrary statuses and timestamps."""
+    statuses = draw(st.lists(st.sampled_from(STATUSES), max_size=6))
+    return [
+        {'id': i + 1, 'track_id': f'track{i}', 'status': status,
+         'current_step_index': draw(st.integers(0, 10)),
+         'last_updated': draw(st.sampled_from(TIMESTAMPS))}
+        for i, status in enumerate(statuses)
+    ]
+
+
+# Feature: tutorial-system, Property 8: a resume prompt is offered iff some track is in_progress
+# Validates: Requirements 5.4, 6.5, 6.6
+@settings(max_examples=100)
+@given(rows=progress_rows())
+def test_property_8_resume_only_for_in_progress(rows):
+    active = tm.pick_active_state(rows)
+    in_progress = [r for r in rows if r['status'] == 'in_progress']
+    if not in_progress:
+        assert active is None
+    else:
+        assert active in in_progress
+        # With several paused tracks the most recently updated one is offered
+        assert (active['last_updated'], active['id']) == max(
+            (r['last_updated'], r['id']) for r in in_progress)
+
+
+# ---------------------------------------------------------------------------
+# Property 13: Account Lifecycle Clears All Tutorial Records
+# ---------------------------------------------------------------------------
+
+track_ids = st.lists(st.text(alphabet=string.ascii_lowercase, min_size=1, max_size=8),
+                     unique=True, max_size=5)
+
+
+def _seed_progress(conn, user_id, tracks):
+    for track_id in tracks:
+        conn.execute(
+            "INSERT INTO tutorial_progress (user_id, track_id, status) VALUES (?, ?, 'completed')",
+            (user_id, track_id))
+    conn.commit()
+
+
+def _progress_count(conn, user_id):
+    return conn.execute(
+        'SELECT COUNT(*) FROM tutorial_progress WHERE user_id = ?', (user_id,)).fetchone()[0]
+
+
+# Feature: tutorial-system, Property 13: after account reset, zero tutorial records remain for that player
+# Validates: Requirements 11.3
+@settings(max_examples=100)
+@given(mine=track_ids, theirs=track_ids)
+def test_property_13_reset_clears_tutorial_records(mine, theirs):
+    from app.models import reset_account
+    conn = _make_db([1, 2])
+    _seed_progress(conn, 1, mine)
+    _seed_progress(conn, 2, theirs)
+    mock_app = MagicMock()
+    mock_app.config = {'DEFAULT_BALANCE': 10000}
+    with patch('app.models.get_db', return_value=conn), patch('app.models.current_app', mock_app):
+        reset_account(1)
+    assert _progress_count(conn, 1) == 0
+    assert _progress_count(conn, 2) == len(theirs)   # other players are untouched
+    conn.close()
+
+
+# Feature: tutorial-system, Property 13: after account deletion, zero tutorial records remain for that player
+# Validates: Requirements 11.4
+@settings(max_examples=100)
+@given(mine=track_ids, theirs=track_ids)
+def test_property_13_delete_clears_tutorial_records(mine, theirs):
+    from app.models import delete_account
+    conn = _make_db([1, 2])
+    _seed_progress(conn, 1, mine)
+    _seed_progress(conn, 2, theirs)
+    with patch('app.models.get_db', return_value=conn), patch('app.models.current_app', MagicMock()):
+        delete_account(1)
+    assert _progress_count(conn, 1) == 0             # removed by ON DELETE CASCADE
+    assert _progress_count(conn, 2) == len(theirs)
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Property 9: Help Page Track Visibility Rules
+# ---------------------------------------------------------------------------
+
+# Feature: tutorial-system, Property 9: Beginner always listed; Advanced iff purchased;
+#   Replay iff completed/dismissed, Resume iff in_progress (so an in-progress track is
+#   always reachable even after the resume toast is gone), no button iff not_started
+# Validates: Requirements 7.1, 7.2, 7.4, 7.5, 7.6
+@settings(max_examples=150)
+@given(
+    advanced_purchased=st.booleans(),
+    advanced_active=st.booleans(),
+    beginner_status=st.sampled_from([None] + STATUSES),
+    advanced_status=st.sampled_from([None] + STATUSES),
+)
+def test_property_9_help_page_track_list(advanced_purchased, advanced_active,
+                                         beginner_status, advanced_status):
+    from app.tutorial.view import build_tutorial_list
+    tracks = tutorial_data.load_all_tracks()
+    states = [
+        {'track_id': track_id, 'status': status}
+        for track_id, status in (('beginner', beginner_status), ('advanced', advanced_status))
+        if status is not None
+    ]
+    rows = {row['id']: row
+            for row in build_tutorial_list(tracks, states, advanced_purchased, advanced_active)}
+
+    assert 'beginner' in rows
+    assert ('advanced' in rows) is advanced_purchased
+    for track_id, status in (('beginner', beginner_status), ('advanced', advanced_status)):
+        if track_id in rows:
+            row = rows[track_id]
+            shown = status or 'not_started'
+            assert row['status'] == shown
+            # In progress -> Resume + Replay; finished -> Replay; not started -> none.
+            labels = [a['label'] for a in row['actions']]
+            if shown == 'in_progress':
+                assert labels == ['Resume', 'Replay']
+                by_label = {a['label']: a for a in row['actions']}
+                assert by_label['Resume']['restart'] is False
+                assert by_label['Replay']['restart'] is True
+            elif shown in ('completed', 'dismissed'):
+                assert labels == ['Replay']
+                assert row['actions'][0]['restart'] is True
+            else:  # not_started
+                assert labels == []
+            assert row['can_replay'] is bool(labels)
+
+            # Each track is gated to the mode its steps are built for: the
+            # Advanced track needs Advanced Mode ON, the Beginner track needs it OFF.
+            if track_id == 'advanced':
+                assert row['disabled'] is (not advanced_active)
+            else:
+                assert row['disabled'] is advanced_active
+            assert (row['disabled_reason'] is not None) is row['disabled']

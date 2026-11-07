@@ -1,0 +1,36 @@
+{
+    "tracks": [
+        {
+            "id": "beginner",
+            "name": "Fixture Beginner",
+            "trigger": "first_login",
+            "steps": [
+                {"selector": "#main-content", "route": "/dashboard", "title": "Fixture Welcome",
+                 "description": "Fixture welcome text.", "position": "center", "highlight": "none", "action": null},
+                {"selector": ".nav__dropdown-items", "route": "/dashboard", "title": "Fixture Menu",
+                 "description": "Fixture menu text.", "position": "left", "reveal": "menu", "action": null},
+                {"selector": "main h1", "route": "/market", "title": "Fixture Market",
+                 "description": "Fixture market text.", "position": "bottom", "action": null},
+                {"selector": "footer", "route": "/market", "title": "Fixture Footer",
+                 "description": "Fixture footer text.", "position": "top", "action": null}
+            ]
+        },
+        {
+            "id": "advanced",
+            "name": "Fixture Advanced",
+            "trigger": "first_advanced_activation",
+            "steps": [
+                {"selector": "#main-content", "route": "/dashboard", "title": "Fixture Advanced Welcome",
+                 "description": "Fixture advanced welcome.", "position": "center", "highlight": "none", "action": null},
+                {"selector": "#short-order-form", "route": "/market/1", "title": "Fixture Short",
+                 "description": "Fixture short form (hidden until the Short tab is revealed). Opens the demo short.",
+                 "position": "right", "reveal": "short-tab", "action": "demo-short-open"},
+                {"selector": "#portfolio-tab-shorts", "route": "/portfolio", "title": "Fixture Shorts Tab",
+                 "description": "Fixture portfolio shorts tab (revealed, and populated by the demo short).",
+                 "position": "top", "reveal": "portfolio-shorts", "action": null},
+                {"selector": "footer", "route": "/portfolio", "title": "Fixture Advanced End",
+                 "description": "Fixture advanced end.", "position": "top", "action": null}
+            ]
+        }
+    ]
+}
