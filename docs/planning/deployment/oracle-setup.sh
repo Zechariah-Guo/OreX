@@ -16,7 +16,7 @@ sudo apt install -y python3 python3-pip python3-venv nginx git curl
 
 echo "=== Cloning repository ==="
 cd /home/ubuntu
-git clone https://github.com/YOUR_USERNAME/OreX.git orex
+git clone https://github.com/Zechariah-Guo/OreX.git orex
 cd orex
 
 echo "=== Creating virtual environment ==="

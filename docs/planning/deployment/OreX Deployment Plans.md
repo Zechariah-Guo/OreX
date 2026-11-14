@@ -144,7 +144,7 @@ sudo apt install -y python3 python3-pip python3-venv nginx git
 
 ```bash
 cd /home/ubuntu
-git clone https://github.com/YOUR_USERNAME/OreX.git orex
+git clone https://github.com/Zechariah-Guo/OreX.git orex
 cd orex
 
 # Create virtual environment
@@ -234,8 +234,8 @@ server {
         proxy_pass http://127.0.0.1:4000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
         proxy_read_timeout 120s;
         proxy_buffering on;
     }
