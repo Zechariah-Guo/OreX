@@ -1,0 +1,27 @@
+# Local rehearsal of the Oracle stack: Nginx -> Gunicorn (1 worker) -> SQLite.
+# Usage: copy .env.example to .env, set SECRET_KEY, then `docker compose up --build`.
+# The site is at http://localhost:8080.
+services:
+  app:
+    build: .
+    env_file: .env
+    volumes:
+      - orex-data:/app/src/data
+      - orex-avatars:/app/src/static/uploads/avatars
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - orex-avatars:/app/src/static/uploads/avatars:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  orex-data:
+  orex-avatars:

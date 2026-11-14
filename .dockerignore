@@ -1,0 +1,23 @@
+.venv
+venv
+.git
+.gitattributes
+.github
+.vscode
+.hypothesis
+.kiro
+.agents
+.env
+docs
+tests
+scripts
+migrations
+slow tests
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+src/data/*.db
+src/data/*.db-*
+src/static/uploads
