@@ -20,7 +20,7 @@
         display: flex;
     }
     .sltp-modal {
-        background: var(--color-card-bg, #fff);
+        background: var(--colour-surface);
         border-radius: 12px;
         padding: var(--spacing-lg, 1.5rem);
         max-width: 400px;
@@ -32,11 +32,11 @@
         font-size: 1.1rem;
         font-weight: 700;
         margin-bottom: var(--spacing-sm, 0.5rem);
-        color: var(--color-text, #1a1a2e);
+        color: var(--colour-text);
     }
     .sltp-modal__price {
         font-size: 0.85rem;
-        color: var(--color-text-muted, #6b5f7a);
+        color: var(--colour-text-muted);
         margin-bottom: var(--spacing-md, 1rem);
     }
     .sltp-modal__field {
@@ -47,24 +47,24 @@
         font-size: 0.8rem;
         font-weight: 600;
         margin-bottom: 0.25rem;
-        color: var(--color-text-muted, #6b5f7a);
+        color: var(--colour-text-muted);
     }
     .sltp-modal__field input {
         width: 100%;
         padding: 0.5rem 0.75rem;
-        border: 1px solid var(--color-border, #e0dce6);
+        border: 1px solid var(--colour-border);
         border-radius: 6px;
         font-size: 0.9rem;
-        background: var(--color-surface, #f8f6fc);
-        color: var(--color-text, #1a1a2e);
+        background: var(--colour-bg);
+        color: var(--colour-text);
     }
     .sltp-modal__field input:focus {
         outline: none;
-        border-color: var(--color-primary, #7c3aed);
+        border-color: #7c3aed;
     }
     .sltp-modal__hint {
         font-size: 0.75rem;
-        color: var(--color-text-muted, #6b5f7a);
+        color: var(--colour-text-muted);
         margin-top: 0.2rem;
     }
     .sltp-modal__actions {
@@ -79,11 +79,13 @@
     /* Portfolio tabs (advanced mode) */
     .portfolio-tabs {
         display: flex;
-        border-bottom: 2px solid var(--color-border, #e0dce6);
+        align-items: center;
+        border-bottom: 2px solid var(--colour-border);
         margin-bottom: var(--spacing-md, 1rem);
     }
     .portfolio-tabs .trade-tabs__tab {
-        flex: 1;
+        flex: 0 0 auto;
+        min-width: 7.5rem;
         padding: 0.6rem 1rem;
         text-align: center;
         font-weight: 600;
@@ -92,15 +94,48 @@
         background: none;
         border: none;
         border-bottom: 3px solid transparent;
-        color: var(--color-text-muted, #6b5f7a);
+        color: var(--colour-text-muted);
         transition: color 0.2s, border-color 0.2s;
     }
     .portfolio-tabs .trade-tabs__tab:hover {
-        color: var(--color-primary, #7c3aed);
+        color: #7c3aed;
     }
     .portfolio-tabs .trade-tabs__tab--active {
-        color: var(--color-primary, #7c3aed);
-        border-bottom-color: var(--color-primary, #7c3aed);
+        color: #7c3aed;
+        border-bottom-color: #7c3aed;
+    }
+    /* Tabs are <button>s, which don't inherit the page font by default, so the
+       tabs and the Finances link share one explicit font to render identically */
+    .portfolio-tabs .trade-tabs__tab,
+    .portfolio-tabs__finances {
+        font-family: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    /* Link to the Finances page, right-aligned on the tab row (Advanced Mode purple) */
+    .portfolio-tabs__finances,
+    .portfolio-tabs__finances:hover {
+        /* the global a:hover underline doesn't suit a tab-row control */
+        text-decoration: none;
+    }
+    .portfolio-tabs__finances {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.6rem 0.25rem;
+        color: #9b59b6;
+    }
+    .portfolio-tabs__finances:hover {
+        color: #8e44ad;
+    }
+    .portfolio-tabs__finances-arrow {
+        transition: transform 0.2s;
+    }
+    .portfolio-tabs__finances:hover .portfolio-tabs__finances-arrow {
+        transform: translateX(3px);
     }
     .portfolio-tab-content {
         display: none;
@@ -109,13 +144,18 @@
         display: block;
     }
 
-    /* Shorts table */
-    .shorts-table {
+    /* Shorts and Longs tables: one shared style so the two tabs look identical.
+       These come after global.css's .holdings-table rules, so they win where they differ. */
+    .shorts-table,
+    .holdings-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.85rem;
+        white-space: nowrap;
+        border-radius: 0;
     }
-    .shorts-table th {
+    .shorts-table th,
+    .holdings-table th {
         text-align: left;
         padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 0.75rem);
         font-size: 0.8rem;
@@ -124,17 +164,19 @@
         letter-spacing: 0.05em;
         color: var(--colour-text-muted, #6b5f7a);
         background-color: var(--colour-bg, #f5f3fa);
-        border-bottom: 1px solid var(--color-border, #e0dce6);
+        border-bottom: 1px solid var(--colour-border);
         white-space: nowrap;
     }
-    .shorts-table td {
+    .shorts-table td,
+    .holdings-table td {
         padding: 0.6rem 0.75rem;
         font-family: var(--font-mono);
         font-size: 0.9rem;
-        border-bottom: 1px solid var(--color-border, #e0dce6);
+        border-bottom: 1px solid var(--colour-border);
         background: var(--colour-surface, #fff);
     }
-    .shorts-table td a {
+    .shorts-table td a,
+    .holdings-table td a {
         font-family: var(--font-main);
         font-weight: 600;
     }
@@ -213,13 +255,32 @@ document.addEventListener('submit', function(e) {
 });
 
 {% if is_advanced_active %}
-/* Portfolio tab state persistence across htmx swaps */
-var _activePortfolioTab = 'longs';
+/* Portfolio tab state.
+   - The server renders the active tab from ?tab= (so links like Finances'
+     "Manage in Portfolio" open Shorts directly, with no flash of Longs).
+   - Switching tabs updates ?tab= in the address bar, so a full reload keeps it.
+   - The 20s htmx refresh sends the open tab, so the swapped-in content arrives
+     on the right tab instead of flipping back to Longs. */
+var _activePortfolioTab = {{ active_tab | tojson }};
 
 function switchPortfolioTab(tab) {
     _activePortfolioTab = tab;
     _applyPortfolioTab();
+
+    var url = new URL(window.location.href);
+    if (tab === 'shorts') {
+        url.searchParams.set('tab', 'shorts');
+    } else {
+        url.searchParams.delete('tab');
+    }
+    history.replaceState(history.state, '', url);
 }
+
+document.body.addEventListener('htmx:configRequest', function (e) {
+    if (e.detail.elt && e.detail.elt.id === 'portfolio-live') {
+        e.detail.parameters.tab = _activePortfolioTab;
+    }
+});
 
 function _applyPortfolioTab() {
     var tabs = document.querySelectorAll('.portfolio-tabs .trade-tabs__tab');

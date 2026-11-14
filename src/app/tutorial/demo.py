@@ -117,9 +117,10 @@ def open_demo_short(user_id):
     db.execute(
         """INSERT INTO short_positions
            (user_id, ore_id, share_quantity, entry_price, locked_collateral,
-            stop_loss_price, take_profit_price, is_demo)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 1)""",
-        (user_id, ore_id, quantity, price, locked_collateral, stop_loss, take_profit),
+            stop_loss_price, take_profit_price, is_demo, open_factor)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)""",
+        (user_id, ore_id, quantity, price, locked_collateral, stop_loss, take_profit,
+         1 + multiplier),
     )
     db.commit()
     return {'ok': True, 'created': True, 'ore_id': ore_id}

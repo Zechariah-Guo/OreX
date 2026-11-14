@@ -304,6 +304,90 @@ class TestFeeBleedToLiquidation:
 
 
 # ---------------------------------------------------------------------------
+# Test 3b: Liquidation refunds are kept (regression: stale balance overwrite)
+# ---------------------------------------------------------------------------
+
+class TestLiquidationRefundKept:
+    """A forced liquidation must leave the player with vault - buyback.
+
+    Phases 2 and 3 cached the balance locally, then overwrote the refund that
+    _close_position credited to the DB.
+    """
+
+    def test_fee_liquidation_keeps_refund(self, authenticated_client, app):
+        """Phase 3: one short, free cash below one tick fee → liquidated, refund kept."""
+        user_id = _setup_advanced_user(app, balance=0.01)
+
+        ore_id = 4  # Gold
+        _set_ore_price(app, ore_id, 50.00)
+
+        # Entry == current price, so no margin call: required = 100*50*1.5 = locked.
+        # Tick fee (~$2.39) > $0.01 → fee liquidation.
+        pos_id = _create_short_position(
+            app, user_id, ore_id,
+            share_quantity=100, entry_price=50.00,
+            locked_collateral=7500.0,
+        )
+
+        _run_process_short_positions(app)
+
+        assert _get_position(app, pos_id)['status'] == 'closed'
+        # Refund = vault - buyback = 7500 - 100*50 = 2500 (the $0.01 went to fees)
+        assert _get_user_balance(app) == pytest.approx(2500.0, abs=0.01)
+
+        conn = _get_db_conn(app)
+        notifs = conn.execute(
+            "SELECT id, category, message, transaction_id FROM notifications WHERE user_id = ?",
+            (user_id,)
+        ).fetchall()
+        txn = conn.execute(
+            "SELECT id, type FROM transactions WHERE user_id = ? AND type = 'short_liquidated'",
+            (user_id,)
+        ).fetchone()
+        conn.close()
+        assert [n['category'] for n in notifs] == ['liquidation']
+        assert '100 Gold' in notifs[0]['message']
+        # The notification links to the liquidation trade
+        assert notifs[0]['transaction_id'] == txn['id']
+
+        # The inbox detail panel renders the breakdown from that trade
+        html = authenticated_client.get(f"/inbox/{notifs[0]['id']}").data.decode()
+        assert 'Returned to you' in html
+        assert '$2,500.00' in html          # refund
+        assert '$7,500.00' in html          # collateral locked
+        assert 'Trade Gold again' not in html  # no "trade again" link for liquidations
+
+    def test_margin_liquidation_refund_covers_next_margin_call(self, authenticated_client, app):
+        """Phase 2: the first liquidation's refund must fund the next position's top-up."""
+        user_id = _setup_advanced_user(app, balance=100.0)
+
+        # A (Coal): 50 @ $10, vault $750. Price $14 → required 1050, deficit 300 > $100
+        #   → liquidated with locked 850; refund = 850 - 50*14 = $150.
+        _set_ore_price(app, 1, 14.00)
+        pos_a = _create_short_position(
+            app, user_id, 1, share_quantity=50, entry_price=10.00,
+            locked_collateral=750.0,
+        )
+        # B (Iron): 10 @ $10, vault $150. Price $14 → required 210, deficit $60.
+        #   Smaller required, so processed after A. The $150 refund covers it.
+        _set_ore_price(app, 2, 14.00)
+        pos_b = _create_short_position(
+            app, user_id, 2, share_quantity=10, entry_price=10.00,
+            locked_collateral=150.0,
+        )
+
+        _run_process_short_positions(app)
+
+        assert _get_position(app, pos_a)['status'] == 'closed'
+        # Before the fix, B saw a stale $0 balance and was liquidated too.
+        assert _get_position(app, pos_b)['status'] == 'active'
+        assert _get_position(app, pos_b)['locked_collateral'] == pytest.approx(210.0, abs=0.01)
+        # $150 refund - $60 top-up = $90, minus B's small tick fee
+        balance = _get_user_balance(app)
+        assert 80.0 < balance < 90.0
+
+
+# ---------------------------------------------------------------------------
 # Test 4: SL/TP trigger
 # ---------------------------------------------------------------------------
 
@@ -1054,3 +1138,33 @@ class TestNoSurplusRelease:
         assert free_cash_after == initial_balance, (
             f"Expected FreeCash unchanged at {initial_balance}, got {free_cash_after}"
         )
+
+
+class TestMarginDoesNotCompound:
+    """Regression: required vault must use the open-time factor, not the current vault.
+
+    Deriving the factor from locked_collateral compounded it by (price / entry)
+    on every tick the price sat above entry, ballooning a ~$10k vault to ~$115k.
+    """
+
+    def test_vault_tracks_price_over_many_ticks(self, authenticated_client, app):
+        user_id = _setup_advanced_user(app, balance=100000.0)
+        _set_ore_price(app, 1, 10.00)
+        pos_id = _create_short_position(
+            app, user_id, 1, share_quantity=100, entry_price=10.00,
+            locked_collateral=1500.0,
+        )
+        conn = _get_db_conn(app)
+        conn.execute("UPDATE short_positions SET open_factor = 1.5 WHERE id = ?", (pos_id,))
+        conn.commit()
+        conn.close()
+
+        _set_ore_price(app, 1, 10.50)
+        for _ in range(30):
+            _run_process_short_positions(app)
+
+        # required = 100 * 10.50 * 1.5 = 1575, every tick, not 1500 * 1.05^30
+        position = _get_position(app, pos_id)
+        assert position['status'] == 'active'
+        assert position['locked_collateral'] == pytest.approx(1575.0, abs=0.01)
+

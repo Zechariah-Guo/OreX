@@ -9,7 +9,7 @@
      duration   — auto-dismiss time in milliseconds (e.g. 3000, 5000)
 #}
 {% if action_url %}
-<a href="{{ action_url }}" class="flash {{ css_class }} flash--toast flash--clickable" role="alert" data-toast data-duration="{{ duration }}" aria-label="{{ message }}">
+<a href="{{ action_url }}" class="flash {{ css_class }} flash--toast flash--clickable" role="alert" data-toast data-duration="{{ duration }}" aria-label="{{ message }}" draggable="false">
     <span class="flash__icon" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor"><path d="{{ icon }}"/></svg>
     </span>

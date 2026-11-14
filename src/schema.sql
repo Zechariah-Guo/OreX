@@ -116,6 +116,11 @@ CREATE TABLE IF NOT EXISTS short_positions (
     -- live data. Excluded from fees, P/L, advancements and leaderboard money, and
     -- always cleaned up by the tutorial; see app/tutorial/demo.py.
     is_demo INTEGER NOT NULL DEFAULT 0,
+    -- (1 + collateral multiplier) fixed at open. The margin-call phase scales
+    -- the vault as price x shares x open_factor; it must NOT be derived from
+    -- locked_collateral, which grows with top-ups and would compound.
+    -- NULL only on legacy rows not yet backfilled.
+    open_factor REAL DEFAULT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
     FOREIGN KEY (ore_id) REFERENCES ores(id) ON DELETE RESTRICT
 );
@@ -135,6 +140,11 @@ CREATE TABLE IF NOT EXISTS notifications (
     category TEXT NOT NULL,
     message TEXT NOT NULL,
     action_url TEXT DEFAULT NULL,
+    target_url TEXT DEFAULT NULL,
+    -- Trade notifications (SL/TP, liquidation): the transaction row they describe,
+    -- and the SL/TP price the player set. NULL for every other notification.
+    transaction_id INTEGER DEFAULT NULL,
+    trigger_price REAL DEFAULT NULL,
     is_read INTEGER NOT NULL DEFAULT 0,
     toasted INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),

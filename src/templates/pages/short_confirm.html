@@ -23,13 +23,17 @@
                 <span class="confirm-row__label">Position <span class="info-icon" title="Shares × Price">ⓘ</span></span>
                 <span class="confirm-row__value" id="confirm-position">${{ "%.2f" | format(position_size) }}</span>
             </div>
-            <div class="confirm-row confirm-row--total">
-                <span class="confirm-row__label">Margin <span class="info-icon" title="Deducted from your FreeCash">ⓘ</span></span>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Cost to open <span class="confirm-row__term">margin</span> <span class="info-icon" title="Taken from your free cash now. This is your margin.">ⓘ</span></span>
                 <span class="confirm-row__value" id="confirm-margin">${{ "%.2f" | format(player_margin) }}</span>
             </div>
             <div class="confirm-row">
-                <span class="confirm-row__label">Vault <span class="info-icon" title="Total locked. Returned minus buyback on close.">ⓘ</span></span>
+                <span class="confirm-row__label">Collateral locked <span class="confirm-row__term">vault</span> <span class="info-icon" title="Your margin plus the short-sale proceeds, held until you close. You get back whatever is left after buying the shares back.">ⓘ</span></span>
                 <span class="confirm-row__value" id="confirm-vault">${{ "%.2f" | format(collateral) }}</span>
+            </div>
+            <div class="confirm-row">
+                <span class="confirm-row__label">Squeeze price <span class="info-icon" title="Estimated price at which your free cash runs out and the short is force-closed.">ⓘ</span></span>
+                <span class="confirm-row__value">{% if squeeze_price is none %}—{% else %}${{ "%.2f" | format(squeeze_price) }}{% endif %}</span>
             </div>
             <div class="confirm-row">
                 <span class="confirm-row__label">Surcharge <span class="info-icon" title="Extra margin from crowding">ⓘ</span></span>
@@ -39,7 +43,7 @@
                 <span class="confirm-row__label">Tick Fee <span class="info-icon" title="Per-tick fee from FreeCash">ⓘ</span></span>
                 <span class="confirm-row__value" id="confirm-fee">-${{ "%.2f" | format(tick_fee) }}</span>
             </div>
-            <div class="confirm-row">
+            <div class="confirm-row confirm-row--total">
                 <span class="confirm-row__label">Balance after</span>
                 <span class="confirm-row__value" id="confirm-balance">${{ "%.2f" | format(balance_after) }}</span>
             </div>

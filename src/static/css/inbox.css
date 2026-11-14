@@ -142,6 +142,7 @@
     color: var(--colour-danger);
 }
 
+.inbox__list-item-icon.flash--bonus,
 .inbox__list-item-icon.flash--take-profit {
     background-color: rgba(46, 204, 113, 0.2);
     color: var(--colour-success);
@@ -196,18 +197,20 @@
 
 /* Right panel — detail view */
 .inbox__detail {
+    display: flex;
+    flex-direction: column;
     padding: var(--spacing-lg);
     background-color: var(--colour-surface);
     overflow-y: auto;
     max-height: 70vh;
 }
 
-/* Detail content */
+/* Detail content: fills the panel so the buttons can sit at its bottom */
 .inbox__detail-content {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
-    height: 100%;
 }
 
 /* Detail header */
@@ -246,6 +249,7 @@
     color: var(--colour-danger);
 }
 
+.inbox__detail-header.flash--bonus .inbox__detail-icon,
 .inbox__detail-header.flash--take-profit .inbox__detail-icon {
     background-color: rgba(46, 204, 113, 0.2);
     color: var(--colour-success);
@@ -262,9 +266,11 @@
     color: var(--colour-text-muted);
 }
 
-/* Detail body */
+/* Detail body: a column so the action buttons can sit at the bottom */
 .inbox__detail-body {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     padding: var(--spacing-md) 0;
 }
 
@@ -282,18 +288,208 @@
     color: var(--colour-text);
 }
 
-/* Detail footer */
-.inbox__detail-footer {
-    padding-top: var(--spacing-md);
+/* Longer advancement flavour text */
+.inbox__detail-blurb {
+    margin-top: var(--spacing-sm);
+    font-size: 0.925rem;
+    line-height: 1.6;
+    color: var(--colour-text-muted);
+}
+
+.inbox__detail-blurb strong {
+    color: var(--colour-text);
+}
+
+/* Small aside, e.g. why a fill differs from the trigger price */
+.inbox__detail-note {
+    margin-top: var(--spacing-sm);
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--colour-text-muted);
+}
+
+/* Badge image: large, centred under the description */
+.inbox__detail-badge {
+    display: block;
+    width: min(70%, 240px);
+    height: auto;
+    aspect-ratio: 1;
+    margin: var(--spacing-lg) auto 0;
+    object-fit: contain;
+}
+
+/* Trade summary card (SL/TP and liquidations) */
+.inbox__trade {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+    background-color: var(--colour-bg);
+}
+
+.inbox__trade-head {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.inbox__trade-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.inbox__trade-ore {
+    font-weight: 600;
+    color: var(--colour-text);
+}
+
+.inbox__trade-side {
+    margin-left: auto;
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.inbox__trade-side--long {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: var(--colour-success);
+}
+
+.inbox__trade-side--short {
+    background-color: rgba(155, 89, 182, 0.15);
+    color: #9b59b6;
+}
+
+.inbox__trade-rows {
+    margin: 0;
+}
+
+.inbox__trade-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-xs) 0;
+    font-size: 0.875rem;
+}
+
+.inbox__trade-row dt {
+    color: var(--colour-text-muted);
+}
+
+.inbox__trade-row dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    color: var(--colour-text);
+}
+
+.inbox__trade-row--total {
+    margin-top: var(--spacing-xs);
+    padding-top: var(--spacing-sm);
     border-top: 1px solid var(--colour-border);
+    font-weight: 700;
+}
+
+/* Daily bonus: compact 3-day track (mirrors the profile page's bonus cards) */
+.inbox__bonus-track {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-sm);
+    margin: var(--spacing-md) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.inbox__bonus-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md) var(--spacing-sm);
+    border: 2px solid var(--colour-border);
+    border-radius: var(--radius);
+    text-align: center;
+}
+
+.inbox__bonus-day-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--colour-text-muted);
+}
+
+.inbox__bonus-day-amount {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--colour-text);
+}
+
+.inbox__bonus-day-state {
+    display: flex;
+    align-items: center;
+    min-height: 18px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--colour-text-muted);
+}
+
+.inbox__bonus-day--collected {
+    border-color: var(--colour-accent);
+    background-color: rgba(46, 204, 113, 0.06);
+}
+
+.inbox__bonus-day--collected .inbox__bonus-day-label,
+.inbox__bonus-day--collected .inbox__bonus-day-state {
+    color: var(--colour-success);
+}
+
+.inbox__bonus-day--collected .inbox__bonus-day-amount {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.inbox__bonus-day--ready {
+    border-color: var(--colour-success);
+    background-color: rgba(46, 204, 113, 0.12);
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.15);
+}
+
+.inbox__bonus-day--ready .inbox__bonus-day-state {
+    color: var(--colour-success);
+}
+
+.inbox__bonus-day--waiting {
+    opacity: 0.75;
+}
+
+.inbox__bonus-day--upcoming {
+    opacity: 0.5;
+}
+
+/* Action buttons: centred and pushed to the bottom of the panel */
+.inbox__detail-cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-top: auto;
+    padding-top: var(--spacing-lg);
 }
 
 .inbox__detail-action {
     display: inline-block;
+    min-width: 12rem;
+    text-align: center;
 }
 
 /* Empty state */
 .inbox__empty-state {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;

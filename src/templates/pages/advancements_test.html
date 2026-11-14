@@ -20,6 +20,33 @@
         </form>
     </section>
 
+    <!-- Free Cash Testing -->
+    <section style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #444; border-radius: 8px;">
+        <h2 style="margin-top: 0;">Free Cash</h2>
+        <p style="color: #aaa; font-size: 0.9rem;">
+            Current free cash: <strong>${{ "{:,.2f}".format(free_cash) }}</strong>.
+            Drain it while holding a short and the next market tick (up to 20s) fee-liquidates the position.
+        </p>
+        {% if cash_tools_enabled %}
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <form method="POST" action="{{ url_for('advancements.drain_free_cash') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" style="padding: 0.4rem 0.8rem; background: #b71c1c; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Drain Free Cash ($0)
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('advancements.grant_free_cash') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" style="padding: 0.4rem 0.8rem; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Add ${{ "{:,}".format(cash_grant_amount) }}
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <p style="color: #ff8a65; font-size: 0.9rem; margin: 0;">Disabled: only available when the app runs in debug mode.</p>
+        {% endif %}
+    </section>
+
     <!-- Daily Bonus Testing -->
     <section style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #444; border-radius: 8px;">
         <h2 style="margin-top: 0;">Daily Bonus</h2>

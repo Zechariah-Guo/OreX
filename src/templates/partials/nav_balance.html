@@ -1,5 +1,5 @@
 {% if is_advanced_active %}
-<a href="{{ url_for('finances.overview') }}" class="nav__balance nav__balance--link" id="nav-balance" hx-swap-oob="true">${{ "%.2f" | format(current_user.balance) }}</a>
+<a href="{{ url_for('finances.overview') }}" class="nav__balance nav__balance--link" id="nav-balance" hx-swap-oob="true" draggable="false">${{ "%.2f" | format(current_user.balance) }}</a>
 {% else %}
 <span id="nav-balance" hx-swap-oob="true" class="nav__balance">${{ "%.2f" | format(current_user.balance) }}</span>
 {% endif %}

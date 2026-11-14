@@ -10,7 +10,7 @@
       {% set is_completed = day < user['bonus_cycle_day'] %}
       {% set is_current = day == user['bonus_cycle_day'] %}
       {% set is_upcoming = day > user['bonus_cycle_day'] %}
-      {% set day_amount = {1: 1000, 2: 10000, 3: 100000}[day] %}
+      {% set day_amount = config.BONUS_AMOUNTS[day] %}
 
       {% if is_current and bonus_available %}
       {# Current day, available to collect — render as a clickable button #}
@@ -35,10 +35,12 @@
       </div>
       {% elif is_current and not bonus_available %}
       <div class="bonus__card bonus__card--current bonus__card--waiting"
-           aria-label="Day {{ day }} — come back tomorrow">
+           aria-label="Day {{ day }} — available again after midnight">
         <span class="bonus__card-day">Day {{ day }}</span>
         <span class="bonus__card-amount">${{ "{:,}".format(day_amount) }}</span>
-        <span class="bonus__card-action bonus__card-action--waiting">Tomorrow</span>
+        {# bonus-countdown.js replaces the text with a live HH:MM:SS countdown; "Tomorrow" is the no-JS fallback #}
+        <span class="bonus__card-action bonus__card-action--waiting bonus__countdown"
+              data-bonus-countdown="{{ bonus_seconds_left }}">Tomorrow</span>
       </div>
       {% else %}
       <div class="bonus__card bonus__card--upcoming"

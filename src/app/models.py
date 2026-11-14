@@ -584,12 +584,12 @@ def get_remaining_backup_code_count(user_id):
 
 # --- Notifications Model ---
 
-def create_notification(user_id, category, message, action_url=None):
+def create_notification(user_id, category, message, action_url=None, target_url=None):
     """Create a new notification for a user.
 
     Validates inputs, inserts a new row with is_read=0, and returns the
     notification ID. The action_url is always set to the notification's own
-    inbox detail view (/inbox/<id>) so toast clicks open the inbox entry.
+    inbox detail view (/inbox?selected=<id>) so toast clicks open the inbox entry.
 
     Args:
         user_id: The target user's ID (must exist in users table).
@@ -597,6 +597,8 @@ def create_notification(user_id, category, message, action_url=None):
         message: The notification message (must not be empty or whitespace-only).
         action_url: Ignored — kept for API compatibility. Always overridden
             with the inbox detail URL.
+        target_url: Optional page the inbox detail pane links onward to
+            (e.g. '/history'). Stored as-is; None means no link is shown.
 
     Returns:
         int: The ID of the newly created notification.
@@ -616,9 +618,9 @@ def create_notification(user_id, category, message, action_url=None):
 
     # Insert notification with is_read=0 (action_url set after we get the ID)
     cursor = db.execute(
-        """INSERT INTO notifications (user_id, category, message, action_url, is_read, created_at)
-           VALUES (?, ?, ?, NULL, 0, datetime('now', 'localtime'))""",
-        (user_id, category, message),
+        """INSERT INTO notifications (user_id, category, message, action_url, target_url, is_read, created_at)
+           VALUES (?, ?, ?, NULL, ?, 0, datetime('now', 'localtime'))""",
+        (user_id, category, message, target_url),
     )
     notif_id = cursor.lastrowid
 
@@ -676,6 +678,24 @@ def get_notification_detail(notification_id, user_id):
         (notification_id, user_id),
     ).fetchone()
     return row
+
+
+def get_notification_trade(transaction_id, user_id):
+    """Return the transaction a trade notification points at, joined with its ore.
+
+    Ownership-checked: returns None unless the transaction belongs to user_id.
+    """
+    if transaction_id is None:
+        return None
+    db = get_db()
+    return db.execute(
+        """SELECT t.id, t.type, t.quantity, t.price_at_trade, t.total_value,
+                  o.id AS ore_id, o.name AS ore_name, o.icon_filename
+           FROM transactions t
+           JOIN ores o ON o.id = t.ore_id
+           WHERE t.id = ? AND t.user_id = ?""",
+        (transaction_id, user_id),
+    ).fetchone()
 
 
 def has_unread_notifications(user_id):
@@ -815,6 +835,7 @@ def delete_notification(notification_id, user_id):
 _NOTIFICATION_ICON_PATHS = {
     "trophy": "M280-120v-80h160v-124q-49-11-87.5-41.5T296-442q-75-9-125.5-65.5T120-640v-40q0-33 23.5-56.5T200-760h80v-80h400v80h80q33 0 56.5 23.5T840-680v40q0 76-50.5 132.5T664-442q-18 46-56.5 76.5T520-324v124h160v80H280Zm0-408v-152h-80v40q0 38 22 68.5t58 43.5Zm285 93q35-35 35-85v-240H360v240q0 50 35 85t85 35q50 0 85-35Zm115-93q36-13 58-43.5t22-68.5v-40h-80v152Zm-200-52Z",
     "warning": "m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm330.5-51.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Zm40-100Z",
+    "dollar": "M441-120v-86q-53-12-91.5-46T293-348l74-30q15 48 44.5 73t77.5 25q41 0 69.5-18.5T587-356q0-35-22-55.5T463-458q-86-27-118-64.5T313-614q0-65 42-101t86-41v-84h80v84q50 8 82.5 36.5T651-650l-74 32q-12-32-34-48t-60-16q-44 0-67 19.5T393-614q0 33 30 52t104 40q69 20 104.5 63.5T667-358q0 71-42 108t-104 46v84h-80Z",
     "bell": "M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z",
 }
 
@@ -824,6 +845,7 @@ _NOTIFICATION_STYLES = {
     "liquidation": ("flash--liquidation", _NOTIFICATION_ICON_PATHS["warning"], 5000),
     "stop_loss": ("flash--stop-loss", _NOTIFICATION_ICON_PATHS["bell"], 3000),
     "take_profit": ("flash--take-profit", _NOTIFICATION_ICON_PATHS["bell"], 3000),
+    "bonus": ("flash--bonus", _NOTIFICATION_ICON_PATHS["dollar"], 5000),
 }
 
 _DEFAULT_NOTIFICATION_STYLE = ("flash--default", _NOTIFICATION_ICON_PATHS["bell"], 3000)

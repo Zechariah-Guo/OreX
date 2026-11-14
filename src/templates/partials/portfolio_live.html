@@ -21,19 +21,15 @@
 </div>
 
 {% if is_advanced_active %}
-<div class="portfolio-finances-link">
-    <a href="{{ url_for('finances.overview') }}" class="btn btn--secondary btn--small">View Finances</a>
-</div>
-{% endif %}
-
-{% if is_advanced_active %}
 <!-- Tabs for advanced users -->
 <div class="portfolio-tabs">
-    <button class="trade-tabs__tab" data-tab="longs" onclick="switchPortfolioTab('longs')">Longs</button>
-    <button class="trade-tabs__tab" data-tab="shorts" onclick="switchPortfolioTab('shorts')">Shorts</button>
+    {% set tab = active_tab | default('longs') %}
+    <button class="trade-tabs__tab {% if tab == 'longs' %}trade-tabs__tab--active{% endif %}" data-tab="longs" onclick="switchPortfolioTab('longs')">Longs</button>
+    <button class="trade-tabs__tab {% if tab == 'shorts' %}trade-tabs__tab--active{% endif %}" data-tab="shorts" onclick="switchPortfolioTab('shorts')">Shorts</button>
+    <a href="{{ url_for('finances.overview') }}" class="portfolio-tabs__finances">Finances <span class="portfolio-tabs__finances-arrow" aria-hidden="true">&rarr;</span></a>
 </div>
 
-<div id="portfolio-tab-longs" class="portfolio-tab-content portfolio-tab-content--active">
+<div id="portfolio-tab-longs" class="portfolio-tab-content {% if tab == 'longs' %}portfolio-tab-content--active{% endif %}">
 {% endif %}
 
 {% if holdings %}
@@ -137,7 +133,7 @@
 {% if is_advanced_active %}
 </div><!-- end #portfolio-tab-longs -->
 
-<div id="portfolio-tab-shorts" class="portfolio-tab-content">
+<div id="portfolio-tab-shorts" class="portfolio-tab-content {% if tab == 'shorts' %}portfolio-tab-content--active{% endif %}">
     {% if short_positions is defined and short_positions %}
     <div class="shorts-table-wrapper">
         <table class="shorts-table">

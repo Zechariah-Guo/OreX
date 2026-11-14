@@ -261,9 +261,22 @@ def test_advanced_tutorial_triggers_only_while_advanced_is_active(tclient, app):
 def test_beginner_runs_before_advanced_and_never_alongside(tclient, app):
     enable_advanced(app)
     assert page_context(tclient, app)['tutorial_auto_track'] == 'beginner'
+    # Standard Mode: a paused beginner tour is the one offered, and blocks advanced
+    enable_advanced(app, active=False)
     set_status(app, 'beginner', 'in_progress', 1)
     ctx = page_context(tclient, app)
     assert ctx['tutorial_auto_track'] is None and ctx['tutorial_active']['track_id'] == 'beginner'
+
+
+def test_paused_beginner_not_offered_in_advanced_mode(tclient, app):
+    # Its steps can't render in the Advanced layout, so no resume prompt once
+    # the player is in Advanced Mode (e.g. after finishing the advanced tour).
+    enable_advanced(app, active=True)
+    set_status(app, 'beginner', 'in_progress', 3)
+    set_status(app, 'advanced', 'completed')
+    ctx = page_context(tclient, app)
+    assert ctx['tutorial_active'] is None
+    assert ctx['tutorial_should_load_alpine'] is False
 
 
 # ---------------------------------------------------------------------------
@@ -357,7 +370,7 @@ def test_help_page_lists_tracks_by_purchase_and_status(tclient, app):
                 context = f'purchased={purchased} beginner={beginner} advanced={advanced}'
 
                 assert 'Getting Started' in html, context
-                assert ('Advanced Mode</span>' in html) is purchased, context
+                assert ('Going Deeper</span>' in html) is purchased, context
                 # A button appears for in-progress (Resume + Replay) and
                 # completed/dismissed (Replay); not_started and absent tracks have none.
                 expected_buttons = {track for track, status, visible in (

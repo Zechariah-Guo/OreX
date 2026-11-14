@@ -62,6 +62,7 @@ def build_tutorial_list(tracks, states, advanced_purchased, advanced_active=Fals
             'can_replay': status in REPLAYABLE_STATUSES or status == 'in_progress',
             'disabled': disabled,
             'disabled_reason': reason if disabled else None,
+            'advanced_only': advanced_only,
         })
     return rows
 

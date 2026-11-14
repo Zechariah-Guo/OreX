@@ -117,16 +117,15 @@ class TestFinancesIntegrationLifecycle:
         assert response.status_code == 200
         html = response.data.decode('utf-8')
 
-        # Verify the ore name appears in the table
-        assert 'Coal' in html
-        # Verify share quantity
-        assert '100' in html
-        # Verify entry price ($10.00)
-        assert '$10.00' in html
-        # Verify locked collateral ($1,500.00)
-        assert '$1,500.00' in html
-        # Short value = 100 shares * $10.00 = $1,000.00
+        # The Short Exposure section summarises it (per-position rows live on
+        # the Portfolio Shorts tab, linked from here)
+        assert 'id="finances-shorts"' in html
+        assert 'href="/portfolio?tab=shorts"' in html
+        # Exposure = 100 shares * $10.00 = $1,000.00
         assert '$1,000.00' in html
+        # Locked collateral, and how many times it covers the exposure
+        assert '$1,500.00' in html
+        assert '1.50&times; exposure' in html
 
     def test_close_short_position_removed_on_partial_reload(self, authenticated_client, app):
         """Close a short position → GET /finances (HTMX) → verify position is gone.
@@ -142,11 +141,12 @@ class TestFinancesIntegrationLifecycle:
             entry_price=25.00, locked_collateral=2000.00,
         )
 
-        # Verify it appears first
+        # Verify it appears first: exposure = 50 * $25.00
         response = authenticated_client.get('/finances')
         assert response.status_code == 200
         html = response.data.decode('utf-8')
-        assert 'Iron' in html
+        assert 'id="finances-shorts"' in html
+        assert '$1,250.00' in html
 
         # Now close the position
         conn = sqlite3.connect(app.config['DATABASE_PATH'])
@@ -164,10 +164,10 @@ class TestFinancesIntegrationLifecycle:
         assert response.status_code == 200
         html = response.data.decode('utf-8')
 
-        # Position should no longer appear
-        assert 'Iron' not in html
-        # Should show empty state or no positions section
-        assert 'No active short positions' in html or 'Active Short Positions' not in html
+        # No shorts left: the Short Exposure and Cash Flow sections are hidden
+        assert 'id="finances-shorts"' not in html
+        assert 'id="finances-cashflow-section"' not in html
+        assert '$1,250.00' not in html
 
     def test_fee_burn_matches_tick_engine_formula(self, authenticated_client, app):
         """Fee burn displayed matches the actual tick engine formula.
@@ -307,16 +307,19 @@ class TestFinancesIntegrationLifecycle:
         assert response.status_code == 200
         html = response.data.decode('utf-8')
 
-        # Verify position count
-        assert f'Positions: <strong>{expected_position_count}</strong>' in html
+        # Short Exposure tiles show the aggregates
+        assert f'<span class="capital__item-value">{expected_position_count}</span>' in html
+        assert '>positions<' in html  # plural label
 
-        # Verify total exposure
         expected_exposure_str = f"${expected_total_exposure:,.2f}"
-        assert f'Total Exposure: <strong>{expected_exposure_str}</strong>' in html
+        assert f'<span class="capital__item-value">{expected_exposure_str}</span>' in html
 
-        # Verify total fees paid
         expected_fees_str = f"${expected_total_fees:,.2f}"
-        assert f'Total Fees Paid: <strong>{expected_fees_str}</strong>' in html
+        assert f'<span class="capital__item-value">{expected_fees_str}</span>' in html
+
+        # Coverage = total locked / total exposure
+        expected_coverage = (1800.00 + 2100.00 + 5400.00) / expected_total_exposure
+        assert f'{expected_coverage:.2f}&times; exposure' in html
 
     def test_zero_free_cash_displays_correctly(self, authenticated_client, app):
         """Zero free cash with active shorts → displays "$0.00" and "0 ticks" with red indicator.

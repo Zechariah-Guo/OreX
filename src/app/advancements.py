@@ -81,6 +81,65 @@ ADVANCEMENT_METADATA = {
     },
 }
 
+# Badge image filenames in static/images/advancements/ (shared by the profile
+# page and the inbox detail panel).
+ADVANCEMENT_IMAGES = {
+    "millionaire": "Millionaire.png",
+    "multimillionaire": "Multimillionaire.png",
+    "the_big_short": "The Big Short.png",
+    "dedicated": "Dedicated.png",
+    "day_trader": "What a Deal!.png",
+    "budding_enthusiast": "Suit Up.png",
+    "completionist": "Completionist.png",
+    "tragedy": "Post Mortem.png",
+    "best_of_the_rest": "Go for Diamond!.png",
+}
+
+# Longer flavour text shown in the inbox detail panel for each advancement.
+ADVANCEMENT_BLURBS = {
+    "millionaire": "Seven figures. You've built a net worth of $1,000,000, and the market is starting to notice.",
+    "multimillionaire": "Eight figures. $10,000,000 in net worth puts you in very rare company.",
+    "the_big_short": "You bet against the market and won. Closing a short in profit takes nerve and good timing.",
+    "dedicated": "Three days in a row. The market never sleeps, and it seems neither do you.",
+    "day_trader": "100 trades and counting. Buying, selling and everything in between, you've put in the reps.",
+    "budding_enthusiast": "20 minutes on the trading floor. You're officially part of the OreX crowd.",
+    "completionist": "Every other achievement, collected. There's nothing left to prove.",
+    "tragedy": "Sometimes the market wins. Every great trader has a story like this one, and now you have yours.",
+    "best_of_the_rest": "Rank 1 on the leaderboard. Everyone else is chasing you now.",
+}
+
+# Advancements that unlock a cosmetic theme (key -> theme display name)
+ADVANCEMENT_THEME_UNLOCKS = {
+    "multimillionaire": "Money",
+    "completionist": "Gold",
+}
+
+
+def advancement_key_from_message(message):
+    """Recover the advancement key from an advancement notification's message.
+
+    award_advancement() always writes "Achievement unlocked: <Name>!", so the
+    display name identifies the key. Returns None if nothing matches.
+    """
+    if not message:
+        return None
+    # Longest names first, so a name that prefixes another can't win by accident
+    for key in sorted(ADVANCEMENT_KEYS, key=lambda k: -len(ADVANCEMENT_METADATA[k]["name"])):
+        if message.startswith(f"Achievement unlocked: {ADVANCEMENT_METADATA[key]['name']}!"):
+            return key
+    return None
+
+
+def get_advancement_detail(key):
+    """Display data for one advancement in the inbox detail panel."""
+    return {
+        "key": key,
+        "name": ADVANCEMENT_METADATA[key]["name"],
+        "blurb": ADVANCEMENT_BLURBS[key],
+        "image": ADVANCEMENT_IMAGES[key],
+        "theme": ADVANCEMENT_THEME_UNLOCKS.get(key),
+    }
+
 
 # --- Core Award & Query Functions ---
 
@@ -142,13 +201,18 @@ def award_advancement(db, user_id, key):
     # Notification
     display_name = ADVANCEMENT_METADATA[key]["name"]
     message = f"Achievement unlocked: {display_name}!"
+    # Unlocks of a feature link to where it lives (theme picker in settings);
+    # every other advancement links to the achievements display on the profile.
+    target_url = "/profile"
     if key == "multimillionaire":
         message += " Money theme unlocked!"
+        target_url = "/settings"
     elif key == "completionist":
         message += " Gold theme unlocked!"
+        target_url = "/settings"
 
     try:
-        _create_notification(user_id, "advancement", message, "/advancements")
+        _create_notification(user_id, "advancement", message, target_url=target_url)
     except Exception:
         # Notifications should not block advancement awards
         pass

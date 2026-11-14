@@ -65,6 +65,7 @@ def _create_test_db():
             category TEXT NOT NULL,
             message TEXT NOT NULL,
             action_url TEXT DEFAULT NULL,
+            target_url TEXT DEFAULT NULL,
             is_read INTEGER NOT NULL DEFAULT 0,
             toasted INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),

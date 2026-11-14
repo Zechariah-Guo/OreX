@@ -192,6 +192,8 @@
             classes.push('flash--clickable');
             el.setAttribute('href', notification.action_url);
             el.setAttribute('aria-label', notification.message);
+            // A native anchor is draggable; that drag hijacks swipe-to-dismiss.
+            el.setAttribute('draggable', 'false');
         } else {
             // No action_url — toast is interactable (for future swipe-to-dismiss etc.)
             // but does not navigate anywhere on click

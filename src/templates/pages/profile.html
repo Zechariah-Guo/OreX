@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Profile - OreX{% endblock %}
+{% block title %}{% if is_own_profile %}Profile{% else %}{{ user['username'] }}{% endif %} - OreX{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"
@@ -49,21 +49,9 @@
         letter-spacing: 1px;
         border: 3px solid var(--colour-border);
 
-        background-color: {
-                {
-                user_avatar_color_hex
-            }
-        }
-
-        ;
-
-        color: {
-                {
-                user_avatar_text_color
-            }
-        }
-
-        ;
+        {# The profile owner's colours, not the viewer's (see routes/profile.py) #}
+        background-color: {{ profile_avatar_hex }};
+        color: {{ profile_avatar_text }};
     }
 
     .profile__avatar-upload-btn {
@@ -723,7 +711,7 @@
     <section class="profile__header" aria-label="Player identity">
         <div class="profile__avatar-wrapper" id="profile-avatar-section">
             {% if user['avatar_path'] %}
-            <img src="{{ url_for('static', filename='uploads/avatars/' ~ current_user.id ~ '.webp') }}"
+            <img src="{{ url_for('static', filename='uploads/avatars/' ~ user['id'] ~ '.webp') }}"
                 alt="Profile avatar for {{ user['username'] }}" class="profile__avatar-img" id="profile-avatar-img"
                 width="140" height="140">
             {% else %}
@@ -732,6 +720,7 @@
                 {{ user['username'][:2] | upper }}
             </div>
             {% endif %}
+            {% if is_own_profile %}
             <button class="profile__avatar-upload-btn" id="avatar-upload-trigger" type="button"
                 aria-label="Upload profile picture" title="Upload avatar">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960"
@@ -743,12 +732,13 @@
             <input type="file" id="avatar-file-input" class="profile__file-input"
                 accept="image/png,image/jpeg,image/webp" aria-label="Select avatar image file">
             <input type="hidden" id="csrf-token" name="csrf_token" value="{{ csrf_token() }}">
+            {% endif %}
         </div>
         <h1 class="profile__username">{{ user['username'] }}</h1>
     </section>
 
     <!-- Daily Bonus Section -->
-    {% if not bonus_complete %}
+    {% if is_own_profile and not bonus_complete %}
     <section aria-label="Daily login bonus">
         {% include 'partials/profile_bonus.html' %}
     </section>
@@ -789,7 +779,9 @@
             <img src="{{ url_for('static', filename='images/streak.webp') }}" alt="" class="profile-stat-box__bg-img" aria-hidden="true">
             <span class="profile-stat-box__label">Login Streak</span>
             <span class="profile-stat-box__value">{{ user['login_streak'] | default(0) }} days</span>
-            {% if not bonus_complete %}
+            {% if not is_own_profile %}
+            <span class="profile-stat-box__sub">Consecutive days</span>
+            {% elif not bonus_complete %}
             <span class="profile-stat-box__sub">Bonus active</span>
             {% else %}
             <span class="profile-stat-box__sub">Welcome bonus completed</span>
@@ -851,6 +843,7 @@
     </div>
 </div>
 
+{% if is_own_profile %}
 <!-- Avatar Crop Dialog -->
 <div class="avatar-crop-backdrop" id="avatar-crop-backdrop" aria-hidden="true">
     <div class="avatar-crop-dialog" role="dialog" aria-labelledby="avatar-crop-title" aria-modal="true">
@@ -864,12 +857,16 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
+{% if is_own_profile %}
+<script src="{{ url_for('static', filename='js/bonus-countdown.js') }}" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"
     integrity="sha512-JyCZjCOZoyeQZSd5+YEAcFgz2fowJ1F1hyJOXgtKu4llIa0KneLcidn5bwfutiehUTiOuK87A986BZJMko0eWQ=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% endif %}
 <script>
     function achievementOrbit() {
         return {
@@ -916,6 +913,7 @@
         };
     }
 </script>
+{% if is_own_profile %}
 <script>
     (function () {
         'use strict';
@@ -1073,4 +1071,5 @@
         });
     })();
 </script>
+{% endif %}
 {% endblock %}

@@ -361,7 +361,7 @@ class TestBonusCollectionFullCycle:
         assert state['bonus_cycle_day'] == 3
         assert state['last_bonus_collected_date'] == '2025-01-02'
 
-        # --- Day 3: Advance date, Collect $100,000 ---
+        # --- Day 3: Advance date, Collect $50,000 ---
         fake_date_day3 = date(2025, 1, 3)
         with patch('app.bonus.date') as mock_date:
             mock_date.today.return_value = fake_date_day3
@@ -378,7 +378,7 @@ class TestBonusCollectionFullCycle:
             assert response.status_code == 200
 
         state = _get_user_bonus_state(app)
-        assert state['balance'] == starting_balance + 1000 + 10000 + 100000
+        assert state['balance'] == starting_balance + 1000 + 10000 + 50000
         assert state['bonus_cycle_day'] == 4
         assert state['last_bonus_collected_date'] == '2025-01-03'
 
@@ -400,7 +400,7 @@ class TestBonusCollectionFullCycle:
 
         # Balance should NOT have changed
         state = _get_user_bonus_state(app)
-        assert state['balance'] == starting_balance + 1000 + 10000 + 100000
+        assert state['balance'] == starting_balance + 1000 + 10000 + 50000
         assert state['bonus_cycle_day'] == 4
 
         # Response should contain the "already completed" indicator

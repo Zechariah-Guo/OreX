@@ -270,9 +270,24 @@ def _apply_time_bleed_fees(db, ores_map: dict, closed_ids: set):
                     (partial_fee, pos['id'])
                 )
 
+                # Persist the zeroed balance BEFORE closing: _close_position
+                # credits the refund (vault - buyback) to the DB balance, and
+                # it must land on top of 0, not on the pre-fee balance.
+                db.execute("UPDATE users SET balance = 0 WHERE id = ?", (user_id,))
+
                 # Trigger forced liquidation for this position
-                _close_position(db, pos, "forced_liquidation", current_price)
+                txn_id = _close_position(db, pos, "forced_liquidation", current_price)
                 closed_ids.add(pos['id'])
+                _create_liquidation_notification(
+                    db, user_id, pos['share_quantity'],
+                    ores_map[pos['ore_id']].get('name', 'ore'), current_price,
+                    transaction_id=txn_id,
+                )
+
+                # Pick up the refund so the final balance write below keeps it
+                user_balance = db.execute(
+                    "SELECT balance FROM users WHERE id = ?", (user_id,)
+                ).fetchone()['balance']
 
                 # Break — skip remaining positions for this user
                 break
@@ -345,11 +360,13 @@ def _close_position(db, position, close_type: str, current_price: float):
 
     # Record the transaction with P/L as total_value
     _now = datetime.now().isoformat()
-    db.execute(
+    cursor = db.execute(
         """INSERT INTO transactions (user_id, ore_id, type, quantity, price_at_trade, total_value, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (user_id, ore_id, trade_type, shares, current_price, pnl, _now)
     )
+    # Returned so callers can link a notification to this trade
+    return cursor.lastrowid
 
 
 def _rebalance_margin(db, ores_map: dict, closed_ids: set):
@@ -388,16 +405,24 @@ def _rebalance_margin(db, ores_map: dict, closed_ids: set):
         shares = pos['share_quantity']
         entry_price = pos['entry_price']
 
-        # Derive the multiplier that was used at open time from stored data
-        # At open: locked_collateral = entry_price × shares × (1 + multiplier)
-        # So: multiplier = (locked_collateral / (entry_price × shares)) - 1
-        # Then required at current price = current_price × shares × (1 + multiplier)
-        # This avoids recalculating short_ratio (which changes as positions open/close)
-        entry_value = entry_price * shares
-        if entry_value > 0:
-            open_factor = pos['locked_collateral'] / entry_value  # = (1 + multiplier_at_open)
-        else:
-            open_factor = 1.5  # fallback
+        # open_factor = (1 + multiplier) fixed at open and stored on the row, so
+        # required = current_price × shares × open_factor. It must not be derived
+        # from locked_collateral: that grows with every top-up, so deriving from it
+        # compounds the factor by (price / entry) each tick.
+        open_factor = pos['open_factor']
+        if open_factor is None:
+            # Legacy row never backfilled: best available estimate, derived from the
+            # vault ONCE and then stored. Re-deriving every tick would compound it
+            # exactly like the old bug (capped at 1 + the max 2.5 multiplier).
+            entry_value = entry_price * shares
+            if entry_value > 0:
+                open_factor = min(pos['locked_collateral'] / entry_value, 3.5)
+            else:
+                open_factor = 1.5
+            db.execute(
+                "UPDATE short_positions SET open_factor = ? WHERE id = ?",
+                (open_factor, pos['id'])
+            )
 
         required_collateral = round(current_price * shares * open_factor, 2)
 
@@ -451,10 +476,22 @@ def _rebalance_margin(db, ores_map: dict, closed_ids: set):
                     updated_pos = db.execute(
                         "SELECT * FROM short_positions WHERE id = ?", (pos['id'],)
                     ).fetchone()
-                    _close_position(db, updated_pos, "forced_liquidation", current_price)
+                    txn_id = _close_position(db, updated_pos, "forced_liquidation", current_price)
 
                     # Add to closed_ids so subsequent phases skip it
                     closed_ids.add(pos['id'])
+                    _create_liquidation_notification(
+                        db, user_id, pos['share_quantity'],
+                        ores_map[pos['ore_id']].get('name', 'ore'), current_price,
+                        transaction_id=txn_id,
+                    )
+
+                    # _close_position credited the refund to the DB balance;
+                    # re-read it so this user's remaining positions see it
+                    # instead of overwriting it with the stale 0.
+                    user_balance = db.execute(
+                        "SELECT balance FROM users WHERE id = ?", (user_id,)
+                    ).fetchone()['balance']
                 else:
                     # Can cover the full deficit
                     new_locked = round(locked_collateral + deficit, 2)
@@ -518,12 +555,22 @@ def _evaluate_sltp_triggers(db, ores_map: dict) -> set:
 
         # Check Stop Loss trigger: price rose to or above SL
         if stop_loss_price is not None and current_price >= stop_loss_price:
-            _close_position(db, position, "sl_triggered", current_price)
+            txn_id = _close_position(db, position, "sl_triggered", current_price)
             closed_ids.add(position['id'])
+            _create_trade_notification(
+                db, position['user_id'], 'stop_loss', 'Stop Loss',
+                position['share_quantity'], ores_map[ore_id].get('name', 'ore'), current_price,
+                transaction_id=txn_id, trigger_price=stop_loss_price,
+            )
         # Check Take Profit trigger: price fell to or below TP
         elif take_profit_price is not None and current_price <= take_profit_price:
-            _close_position(db, position, "tp_triggered", current_price)
+            txn_id = _close_position(db, position, "tp_triggered", current_price)
             closed_ids.add(position['id'])
+            _create_trade_notification(
+                db, position['user_id'], 'take_profit', 'Take Profit',
+                position['share_quantity'], ores_map[ore_id].get('name', 'ore'), current_price,
+                transaction_id=txn_id, trigger_price=take_profit_price,
+            )
 
             # Evaluate short advancement for profitable TP-triggered close
             # TP trigger means price fell → short is profitable (pnl > 0)
@@ -638,7 +685,7 @@ def _check_forced_liquidation(db, ores_map: dict, closed_ids: set):
             # 3. Record the transaction (pnl for the transaction record reflects actual P/L)
             pnl = locked - short_value
             _now = datetime.now().isoformat()
-            db.execute(
+            txn_cursor = db.execute(
                 """INSERT INTO transactions (user_id, ore_id, type, quantity, price_at_trade, total_value, created_at)
                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (user_id, pos['ore_id'], TRANSACTION_TYPE_SHORT_LIQUIDATED,
@@ -646,41 +693,82 @@ def _check_forced_liquidation(db, ores_map: dict, closed_ids: set):
             )
 
             # 4. Create notification for the player
-            _create_liquidation_notification(db, user_id)
+            _create_liquidation_notification(
+                db, user_id, pos['share_quantity'],
+                ores_map[pos['ore_id']].get('name', 'ore'), current_price,
+                transaction_id=txn_cursor.lastrowid,
+            )
 
             # 5. Add to closed_ids
             closed_ids.add(pos['id'])
 
 
-def _create_liquidation_notification(db, user_id: int):
-    """Create a forced liquidation notification for the player.
+def _insert_notification(db, user_id: int, category: str, message: str,
+                         transaction_id=None, trigger_price=None):
+    """Insert a notification linking onward to /history, on the tick's connection.
 
-    Phase 4 is a catch-all liquidation check — the specific cause (fee or margin)
-    may have been handled in Phase 2 or Phase 3. This notification uses a generic
-    liquidation message.
+    transaction_id / trigger_price feed the inbox detail panel's trade summary.
 
-    Inserts directly into the notifications table if it exists. Gracefully handles
-    the case where the notifications table has not yet been created (the notification
-    system is defined in a separate spec).
-
-    Args:
-        db: An active sqlite3 connection.
-        user_id: The player whose position was liquidated.
+    Inserts directly (rather than via create_notification(), which opens and
+    commits its own connection) so it joins the caller's transaction. Failures
+    never break the tick loop.
     """
     try:
+        # Bots short too, but nobody reads their inbox — don't fill the table.
+        is_bot = db.execute(
+            "SELECT 1 FROM users WHERE id = ? AND password_hash = 'BOT_NO_LOGIN'",
+            (user_id,)
+        ).fetchone()
+        if is_bot:
+            return
+
+        cursor = db.execute(
+            """INSERT INTO notifications (user_id, category, message, action_url, target_url,
+                                          transaction_id, trigger_price, is_read, created_at)
+               VALUES (?, ?, ?, NULL, '/history', ?, ?, 0, datetime('now', 'localtime'))""",
+            (user_id, category, message, transaction_id, trigger_price)
+        )
+        # Point the toast click at this notification's inbox entry
         db.execute(
-            """INSERT INTO notifications (user_id, category, message, created_at)
-               VALUES (?, ?, ?, datetime('now'))""",
-            (
-                user_id,
-                "liquidation_fee",
-                "Forced liquidation: Fee costs depleted your free cash reserves.",
-            )
+            "UPDATE notifications SET action_url = ? WHERE id = ?",
+            (f'/inbox?selected={cursor.lastrowid}', cursor.lastrowid),
         )
     except Exception:
-        # Notifications table may not exist yet (separate spec dependency).
-        # Silently skip notification creation.
+        # Never let a notification failure break the tick loop.
         pass
+
+
+def _create_trade_notification(db, user_id: int, category: str, label: str,
+                               shares: int, ore_name: str, price: float,
+                               transaction_id=None, trigger_price=None):
+    """Notify the player that a short's Stop Loss / Take Profit triggered.
+
+    Uses the same 'stop_loss' / 'take_profit' categories as long positions.
+    Shorts are bought back, so the wording is 'covered' rather than 'sold'.
+    """
+    _insert_notification(
+        db, user_id, category,
+        f"{label} triggered: covered {shares} {ore_name} short at ${price:.2f}",
+        transaction_id=transaction_id, trigger_price=trigger_price,
+    )
+
+
+def _create_liquidation_notification(db, user_id: int, shares=None, ore_name=None, price=None,
+                                     transaction_id=None):
+    """Create a forced liquidation notification for the player.
+
+    Phase 4 is a catch-all: free cash hit zero, whether from fees or margin
+    top-ups, so the message is cause-agnostic. When the position details are
+    supplied they are included; otherwise a generic message is used.
+    """
+    if shares is not None and ore_name is not None and price is not None:
+        message = (
+            f"Forced liquidation: your free cash ran out, so your {shares} {ore_name} "
+            f"short was closed at ${price:.2f}."
+        )
+    else:
+        message = "Forced liquidation: your free cash ran out, so a short position was closed."
+    _insert_notification(db, user_id, "liquidation", message, transaction_id=transaction_id)
 
 
 def process_short_positions(db):
@@ -702,11 +790,12 @@ def process_short_positions(db):
     try:
         # Fetch current ore prices and volatility into a lookup map
         ores_rows = db.execute(
-            "SELECT id, current_price, volatility FROM ores"
+            "SELECT id, name, current_price, volatility FROM ores"
         ).fetchall()
 
         ores_map = {
             row['id']: {
+                'name': row['name'],
                 'current_price': float(row['current_price']),
                 'volatility': float(row['volatility']),
             }

@@ -1,84 +1,99 @@
 <!-- Capital Breakdown -->
+{% set cb = capital_breakdown %}
+{% set pct_by_key = {} %}
+{% for s in cb.segments %}{% set _ = pct_by_key.update({s.key: s.pct}) %}{% endfor %}
 <section class="finances-section" id="finances-capital" aria-label="Capital Breakdown">
     <h2 class="finances-section__title">Capital Breakdown</h2>
-    <div class="finances-summary">
-        <div class="stat-card">
-            <span class="stat-card__label">Free Cash</span>
-            <span class="stat-card__value">${{ "{:,.2f}".format(free_cash) }}</span>
+
+    {# Headline: the total the parts below add up to #}
+    <div class="capital__headline">
+        <span class="capital__headline-label">Net Worth</span>
+        <span class="capital__headline-value">${{ "{:,.2f}".format(net_worth) }}</span>
+    </div>
+
+    {# Allocation bar. Width = assets (positive parts). A losing short is a red
+       overlay on the right end; the marker shows where net worth lands. #}
+    <div class="capital__bar" role="img"
+         aria-label="Free cash {{ '%.0f' | format(pct_by_key.get('free_cash', 0)) }}%, long holdings {{ '%.0f' | format(pct_by_key.get('holdings', 0)) }}%{% if pct_by_key.get('short_equity') %}, short equity {{ '%.0f' | format(pct_by_key.short_equity) }}%{% endif %}{% if cb.loss > 0 %}, minus a ${{ '{:,.2f}'.format(cb.loss) }} short loss{% endif %}">
+        {% for s in cb.segments %}{% if s.pct > 0 %}
+        <span class="capital__bar-seg capital__bar-seg--{{ s.key }}" style="width: {{ '%.3f' | format(s.pct) }}%"></span>
+        {% endif %}{% endfor %}
+        {% if cb.loss_pct > 0 %}
+        <span class="capital__bar-loss" style="width: {{ '%.3f' | format(cb.loss_pct) }}%"></span>
+        <span class="capital__bar-marker" style="left: {{ '%.3f' | format(cb.net_pct) }}%"></span>
+        {% endif %}
+    </div>
+
+    {# Legend #}
+    <div class="capital__legend">
+        <div class="capital__item">
+            <span class="capital__item-label"><span class="capital__dot capital__dot--free_cash" aria-hidden="true"></span>Free Cash</span>
+            <span class="capital__item-value">${{ "{:,.2f}".format(free_cash) }}</span>
+            <span class="capital__item-sub">{{ '%.1f' | format(pct_by_key.get('free_cash', 0)) }}% &middot; ready to spend</span>
         </div>
-        <div class="stat-card">
-            <span class="stat-card__label">Locked Collateral</span>
-            <span class="stat-card__value">${{ "{:,.2f}".format(locked_collateral) }}</span>
+        <div class="capital__item">
+            <span class="capital__item-label"><span class="capital__dot capital__dot--holdings" aria-hidden="true"></span>Long Holdings</span>
+            <span class="capital__item-value">${{ "{:,.2f}".format(long_holdings_value) }}</span>
+            <span class="capital__item-sub">{{ '%.1f' | format(pct_by_key.get('holdings', 0)) }}% &middot; ore you own</span>
         </div>
-        <div class="stat-card">
-            <span class="stat-card__label">Short Equity</span>
-            <span class="stat-card__value">${{ "{:,.2f}".format(total_short_equity) }}</span>
+        {% if cb.show_shorts %}
+        <div class="capital__item">
+            <span class="capital__item-label">
+                <span class="capital__dot {% if total_short_equity < 0 %}capital__dot--loss{% else %}capital__dot--short_equity{% endif %}" aria-hidden="true"></span>Short Equity
+            </span>
+            <span class="capital__item-value {% if total_short_equity > 0 %}text--success{% elif total_short_equity < 0 %}text--danger{% endif %}">
+                {% if total_short_equity < 0 %}-{% endif %}${{ "{:,.2f}".format(total_short_equity | abs) }}
+            </span>
+            <span class="capital__item-sub">
+                {% if total_short_equity < 0 %}
+                Buyback costs more than the ${{ "{:,.2f}".format(locked_collateral) }} locked
+                {% else %}
+                {{ '%.1f' | format(pct_by_key.get('short_equity', 0)) }}% &middot; from ${{ "{:,.2f}".format(locked_collateral) }} locked
+                {% endif %}
+            </span>
         </div>
-        <div class="stat-card">
-            <span class="stat-card__label">Long Holdings Value</span>
-            <span class="stat-card__value">${{ "{:,.2f}".format(long_holdings_value) }}</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-card__label">Net Worth</span>
-            <span class="stat-card__value">${{ "{:,.2f}".format(net_worth) }}</span>
-        </div>
+        {% endif %}
     </div>
 </section>
-<br>
 
 {% if has_shorts %}
-<!-- Active Short Positions -->
-<section class="finances-section" aria-label="Active Short Positions">
-    <h2 class="finances-section__title">Active Short Positions</h2>
+<!-- Short Exposure: totals only. Per-position detail and actions live on the
+     Portfolio Shorts tab, which the "Manage" link opens directly. -->
+<section class="finances-section" id="finances-shorts" aria-label="Short Exposure">
+    <div class="finances-section__head">
+        <h2 class="finances-section__title">Short Exposure</h2>
+        <a href="{{ url_for('portfolio.overview', tab='shorts') }}" class="finances-section__link">Manage in Portfolio <span aria-hidden="true">&rarr;</span></a>
+    </div>
 
-    {% if short_positions %}
-    <div class="finances-table-wrapper">
-        <table class="shorts-table">
-            <thead>
-                <tr>
-                    <th>Ore</th>
-                    <th>Shares</th>
-                    <th>Entry Price</th>
-                    <th>Short Value</th>
-                    <th>Locked Collateral</th>
-                    <th>Unrealized PnL</th>
-                    <th>SL Price</th>
-                    <th>TP Price</th>
-                    <th>Ticks to Liq.</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pos in short_positions %}
-                <tr>
-                    <td>{{ pos.ore_name }}</td>
-                    <td>{{ pos.share_quantity }}</td>
-                    <td>${{ "{:,.2f}".format(pos.entry_price) }}</td>
-                    <td>${{ "{:,.2f}".format(pos.short_value) }}</td>
-                    <td>${{ "{:,.2f}".format(pos.locked_collateral) }}</td>
-                    <td class="{% if pos.unrealized_pnl >= 0 %}text--success{% else %}text--danger{% endif %}">
-                        {% if pos.unrealized_pnl >= 0 %}+{% endif %}${{ "{:,.2f}".format(pos.unrealized_pnl) }}
-                    </td>
-                    <td>{{ "{:.2f}".format(pos.stop_loss_price) if pos.stop_loss_price is not none else "None" }}</td>
-                    <td>{{ "{:.2f}".format(pos.take_profit_price) if pos.take_profit_price is not none else "None" }}</td>
-                    <td>{% if pos.ticks_to_liquidation >= 9223372036854775807 %}∞{% else %}{{ pos.ticks_to_liquidation }}{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="capital__legend">
+        <div class="capital__item">
+            <span class="capital__item-label">Open Shorts</span>
+            <span class="capital__item-value">{{ position_count }}</span>
+            <span class="capital__item-sub">{{ 'position' if position_count == 1 else 'positions' }}</span>
+        </div>
+        <div class="capital__item">
+            <span class="capital__item-label">Exposure</span>
+            <span class="capital__item-value">${{ "{:,.2f}".format(total_exposure) }}</span>
+            <span class="capital__item-sub">cost to buy back now</span>
+        </div>
+        <div class="capital__item">
+            <span class="capital__item-label">Collateral Locked</span>
+            <span class="capital__item-value">${{ "{:,.2f}".format(locked_collateral) }}</span>
+            <span class="capital__item-sub">
+                {% if collateral_coverage is not none %}
+                <span class="{% if collateral_coverage < 1 %}text--danger{% endif %}">{{ "%.2f" | format(collateral_coverage) }}&times; exposure</span>
+                {% else %}
+                no exposure
+                {% endif %}
+            </span>
+        </div>
+        <div class="capital__item">
+            <span class="capital__item-label">Fees Paid</span>
+            <span class="capital__item-value">${{ "{:,.2f}".format(total_fees_paid) }}</span>
+            <span class="capital__item-sub">so far, across open shorts</span>
+        </div>
     </div>
-    <!-- Aggregate Summary -->
-    <div class="finances-aggregate">
-        <span class="finances-aggregate__item">Positions: <strong>{{ position_count }}</strong></span>
-        <span class="finances-aggregate__item">Total Exposure: <strong>${{ "{:,.2f}".format(total_exposure) }}</strong></span>
-        <span class="finances-aggregate__item">Total Fees Paid: <strong>${{ "{:,.2f}".format(total_fees_paid) }}</strong></span>
-    </div>
-    {% else %}
-    <div class="empty-state">
-        <p>No active short positions.</p>
-    </div>
-    {% endif %}
 </section>
-<br>
 <!-- Cash Flow Projections -->
 <section class="finances-section" id="finances-cashflow-section" aria-label="Cash Flow Projections">
     <h2 class="finances-section__title">Cash Flow Projections</h2>

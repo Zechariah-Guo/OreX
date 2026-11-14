@@ -202,6 +202,16 @@ html[data-theme="dark"] .nav__brand {
     white-space: nowrap;
 }
 
+/* Balance pill is an anchor in advanced mode; keep it from showing the link
+   underline on hover or being selected/dragged like ordinary link text. */
+.nav__balance--link,
+.nav__balance--link:hover {
+    text-decoration: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
 /* --- Avatar circle --- */
 .nav__avatar {
     width: 36px;
@@ -278,6 +288,27 @@ html[data-theme="dark"] .nav__brand {
 
 .leaderboard-avatar--bot {
     border-radius: 50%;
+}
+
+/* Leaderboard row link to a player's profile (avatar + name) */
+.leaderboard__player-link,
+.leaderboard__player-link:hover {
+    display: inline-flex;
+    align-items: center;
+    /* baseline alignment leaves a descender gap under image avatars */
+    vertical-align: middle;
+    color: inherit;
+    /* global a:hover would underline the avatar too; underline only the name */
+    text-decoration: none;
+}
+
+.leaderboard__player-link:hover .leaderboard__username,
+.leaderboard__player-link:focus-visible .leaderboard__username {
+    text-decoration: underline;
+}
+
+.leaderboard__player-link:hover .leaderboard-avatar {
+    border-color: var(--colour-accent);
 }
 
 /* --- Dropdown menu --- */
@@ -438,11 +469,18 @@ html[data-theme="dark"] .nav__brand {
         flex-shrink: 0;
 }
 
-.flash--clickable {
+.flash--clickable,
+.flash--clickable:hover {
         text-decoration: none;
         color: inherit;
         cursor: pointer;
         display: block;
+        /* A native anchor is draggable and its text is selectable, which hijacks
+           the swipe-to-dismiss gesture on the toast. Suppress both so the swipe
+           works the same as on a non-clickable toast. */
+        user-select: none;
+        -webkit-user-drag: none;
+        -webkit-user-select: none;
 }
 
 .flash__message {
@@ -510,6 +548,7 @@ html[data-theme="dark"] .nav__brand {
     color: var(--colour-danger);
 }
 
+.flash--toast.flash--bonus,
 .flash--toast.flash--take-profit {
     background: linear-gradient(to right, rgba(46, 204, 113, 0.12), rgba(34, 153, 84, 0.18));
     border-left: 3px solid #2ecc71;
@@ -553,6 +592,13 @@ html[data-theme="dark"] .nav__brand {
     border-bottom: 1px solid rgba(41, 128, 185, 0.3);
     border-right: 1px solid rgba(41, 128, 185, 0.3);
     color: #3498db;
+}
+
+/* Opaque base under every toast's tinted gradient. Each category above uses the
+   `background` shorthand, which resets background-color to transparent, so this
+   must come after them (same specificity, later wins, only the colour is set). */
+.flash.flash--toast {
+    background-color: var(--colour-surface);
 }
 
 .notification-toasts {
@@ -627,6 +673,26 @@ html[data-theme="dark"] .nav__brand {
 
 .btn:active {
     transform: translateY(0);
+}
+
+.btn:disabled,
+.btn[disabled] {
+    background-color: var(--colour-surface-hover);
+    color: var(--colour-text-muted);
+    border-color: var(--colour-border);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn:disabled:hover,
+.btn[disabled]:hover {
+    background-color: var(--colour-surface-hover);
+    transform: none;
+}
+
+.btn:disabled:active,
+.btn[disabled]:active {
+    transform: none;
 }
 
 .btn--primary {
@@ -776,67 +842,421 @@ html[data-theme="dark"] .nav__brand {
     margin-bottom: var(--spacing-xl);
 }
 
-.landing__sections {
+/* ----- Landing: below the hero ----- */
+.lp {
     max-width: var(--max-width);
-    margin: var(--spacing-xl) auto 0;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg) var(--spacing-xl);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
-    padding: 0 var(--spacing-lg);
+    gap: 5rem;
 }
 
-.landing__section {
+.lp-heading {
+    font-size: 1.75rem;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Scroll cue at the bottom of the hero */
+.lp-scroll-cue,
+.lp-scroll-cue:hover {
+    text-decoration: none;
+}
+
+.lp-scroll-cue {
+    position: absolute;
+    bottom: var(--spacing-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.8rem;
+    color: var(--colour-text-muted);
+}
+
+.lp-scroll-cue svg {
+    animation: lpBob 1.8s ease-in-out infinite;
+}
+
+.lp-scroll-cue:hover {
+    color: var(--colour-accent);
+}
+
+@keyframes lpBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(5px); }
+}
+
+/* Live market strip: a scrolling stock-ticker marquee */
+.lp-ticker {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xl);
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
     background-color: var(--colour-surface);
     border: 2px solid var(--colour-border);
-    border-radius: var(--radius);
-    padding: var(--spacing-xl);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
 }
 
-.landing__section--reverse {
-    flex-direction: row-reverse;
+.lp-ticker__label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--colour-text-muted);
 }
 
-.landing__section-text {
+.lp-ticker__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--colour-success);
+    animation: lpPulse 2s infinite;
+}
+
+@keyframes lpPulse {
+    0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.6); }
+    70% { box-shadow: 0 0 0 8px rgba(46, 204, 113, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+}
+
+/* Fades the ticker in and out at both edges */
+.lp-ticker__viewport {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
 }
 
-.landing__section-text h2 {
+.lp-ticker__viewport::-webkit-scrollbar {
+    display: none;
+}
+
+/* Two identical lists side by side; sliding by half loops seamlessly */
+.lp-ticker__track {
+    display: flex;
+    width: max-content;
+    animation: lpTicker 40s linear infinite;
+}
+
+.lp-ticker:hover .lp-ticker__track {
+    animation-play-state: paused;
+}
+
+@keyframes lpTicker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+.lp-ticker__list {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.lp-ticker__item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0 var(--spacing-lg) 0 0;
+    white-space: nowrap;
+}
+
+.lp-ticker__icon {
+    width: 24px;
+    height: 24px;
+    image-rendering: pixelated;
+}
+
+.lp-ticker__name {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.lp-ticker__price {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.lp-ticker__trend { font-size: 0.7rem; }
+.lp-ticker__trend--rise { color: var(--colour-success); }
+.lp-ticker__trend--fall { color: var(--colour-danger); }
+.lp-ticker__trend--hold { color: var(--colour-text-muted); }
+
+/* How it works: numbered steps joined by a line */
+.lp-steps__list {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-lg);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.lp-steps__list::before {
+    content: "";
+    position: absolute;
+    top: 26px;
+    left: 16.6%;
+    right: 16.6%;
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--colour-accent), #9b59b6);
+    opacity: 0.5;
+}
+
+.lp-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.lp-step__num {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    transform: rotate(45deg);
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--colour-accent), #27ae60);
+    box-shadow: 0 6px 16px rgba(46, 204, 113, 0.35);
+}
+
+.lp-step:nth-child(2) .lp-step__num {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    box-shadow: 0 6px 16px rgba(52, 152, 219, 0.35);
+}
+
+.lp-step:nth-child(3) .lp-step__num {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    box-shadow: 0 6px 16px rgba(155, 89, 182, 0.35);
+}
+
+/* Number stays upright inside the rotated diamond */
+.lp-step__num > span {
+    transform: rotate(-45deg);
+    line-height: 1;
+}
+
+.lp-step h3 {
+    margin-top: var(--spacing-sm);
+}
+
+.lp-step p {
+    max-width: 280px;
+    color: var(--colour-text-muted);
+    line-height: 1.6;
+}
+
+/* Screenshot showcase: angled, masked frames with a coloured shape behind */
+.lp-showcase {
+    display: flex;
+    flex-direction: column;
+    gap: 5rem;
+}
+
+.lp-show {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    align-items: center;
+    gap: var(--spacing-xl);
+    text-align: left;
+}
+
+.lp-show--reverse {
+    grid-template-columns: 7fr 5fr;
+}
+
+.lp-show--reverse .lp-show__text {
+    order: 2;
+}
+
+.lp-show__kicker {
+    display: inline-block;
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     color: var(--colour-accent);
+}
+
+.lp-show--advanced .lp-show__kicker {
+    color: #9b59b6;
+}
+
+.lp-show__text h2 {
+    font-size: 1.6rem;
     margin-bottom: var(--spacing-sm);
 }
 
-.landing__section-text p {
+.lp-show__text p {
     color: var(--colour-text-muted);
     line-height: 1.7;
 }
 
-.landing__section-img {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.lp-show__frame {
+    margin: 0;
 }
 
-.landing__section-img img {
-    width: 120px;
-    height: 120px;
+.lp-show__frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 2px solid var(--colour-border);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(26, 16, 37, 0.14);
+}
+
+/* More to play for */
+.lp-features__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-lg);
+}
+
+.lp-feature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    background-color: color-mix(in srgb, var(--colour-surface) 20%, transparent);
+    border: 2px solid var(--colour-border);
+    border-radius: var(--radius);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.lp-feature:hover {
+    transform: translateY(-4px);
+    border-color: var(--colour-accent);
+    background-color: color-mix(in srgb, var(--colour-surface) 60%, transparent);
+}
+
+.lp-feature__img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+}
+
+.lp-feature__img--pixel {
     image-rendering: pixelated;
 }
 
-@media (max-width: 600px) {
-    .landing__section,
-    .landing__section--reverse {
-        flex-direction: column;
+.lp-feature p {
+    color: var(--colour-text-muted);
+    line-height: 1.6;
+}
+
+/* Final call to action: frosted glass with a gradient border */
+.lp-cta {
+    position: relative;
+    padding: 4rem var(--spacing-lg);
+    border-radius: 24px;
+    background-color: color-mix(in srgb, var(--colour-surface) 20%, transparent);
+    box-shadow: 0 12px 40px rgba(26, 16, 37, 0.1);
+}
+
+/* The gradient is painted as a ring: a full-size gradient with its middle
+   masked out, so only the 3px border shows and the glass stays see-through. */
+.lp-cta::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 3px;
+    border-radius: inherit;
+    background: linear-gradient(120deg, #2ecc71, #3498db 50%, #9b59b6);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.lp-cta h2 {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.lp-cta p {
+    margin-bottom: var(--spacing-lg);
+    color: var(--colour-text-muted);
+}
+
+.lp-cta .landing__actions {
+    margin-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lp-scroll-cue svg,
+    .lp-ticker__dot,
+    .lp-ticker__track {
+        animation: none;
+    }
+    .lp-ticker__viewport {
+        overflow-x: auto;
+    }
+    /* Not looping, so the second copy would just repeat the ores */
+    .lp-ticker__list[aria-hidden="true"] {
+        display: none;
+    }
+    .lp-feature {
+        transition: none;
+    }
+}
+
+@media (max-width: 860px) {
+    .lp,
+    .lp-showcase {
+        gap: 3.5rem;
+    }
+
+    .lp-steps__list,
+    .lp-features__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lp-steps__list::before {
+        display: none;
+    }
+
+    .lp-show,
+    .lp-show--reverse {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
         text-align: center;
     }
 
-    .landing__section-img img {
-        width: 80px;
-        height: 80px;
+    .lp-show--reverse .lp-show__text {
+        order: 0;
+    }
+
+    .lp-cta {
+        padding: 3rem var(--spacing-md);
+    }
+
+    .lp-cta h2 {
+        font-size: 1.5rem;
     }
 }
 
@@ -1113,6 +1533,16 @@ input::-webkit-inner-spin-button {
     margin-bottom: var(--spacing-md);
 }
 
+.trade-form__cap--max {
+    color: var(--colour-text-muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.trade-form__cap--max strong {
+    color: #b8860b;
+}
+
 /* ===== Trade Confirmation ===== */
 .trade-confirm-page {
     display: flex;
@@ -1153,6 +1583,15 @@ input::-webkit-inner-spin-button {
 
 .confirm-row__label {
     color: var(--colour-text-muted);
+}
+
+/* Small secondary name for a row, e.g. "Cost to open  margin" */
+.confirm-row__term {
+    margin-left: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 400;
+    font-style: italic;
+    opacity: 0.75;
 }
 
 .confirm-card__actions {
@@ -1761,12 +2200,6 @@ td.leaderboard-table__rank {
     background-color: rgba(46, 204, 113, 0.1);
 }
 
-.leaderboard-you {
-    font-size: 0.75rem;
-    color: var(--colour-accent);
-    font-weight: 400;
-}
-
 /* Nav settings icon */
 .nav__settings {
     font-size: 1.2rem;
@@ -1865,6 +2298,27 @@ td.leaderboard-table__rank {
 .changelog-card--latest {
     border-color: var(--colour-accent);
     box-shadow: 0 0 0 1px var(--colour-accent), 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.changelog-card--upcoming {
+    border-style: dashed;
+    background-color: transparent;
+    opacity: 0.6;
+}
+
+.changelog-card--upcoming .changelog-card__badge {
+    background-color: transparent;
+    border: 1px solid var(--colour-text-muted);
+    color: var(--colour-text-muted);
+}
+
+.changelog-card--upcoming .changelog-card__list li::before {
+    background-color: var(--colour-text-muted);
+}
+
+.changelog-card--upcoming .changelog-card__list li.changelog-card__more {
+    font-style: italic;
+    color: var(--colour-text-muted);
 }
 
 .changelog-card__header {
@@ -2485,11 +2939,134 @@ details summary:focus-visible {
 }
 
 /* ===== Help Page: Tutorials ===== */
+
+/* Two-box side-by-side layout: one box per mode, each with its heart watermark. */
+.tutorial-modes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+}
+
+.tutorial-mode {
+    position: relative;
+    overflow: hidden;
+    padding: var(--spacing-lg);
+    background-color: var(--colour-surface);
+    border: 2px solid var(--colour-border);
+    border-radius: var(--radius);
+    isolation: isolate;
+}
+
+.tutorial-mode--advanced {
+    border-color: #9b59b6;
+}
+
+/* Heart watermark: offset into the top corner, partly bled off-edge, sitting
+   behind the content (clipped by the box's overflow: hidden). */
+.tutorial-mode__heart {
+    position: absolute;
+    top: 0px;
+    right: -20px;
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+    opacity: 0.3;
+    pointer-events: none;
+    transform: rotate(8deg);
+    z-index: -1;
+}
+
+.tutorial-mode__header {
+    margin-bottom: var(--spacing-md);
+}
+
+.tutorial-mode__title {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.tutorial-mode__blurb {
+    margin: var(--spacing-xs) 0 0;
+    color: var(--colour-text-muted);
+    font-size: 0.875rem;
+}
+
+/* Inside a mode box the surrounding card already provides the panel, so the
+   per-item fill is translucent to let the heart read through. */
+.tutorial-mode .tutorial-list__item {
+    background-color: transparent;
+    border-width: 2px;
+    /* Left text column | right buttons. Buttons stay vertically centred against
+       the name/status block. */
+    align-items: center;
+}
+
+/* Left column: tutorial name on top, status chip underneath it (not inline),
+   so the item height is stable whatever the status. */
+.tutorial-mode .tutorial-list__main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+    min-width: 0;
+}
+
+/* Buttons grouped on the right, centred against the left column. */
+.tutorial-mode .tutorial-list__actions {
+    align-items: center;
+}
+
+/* The inner item card's border also follows the box's scheme. */
+.tutorial-mode--advanced .tutorial-list__item {
+    border-color: rgb(155, 89, 182);
+    border-width: 2px;
+}
+
+/* Advanced box keeps the purple scheme throughout: chip border and the
+   Resume/Replay buttons, rather than falling back to the green accent. */
+.tutorial-mode--advanced .tutorial-badge,
+.tutorial-mode--advanced .tutorial-badge--completed,
+.tutorial-mode--advanced .tutorial-badge--dismissed {
+    border-color: #9b59b6;   /* override the green --colour-accent on completed */
+}
+
+.tutorial-mode--advanced .tutorial-badge--in_progress {
+    border-color: #f1c40f;   /* keep the in-progress amber signal readable */
+}
+
+/* Resume = filled purple (primary); Replay = solid purple outline that fills on
+   hover. Both bumped for contrast against the translucent box. */
+.tutorial-mode--advanced .tutorial-btn-resume {
+    background-color: #9b59b6;
+    color: #ffffff;
+    border-color: #8e44ad;
+}
+
+.tutorial-mode--advanced .tutorial-btn-resume:hover {
+    background-color: #8e44ad;
+    border-color: #8e44ad;
+}
+
+.tutorial-mode--advanced .tutorial-btn-replay {
+    background-color: rgba(155, 89, 182, 0.12);
+    color: #7d3c98;
+    border-color: #9b59b6;
+    font-weight: 700;
+}
+
+
+@media (max-width: 640px) {
+    .tutorial-modes {
+        grid-template-columns: 1fr;
+    }
+}
+
 .tutorial-list {
     list-style: none;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .tutorial-list__item {
@@ -2576,12 +3153,7 @@ details summary:focus-visible {
     opacity: 0.6;
 }
 
-.tutorial-btn-resume:disabled:hover,
-.tutorial-btn-replay:disabled:hover {
-    background-color: var(--colour-bg);
-    border-color: var(--colour-border);
-    transform: none;
-}
+
 
 .tutorial-list__hint {
     color: var(--colour-text-muted);

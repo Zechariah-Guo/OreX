@@ -78,6 +78,7 @@ def _create_test_db():
             category TEXT NOT NULL,
             message TEXT NOT NULL,
             action_url TEXT,
+            target_url TEXT,
             created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
@@ -465,6 +466,7 @@ def _create_net_worth_test_db(balance: float):
             category TEXT NOT NULL,
             message TEXT NOT NULL,
             action_url TEXT,
+            target_url TEXT,
             created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
@@ -623,6 +625,7 @@ def _create_trade_test_db(transactions):
             category TEXT NOT NULL,
             message TEXT NOT NULL,
             action_url TEXT,
+            target_url TEXT,
             created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
@@ -858,6 +861,7 @@ def _create_multi_user_net_worth_db(balances):
             category TEXT NOT NULL,
             message TEXT NOT NULL,
             action_url TEXT,
+            target_url TEXT,
             created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )

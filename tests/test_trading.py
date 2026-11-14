@@ -880,3 +880,131 @@ class TestWeightedAveragePriceProperty:
         assert holding['avg_purchase_price'] == pytest.approx(expected_avg, rel=1e-6)
 
 
+# ---------------------------------------------------------------------------
+# Per-Holding Buy Cap Tests (standard mode)
+# ---------------------------------------------------------------------------
+
+
+def _set_holding(app, ore_id, quantity, avg_price=10.00):
+    """Directly seed a holding of ``quantity`` units for TestUser1."""
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    user_id = conn.execute(
+        "SELECT id FROM users WHERE username = 'TestUser1'"
+    ).fetchone()[0]
+    conn.execute(
+        "INSERT INTO holdings (user_id, ore_id, quantity, avg_purchase_price) "
+        "VALUES (?, ?, ?, ?)",
+        (user_id, ore_id, quantity, avg_price),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _set_balance(app, balance):
+    """Set TestUser1's balance."""
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    conn.execute(
+        "UPDATE users SET balance = ? WHERE username = 'TestUser1'", (balance,)
+    )
+    conn.commit()
+    conn.close()
+
+
+def _enable_advanced(app):
+    """Flip TestUser1 into active Advanced Mode."""
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    conn.execute(
+        "UPDATE users SET advanced_eligible = 1, advanced_purchased = 1, "
+        "advanced_active = 1 WHERE username = 'TestUser1'"
+    )
+    conn.commit()
+    conn.close()
+
+
+def _holding_qty(app, ore_id):
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    conn.row_factory = sqlite3.Row
+    row = conn.execute(
+        "SELECT quantity FROM holdings "
+        "WHERE user_id = (SELECT id FROM users WHERE username = 'TestUser1') "
+        "AND ore_id = ?",
+        (ore_id,),
+    ).fetchone()
+    conn.close()
+    return row['quantity'] if row else 0
+
+
+@pytest.mark.trading
+class TestBuyHoldingCap:
+    """The standard-mode buy cap limits TOTAL units held, not units per order."""
+
+    def test_at_cap_rejects_further_buy(self, authenticated_client, app):
+        """Holding 500 already → buying even 1 more is rejected, state unchanged."""
+        ore_id = 1  # Coal, $10
+        _set_balance(app, 100000.0)
+        _set_holding(app, ore_id, 500)
+
+        response = _buy_ore(authenticated_client, ore_id, '1')
+        assert b'You can hold at most 500' in response.data
+        assert _holding_qty(app, ore_id) == 500
+
+    def test_partial_headroom_rejects_overshoot_allows_fit(
+        self, authenticated_client, app
+    ):
+        """Holding 480: buying 30 (→510) rejected; buying 20 (→500) allowed."""
+        ore_id = 1  # Coal, $10
+        _set_balance(app, 100000.0)
+        _set_holding(app, ore_id, 480)
+
+        # 480 + 30 = 510 > 500 → rejected
+        response = _buy_ore(authenticated_client, ore_id, '30')
+        assert b'You can hold at most 500' in response.data
+        assert _holding_qty(app, ore_id) == 480
+
+        # 480 + 20 = 500 → allowed
+        response = _buy_ore(authenticated_client, ore_id, '20')
+        assert response.status_code == 200
+        assert _holding_qty(app, ore_id) == 500
+
+    def test_repeated_buys_cannot_exceed_cap(self, authenticated_client, app):
+        """Repeating sub-cap orders cannot stockpile past the cap."""
+        ore_id = 1  # Coal, $10
+        _set_balance(app, 100000.0)
+
+        # First 400 succeeds
+        _buy_ore(authenticated_client, ore_id, '400')
+        assert _holding_qty(app, ore_id) == 400
+
+        # Another 400 would make 800 → rejected
+        response = _buy_ore(authenticated_client, ore_id, '400')
+        assert b'You can hold at most 500' in response.data
+        assert _holding_qty(app, ore_id) == 400
+
+    def test_sell_then_rebuy_restores_headroom(self, authenticated_client, app):
+        """At 500, sell 200 (→300), then rebuy up to 200 more succeeds."""
+        ore_id = 1  # Coal, $10
+        _set_balance(app, 100000.0)
+        _set_holding(app, ore_id, 500)
+
+        # Sell 200 → 300 held
+        _sell_ore(authenticated_client, ore_id, '200')
+        assert _holding_qty(app, ore_id) == 300
+
+        # Rebuy 200 → back to 500, allowed
+        response = _buy_ore(authenticated_client, ore_id, '200')
+        assert response.status_code == 200
+        assert _holding_qty(app, ore_id) == 500
+
+    def test_advanced_mode_bypasses_cap(self, authenticated_client, app):
+        """Advanced Mode users can exceed 500 units in a single holding."""
+        ore_id = 1  # Coal, $10
+        _set_balance(app, 1000000.0)
+        _enable_advanced(app)
+
+        # Buy 500 then 300 more → 800 total, no cap in Advanced Mode
+        _buy_ore(authenticated_client, ore_id, '500')
+        response = _buy_ore(authenticated_client, ore_id, '300')
+        assert response.status_code == 200
+        assert _holding_qty(app, ore_id) == 800
+
+

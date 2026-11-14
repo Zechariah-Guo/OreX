@@ -36,11 +36,11 @@
 - **Two-Factor Authentication** — Optional TOTP-based login security via Google Authenticator
 
 ### Quality of Life
-- **Buy limits in standard mode** — Encourages strategic trading over bulk purchases and progression to advanced mode (unlocks limits)
+- **Holding limits in standard mode** — Caps total units held per ore to encourage strategic trading and progression to advanced mode (unlocks limits)
 
 ---
 
-## Beta 2 — "The Progression Update"
+## Beta 2 — "The Identity Update"
 
 *Player identity, progression, and notifications.*
 
@@ -68,12 +68,23 @@
 > Beta features plus changes to accommodate a full production deployment
 
 ### Onboarding & Guidance
-- **Interactive tutorials** — Guided walkthroughs for new players and advanced mechanics
-- **Help section** — Reorganised + tutorial access
-- **In-app changelogs** — Major version notes displayed in the About section
+- **Interactive tutorials** — Step-by-step spotlight walkthroughs for beginners and for Advanced Mode
+- **Replay from Help** — Restart any tutorial you have access to, or resume one you left midway
+- **New landing page** — A live ore ticker and screenshots for visitors who haven't signed in
+
+### Profiles & Community
+- **Public player profiles** — Click any player on the leaderboard to see their stats and advancements
+- **Bonus countdown** — See exactly when your next welcome bonus unlocks
+
+### Finances & Trading
+- **Capital Breakdown** — See cash, holdings, and short collateral at a glance, with short exposure and cash flow
+- **Portfolio summary** — A summary header and tabs for holdings and shorts
+- **Fairer margin calls** — A short's collateral factor is fixed when it opens, so topping up your vault no longer shifts it
 
 ### Quality of Life
-- TBC (additional QoL changes bundled with the release)
+- **Smarter notifications** — Inbox messages now link to the page they refer to
+- **Smoother updates** — Live pages refresh without flicker
+- **Chart fixes** — Switching time ranges is reliable and axis labels are no longer cut off
 
 ## Version 1.1 
 
@@ -81,11 +92,23 @@
 
 ### Mobile Support
 - Change UI basically for mobile sized screens
+- Turn into PWA (add option in settings to download)
+- Maybe get push notifications working on the PWA (bit more complex)
 
 ### QoL
 - Allow "forgot password" functionality by leveraging the existing 2fa system
-- Optimise leaderboard and other pages' SQL with CTE
 - (Maybe) Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc) (use python uv library)
 - Implement celery and redis for background profile picture processing and storage
 - Migrate all images to avif with webp fallback
-- Try tailwind css (no, not enough benefit and too invasive of an update) and alpine js (already tried in profile page)
+
+## Version 1.2
+
+*Big gamemode update introducing additional "fun" ways to experience the game. (Also likely the last big update)*
+
+### Challenge Modes (maybe)
+- Race to the Bottom: Time how long it takes to go from 100k to < 100$
+- Go for Broke: Start with 10k and advanced mode. make money, spend it on slots (a screen of stone + random ores appear) + maybe other modes
+- Versus mode: 10 mins, 1 sec ticks, either blank or some set starting .db, who has the most money at the end wins. leaderboard for wins (+2), draws (+1 both), losses (0) which kinda forces you to play more if you want to be #1
+- All 3 will introduce a new state or badge on the profile page: Profit for gamble mode (can be negative), Best time for race to the bottom, rank for versus
+- Must unlock advanced then buy each game mode for a price (maybe 50k for versus, 100k for race to bottom, 150k for gamble)
+- Might all need their own tutorial? just 1 or 2 steps for new stuff. 

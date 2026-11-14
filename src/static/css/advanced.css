@@ -727,20 +727,174 @@ html[data-theme="dark"] .short-card__value--squeeze {
     margin-bottom: var(--spacing-md);
 }
 
-/* Capital Breakdown — stat cards grid */
-.finances-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: var(--spacing-md);
+/* The live partial's sections are children of #finances-live, not the page */
+#finances-live {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
 }
 
-/* Active Short Positions — table with horizontal scroll */
-.finances-table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+/* ===== Capital Breakdown: headline, allocation bar, legend ===== */
+.finances-section {
+    /* segment colours, shared by bar segments and legend dots */
+    --capital-free-cash: #2ecc71;     /* green: spendable money */
+    --capital-holdings: #3498db;      /* blue: ore owned */
+    --capital-short-equity: #9b59b6;  /* Advanced Mode purple */
+    --capital-loss: #e74c3c;
+}
+
+.capital__headline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
     margin-bottom: var(--spacing-md);
 }
 
+.capital__headline-label {
+    font-size: 0.8rem;
+    color: var(--colour-text-muted);
+}
+
+.capital__headline-value {
+    font-family: var(--font-mono);
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--colour-text);
+}
+
+.capital__bar {
+    position: relative;
+    display: flex;
+    height: 14px;
+    border-radius: 999px;
+    overflow: hidden;
+    background-color: var(--colour-surface-hover);
+}
+
+.capital__bar-seg {
+    height: 100%;
+    transition: width 0.4s ease;
+}
+
+/* Thin gap between adjacent segments */
+.capital__bar-seg + .capital__bar-seg {
+    border-left: 2px solid var(--colour-surface);
+}
+
+.capital__bar-seg--free_cash { background-color: var(--capital-free-cash); }
+.capital__bar-seg--holdings { background-color: var(--capital-holdings); }
+.capital__bar-seg--short_equity { background-color: var(--capital-short-equity); }
+
+/* Losing short: striped red over the right end of the asset bar */
+.capital__bar-loss {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--capital-loss) 0 4px,
+        rgba(231, 76, 60, 0.55) 4px 8px
+    );
+    transition: width 0.4s ease;
+}
+
+/* Where net worth lands (assets minus the loss) */
+.capital__bar-marker {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 3px;
+    margin-left: -1.5px;
+    border-radius: 2px;
+    background-color: var(--colour-text);
+}
+
+.capital__legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.capital__item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+    background-color: var(--colour-bg);
+}
+
+.capital__item-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.8rem;
+    color: var(--colour-text-muted);
+}
+
+.capital__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.capital__dot--free_cash { background-color: var(--capital-free-cash); }
+.capital__dot--holdings { background-color: var(--capital-holdings); }
+.capital__dot--short_equity { background-color: var(--capital-short-equity); }
+.capital__dot--loss { background-color: var(--capital-loss); }
+
+.capital__item-value {
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--colour-text);
+}
+
+.capital__item-sub {
+    font-size: 0.75rem;
+    color: var(--colour-text-muted);
+}
+
+/* Section header with a right-aligned link (Short Exposure -> Portfolio) */
+.finances-section__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.finances-section__head .finances-section__title {
+    margin-bottom: 0;
+}
+
+.finances-section__link,
+.finances-section__link:hover {
+    text-decoration: none;
+}
+
+.finances-section__link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #9b59b6;
+    white-space: nowrap;
+}
+
+.finances-section__link:hover {
+    color: #8e44ad;
+}
+
+/* The tile grid sits directly under the header here */
+#finances-shorts .capital__legend {
+    margin-top: 0;
+}
+
+/* Shorts table (still used by the Portfolio Shorts tab) */
 .shorts-table {
     width: 100%;
     border-collapse: collapse;
@@ -766,25 +920,6 @@ html[data-theme="dark"] .short-card__value--squeeze {
 .shorts-table td {
     font-family: var(--font-mono);
     font-size: 0.9rem;
-}
-
-/* Aggregate summary below the table */
-.finances-aggregate {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-md) var(--spacing-lg);
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--colour-border);
-}
-
-.finances-aggregate__item {
-    font-size: 0.85rem;
-    color: var(--colour-text-muted);
-}
-
-.finances-aggregate__item strong {
-    color: var(--colour-text);
-    font-family: var(--font-mono);
 }
 
 /* Cash Flow Projections */
@@ -867,22 +1002,17 @@ html[data-theme="dark"] .shorts-table th {
 
 /* ===== Responsive: Finances Page ===== */
 @media (max-width: 768px) {
-    .finances-summary {
-        grid-template-columns: 1fr 1fr;
-    }
-
     .finances-section {
         padding: var(--spacing-md);
+    }
+
+    .capital__headline-value {
+        font-size: 1.75rem;
     }
 
     .finances-cashflow__row {
         flex-direction: column;
         align-items: flex-start;
         gap: var(--spacing-xs);
-    }
-
-    .finances-aggregate {
-        flex-direction: column;
-        gap: var(--spacing-sm);
     }
 }

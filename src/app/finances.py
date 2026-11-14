@@ -63,6 +63,9 @@ def get_finances_data(user_id: int) -> dict:
     net_worth = free_cash + long_holdings_value + total_short_equity
 
     return {
+        'capital_breakdown': build_capital_breakdown(
+            free_cash, long_holdings_value, total_short_equity, has_shorts,
+        ),
         'free_cash': free_cash,
         'locked_collateral': total_locked_collateral,
         'total_short_equity': total_short_equity,
@@ -76,10 +79,74 @@ def get_finances_data(user_id: int) -> dict:
         'runway_color': runway_color,
         'runway_bar_width': runway_bar_width,
         'total_exposure': total_exposure,
+        # How many times the locked collateral covers the current buyback cost
+        # (1.5x at open; below 1x means a short is losing money). None if no exposure.
+        'collateral_coverage': (
+            total_locked_collateral / total_exposure if total_exposure > 0 else None
+        ),
         'total_fees_paid': total_fees_paid,
         'position_count': len(positions),
         'ticks_per_hour': ticks_per_hour,
         'has_shorts': has_shorts,
+    }
+
+
+def build_capital_breakdown(free_cash: float, long_holdings_value: float,
+                            total_short_equity: float, has_shorts: bool) -> dict:
+    """Geometry for the Capital Breakdown allocation bar.
+
+    Net worth = free cash + long holdings + short equity, but short equity can
+    be negative (a short losing more than its collateral surplus), and a bar
+    can't have a negative-width segment. So the bar measures ASSETS: its full
+    width is the sum of the positive parts. A negative short equity is drawn as
+    a red overlay covering the right end of the bar, and a marker shows where
+    net worth (assets minus that loss) lands.
+
+    With no loss, assets == net worth, so each segment's pct is its share of
+    net worth.
+
+    Returns:
+        {
+          'segments': [{'key', 'label', 'amount', 'pct'}, ...]  # positive parts only
+          'assets': float,          # bar's 100% width
+          'loss': float,            # magnitude of negative short equity (0 if none)
+          'loss_pct': float,        # overlay width, clamped to 0-100
+          'net_pct': float | None,  # net worth marker position; None when no loss
+          'show_shorts': bool,      # whether the short equity line is shown at all
+        }
+    """
+    parts = [
+        ('free_cash', 'Free Cash', free_cash),
+        ('holdings', 'Long Holdings', long_holdings_value),
+    ]
+    if has_shorts and total_short_equity > 0:
+        parts.append(('short_equity', 'Short Equity', total_short_equity))
+
+    positive = [(k, label, max(0.0, amount)) for k, label, amount in parts]
+    assets = sum(amount for _, _, amount in positive)
+    loss = -total_short_equity if (has_shorts and total_short_equity < 0) else 0.0
+
+    segments = []
+    for key, label, amount in positive:
+        pct = (amount / assets * 100) if assets > 0 else 0.0
+        segments.append({'key': key, 'label': label, 'amount': amount, 'pct': pct})
+
+    if loss > 0 and assets > 0:
+        loss_pct = min(100.0, loss / assets * 100)
+        net_pct = 100.0 - loss_pct
+    elif loss > 0:
+        # No assets at all: the whole bar is loss
+        loss_pct, net_pct = 100.0, 0.0
+    else:
+        loss_pct, net_pct = 0.0, None
+
+    return {
+        'segments': segments,
+        'assets': assets,
+        'loss': loss,
+        'loss_pct': loss_pct,
+        'net_pct': net_pct,
+        'show_shorts': has_shorts,
     }
 
 

@@ -41,7 +41,8 @@
     justify-content: center;
 }
 
-.landing__sections {
+/* Content below the hero sits above the falling-ores layer */
+.lp {
     position: relative;
     z-index: 1;
 }
@@ -64,38 +65,117 @@
             <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Create Account</a>
             <a href="{{ url_for('auth.login') }}" class="btn btn--secondary">Login</a>
         </div>
+
+        <a href="#lp-more" class="lp-scroll-cue" aria-label="See how OreX works">
+            <span>See how it works</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg>
+        </a>
     </div>
 
-    <div class="landing__sections">
-        <div class="landing__section">
-            <div class="landing__section-text">
-                <h2>9 Tradeable Ores</h2>
-                <p>From stable Coal to volatile Netherite, each ore behaves like a real stock with its own risk profile. Diversify your holdings or go all-in on a single gem.</p>
-            </div>
-            <div class="landing__section-img">
-                <img src="{{ url_for('static', filename='images/ores/Diamond.webp') }}" alt="Diamond ore">
-            </div>
-        </div>
+    {% set bonus_total = bonus_amounts.values() | sum %}
+    <div class="lp" id="lp-more">
 
-        <div class="landing__section landing__section--reverse">
-            <div class="landing__section-text">
-                <h2>Live Market</h2>
-                <p>Prices tick every 20 seconds driven by supply, demand, random events, and other traders. Watch trends form in real time and strike when the moment is right.</p>
-            </div>
-            <div class="landing__section-img">
-                <img src="{{ url_for('static', filename='images/ores/Emerald.webp') }}" alt="Emerald ore">
-            </div>
-        </div>
+        {# 1. Live market strip (refreshes itself every tick) #}
+        {% include 'partials/landing_ticker.html' %}
 
-        <div class="landing__section">
-            <div class="landing__section-text">
-                <h2>Track Your Portfolio</h2>
-                <p>Monitor holdings, profit/loss, and total portfolio value at a glance. See your trade history and compete on the leaderboard against other miners.</p>
+        {# 2. How it works #}
+        <section class="lp-steps" aria-labelledby="lp-steps-title">
+            <h2 class="lp-heading" id="lp-steps-title">How it works</h2>
+            <ol class="lp-steps__list">
+                <li class="lp-step">
+                    <span class="lp-step__num" aria-hidden="true"><span>1</span></span>
+                    <h3>Start with ${{ "{:,}".format(starting_balance) }}</h3>
+                    <p>Every new account gets ${{ "{:,}".format(starting_balance) }} to trade with.</p>
+                </li>
+                <li class="lp-step">
+                    <span class="lp-step__num" aria-hidden="true"><span>2</span></span>
+                    <h3>Trade the market</h3>
+                    <p>Buy and sell 9 ores, each with its own volatility. Prices move every 20 seconds as traders buy and sell.</p>
+                </li>
+                <li class="lp-step">
+                    <span class="lp-step__num" aria-hidden="true"><span>3</span></span>
+                    <h3>Unlock Advanced Mode</h3>
+                    <p>Reach ${{ "{:,}".format(advanced_threshold) }} net worth, then buy Advanced Mode for ${{ "{:,}".format(advanced_cost) }} to start short selling.</p>
+                </li>
+            </ol>
+        </section>
+
+        {# 3. Screenshots #}
+        <section class="lp-showcase" aria-label="What playing looks like">
+            <div class="lp-show">
+                <div class="lp-show__text">
+                    <span class="lp-show__kicker">The market</span>
+                    <h2>Nine ores, nine personalities</h2>
+                    <p>Stable Coal, volatile Netherite and everything in between. Diversify, or go all-in on one ore.</p>
+                </div>
+                <figure class="lp-show__frame">
+                    <img src="{{ url_for('static', filename='images/landing/market.webp') }}"
+                         alt="The OreX market page showing all nine ores with live prices"
+                         width="1100" height="450" loading="lazy">
+                </figure>
             </div>
-            <div class="landing__section-img">
-                <img src="{{ url_for('static', filename='images/ores/Gold_Ingot.webp') }}" alt="Gold ingot">
+
+            <div class="lp-show lp-show--reverse">
+                <div class="lp-show__text">
+                    <span class="lp-show__kicker">The chart</span>
+                    <h2>Read the trend, time the trade</h2>
+                    <p>Price history from the last five minutes to the whole life of the market. Buy the dip, sell the peak.</p>
+                </div>
+                <figure class="lp-show__frame">
+                    <img src="{{ url_for('static', filename='images/landing/chart.webp') }}"
+                         alt="A Diamond price chart with buy and sell panels"
+                         width="1100" height="642" loading="lazy">
+                </figure>
             </div>
-        </div>
+
+            <div class="lp-show lp-show--advanced">
+                <div class="lp-show__text">
+                    <span class="lp-show__kicker">Advanced Mode</span>
+                    <h2>Bet against the market</h2>
+                    <p>Short sell falling ores, set stop loss and take profit orders, read support and resistance lines, and track it all on your Finances dashboard.</p>
+                </div>
+                <figure class="lp-show__frame">
+                    <img src="{{ url_for('static', filename='images/landing/advanced.webp') }}"
+                         alt="Advanced Mode chart with support and resistance levels"
+                         width="1100" height="723" loading="lazy">
+                </figure>
+            </div>
+        </section>
+
+        {# 4. More to play for #}
+        <section class="lp-features" aria-labelledby="lp-features-title">
+            <h2 class="lp-heading" id="lp-features-title">More to play for</h2>
+            <div class="lp-features__grid">
+                <div class="lp-feature">
+                    <img src="{{ url_for('static', filename='images/advancements/Millionaire.png') }}" alt="" class="lp-feature__img" width="72" height="72">
+                    <h3>9 achievements</h3>
+                    <p>From your first million to topping the leaderboard. Two of them unlock the Money and Gold themes.</p>
+                </div>
+                <div class="lp-feature">
+                    <img src="{{ url_for('static', filename='images/ores/Emerald.webp') }}" alt="" class="lp-feature__img lp-feature__img--pixel" width="72" height="72">
+                    <h3>Beginner bonus</h3>
+                    <p>
+                        {% for day, amount in bonus_amounts | dictsort %}${{ "{:,}".format(amount) }}{% if not loop.last %}, {% endif %}{% endfor %}
+                        over your first three days. That's ${{ "{:,}".format(bonus_total) }} extra, no streak needed.
+                    </p>
+                </div>
+                <div class="lp-feature">
+                    <img src="{{ url_for('static', filename='images/advancements/Go for Diamond!.png') }}" alt="" class="lp-feature__img" width="72" height="72">
+                    <h3>Climb the leaderboard</h3>
+                    <p>Ranked by net worth against every other player. Check out anyone's profile and achievements.</p>
+                </div>
+            </div>
+        </section>
+
+        {# 5. Final call to action #}
+        <section class="lp-cta" aria-labelledby="lp-cta-title">
+            <h2 id="lp-cta-title">Your first ${{ "{:,}".format(starting_balance) }} is waiting</h2>
+            <p>Free to play. All you need is a username and password.</p>
+            <div class="landing__actions">
+                <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Create Account</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn--secondary">Login</a>
+            </div>
+        </section>
     </div>
 </div>
 {% endblock %}

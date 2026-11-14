@@ -94,13 +94,24 @@ def delete_tutorial_progress(user_id):
     return cur.rowcount
 
 
-def pick_active_state(states):
+def pick_active_state(states, advanced_active=None):
     """From a list of tutorial_progress dicts, return the in-progress one to show, or None.
 
     If more than one track is in progress (e.g. a paused Beginner tutorial and a
     just-replayed Advanced one), the most recently updated wins.
+
+    When advanced_active is given (True/False), tracks built for the other mode
+    are ignored: a paused Beginner tutorial must not prompt "resume?" while
+    Advanced Mode is on (its steps can't render there), and vice versa. It
+    stays in progress and is resumable from Help once the mode matches.
     """
+    from app.tutorial.data import ADVANCED_ONLY_TRACKS
     in_progress = [s for s in states if s['status'] == 'in_progress']
+    if advanced_active is not None:
+        in_progress = [
+            s for s in in_progress
+            if (s['track_id'] in ADVANCED_ONLY_TRACKS) == bool(advanced_active)
+        ]
     if not in_progress:
         return None
     return max(in_progress, key=lambda s: (s['last_updated'], s['id']))

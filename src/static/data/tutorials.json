@@ -9,7 +9,7 @@
                     "selector": "#main-content",
                     "route": "/dashboard",
                     "title": "Welcome to OreX",
-                    "description": "This short tour covers trading, your portfolio, and where to find everything. Tap anywhere to continue, or use the Skip button to skip this tutorial.",
+                    "description": "This short tutorial will cover trading, your portfolio, and where to find everything. Tap anywhere to continue, or use the Skip button to skip this tutorial.",
                     "position": "center",
                     "highlight": "none",
                     "action": null
@@ -18,7 +18,7 @@
                     "selector": "#dashboard-summary",
                     "route": "/dashboard",
                     "title": "Your Balance",
-                    "description": "You start with $10,000 in cash. Holdings Value is what your ores are worth right now, Total Value combines the two, and Profit / Loss tracks how you are doing.",
+                    "description": "Cash Balance is your availble free cash. Holdings Value is what your ores are worth right now. Total Value is the sum of your Cash and Holdings. Profit / Loss tracks how you are doing.",
                     "position": "bottom",
                     "action": null
                 },
@@ -26,7 +26,7 @@
                     "selector": ".nav__profile-pill",
                     "route": "/dashboard",
                     "title": "Account Menu",
-                    "description": "Your cash balance is always shown here. Your avatar beside it opens the account menu.",
+                    "description": "Your cash balance is always shown here. Your avatar beside it houses the account menu.",
                     "position": "bottom",
                     "action": null
                 },
@@ -34,7 +34,7 @@
                     "selector": ".nav__dropdown-icons",
                     "route": "/dashboard",
                     "title": "Portfolio, Inbox & History",
-                    "description": "These icons open your holdings, your notifications, and your trade history. The inbox shows a red dot when something is unread.",
+                    "description": "These icons open your holdings, your notifications, and your trade history. You will need these frequently in your trading journey.",
                     "position": "left",
                     "action": null,
                     "reveal": "menu"
@@ -43,7 +43,7 @@
                     "selector": ".nav__dropdown-items",
                     "route": "/dashboard",
                     "title": "Profile, Settings & Help",
-                    "description": "Profile holds your stats, achievements, and daily bonus. Settings covers themes, security, and Advanced Mode, while Help has the FAQ and these tutorials.",
+                    "description": "Profile holds your stats, achievements, and daily bonus. Settings covers themes, security, and Advanced Mode, while Help has the FAQ and a few other useful things.",
                     "position": "left",
                     "action": null,
                     "reveal": "menu"
@@ -52,7 +52,7 @@
                     "selector": "#ore-price-grid",
                     "route": "/market",
                     "title": "The Market",
-                    "description": "Every ore trades here with its current price. The arrow shows its last move, Vol is how sharply it can swing, and Base is its starting price.",
+                    "description": "Every ore trades here with its current price. The arrow shows its last move, Vol is how sharply it can swing, and Base is its original base price.",
                     "position": "top",
                     "action": null
                 },
@@ -60,7 +60,7 @@
                     "selector": "#qt-1",
                     "route": "/market",
                     "title": "Quick Trade",
-                    "description": "Enter a quantity and use Buy or Sell right on the card. In Standard Mode a single buy order is capped at 500 units.",
+                    "description": "Enter a quantity and use Buy or Sell right on the card. In Standard Mode your total holding of an ore is capped at 500 units.",
                     "position": "left",
                     "action": null
                 },
@@ -108,7 +108,7 @@
                     "selector": "#main-content",
                     "route": "/profile",
                     "title": "You're All Set",
-                    "description": "That's the tour. If a daily login bonus is waiting, you'll find it here on your profile. Happy trading, and remember you can replay this tutorial any time from Help in your profile menu.",
+                    "description": "That's the tour. If a daily login bonus is waiting, you'll find it here on your profile. Happy trading, and remember that you can replay this tutorial any time from Help in your profile menu.",
                     "position": "center",
                     "highlight": "none",
                     "action": null
@@ -117,14 +117,14 @@
         },
         {
             "id": "advanced",
-            "name": "Advanced Mode",
+            "name": "Going Deeper",
             "trigger": "first_advanced_activation",
             "steps": [
                 {
                     "selector": "#main-content",
                     "route": "/dashboard",
                     "title": "Welcome to Advanced Mode",
-                    "description": "You've unlocked Advanced Mode. This tour walks through the new tools using a sample short position, so you can see every screen with live data. Tap anywhere to continue, or Skip to leave the tour.",
+                    "description": "You've unlocked Advanced Mode! This tutorial walks through the new tools you've acquired. Tap anywhere to continue, or Skip to leave the tour.",
                     "position": "center",
                     "highlight": "none",
                     "action": null
@@ -133,7 +133,7 @@
                     "selector": "#rs-info-box",
                     "route": "/market/1",
                     "title": "Resistance & Support",
-                    "description": "Advanced Mode tracks resistance and support, the prices an ore has tended to stall below or rebound from. They're shown here, and drawn as dashed lines on the chart below so you can see them against the live price.",
+                    "description": "Advanced Mode tracks resistance and support, the prices an ore has tended to not fall below or not rise above. They're shown here, and drawn as dashed lines on the chart below so you can see them against the live price.",
                     "position": "bottom",
                     "action": null
                 },
@@ -141,7 +141,7 @@
                     "selector": ".trade-tabs__tab[data-tab=\"short\"]",
                     "route": "/market/1",
                     "title": "Short Selling",
-                    "description": "Alongside the usual Buy and Sell, a new Short tab lets you profit when an ore's price falls. We'll open the tab and explore it next. To demonstrate, we've opened a one-unit sample short for you, it costs you nothing and is removed automatically when the tour ends.",
+                    "description": "Alongside the usual Buy and Sell, a new Short tab lets you profit when an ore's price falls. To demonstrate, we've opened a one-unit sample short for you, it costs you nothing and is removed automatically when the tour ends.",
                     "position": "bottom",
                     "action": "demo-short-open",
                     "reveal": "long-tab"
@@ -150,7 +150,7 @@
                     "selector": "#short-preview-collateral",
                     "route": "/market/1",
                     "title": "Collateral & Surcharge",
-                    "description": "Opening a short locks up collateral: the Position is the value you're shorting, and the Margin is the cash held against it. The Surcharge rises when an ore is already heavily shorted, so crowded shorts cost more to hold.",
+                    "description": "Opening a short locks up collateral, money put aside to guarantee you can pay off your investment. Position is the value you're shorting, and the Margin is the cash held against it. The Surcharge rises when an ore is already heavily shorted, so crowded shorts cost more to hold.",
                     "position": "top",
                     "action": null,
                     "reveal": "short-tab"
@@ -159,7 +159,7 @@
                     "selector": "#short-preview-fees",
                     "route": "/market/1",
                     "title": "Fees & Squeeze",
-                    "description": "A small Tick Fee is charged every market tick until you close the position. The Squeeze price is the level at which rising prices would force a liquidation, so the closer the price gets, the more urgent it is to act.",
+                    "description": "A small Tick Fee is charged every market tick until you close the position. This means you can't hold onto a short position forever. The Squeeze price is the price at which the short would cost you more money than you have, forcing the position to be liquidated. Thus, the closer the price gets, the more urgent it is to act.",
                     "position": "top",
                     "action": null,
                     "reveal": "short-tab"
@@ -177,7 +177,7 @@
                     "selector": "#nav-balance",
                     "route": "/portfolio",
                     "title": "The Finances Page",
-                    "description": "Your balance pill is now a link. Select it any time to open the Finances page, a full breakdown of where your capital sits and how your shorts are trending.",
+                    "description": "Your balance pill is now a button. Select it any time to open the Finances page, a full breakdown of where your capital sits and how your shorts are trending.",
                     "position": "bottom",
                     "action": null
                 },
@@ -185,7 +185,7 @@
                     "selector": "#finances-capital",
                     "route": "/finances",
                     "title": "Capital Breakdown",
-                    "description": "Finances splits your capital into free cash, locked collateral, short equity, and long holdings, adding up to your net worth. It's the quickest way to see how much of your money is tied up in open positions.",
+                    "description": "Your net worth is free cash plus long holdings plus short equity, and the bar shows how it's split. Short equity is what you'd keep if you closed your shorts now: the collateral locked for them minus the cost of buying the shares back.",
                     "position": "bottom",
                     "action": null
                 },
@@ -209,7 +209,7 @@
                     "selector": "#leaderboard-live",
                     "route": "/leaderboard",
                     "title": "Standing Out",
-                    "description": "Advanced players show a red name on the leaderboard, and bot traders carry an icon. Short equity counts toward total value, so your demo short is ranked here too, for now. Bots also short crowded, falling ores, which can push up the collateral you need.",
+                    "description": "Advanced players show a red name on the leaderboard. Short equity counts toward total value, so your demo short is ranked here too, for now. Bots are also actively shorting, putting money into falling ores, which can push up the collateral you may need to pay.",
                     "position": "top",
                     "action": null
                 },
@@ -217,7 +217,7 @@
                     "selector": "#main-content",
                     "route": "/dashboard",
                     "title": "You're All Set",
-                    "description": "That's Advanced Mode. The demo short is being closed now and your account is exactly as it was, no fees, no profit or loss. Open your own shorts whenever you're ready, and replay this tour any time from Help in your profile menu.",
+                    "description": "That's Advanced Mode. The demo short is being closed now and your account is exactly as it was, no fees, no profit or loss. Open your own shorts whenever you're ready. Additionally, the 500 unit holding limit on longs has been lifted, allowing you to make bigger investments. Remember, you can replay this tour any time from Help in your profile menu.",
                     "position": "center",
                     "highlight": "none",
                     "action": null

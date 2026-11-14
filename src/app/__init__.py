@@ -188,7 +188,11 @@ def create_app():
             )
             from app.advanced import get_advanced_status
 
-            active = pick_active_state(get_all_tutorial_states(current_user.id))
+            # Ignore paused tracks built for the other mode (see pick_active_state)
+            active = pick_active_state(
+                get_all_tutorial_states(current_user.id),
+                get_advanced_status(current_user.id)['active'],
+            )
 
             # The Advanced tour opens a demo short and walks several pages, so it
             # must begin from a clean, known starting point: the dashboard. Advanced

@@ -1,5 +1,8 @@
-{# Notification detail panel — email-like layout with header, body, footer #}
+{# Notification detail panel: header, content, and action buttons pinned to the bottom #}
 {% if notification is defined and notification %}
+{% set adv = advancement if advancement is defined else none %}
+{% set trade = trade if trade is defined else none %}
+{% set bonus = bonus if bonus is defined else none %}
 <div class="inbox__detail-content">
     <header class="inbox__detail-header {{ css_class }}">
         <span class="inbox__detail-icon">
@@ -9,15 +12,136 @@
     </header>
 
     <div class="inbox__detail-body">
-        <p class="inbox__detail-category">{{ notification.category | capitalize }}</p>
+        <p class="inbox__detail-category">{{ notification.category | replace('_', ' ') | capitalize }}</p>
         <p class="inbox__detail-message">{{ notification.message }}</p>
-    </div>
 
-    {% if notification.action_url and not notification.action_url.startswith('/inbox') %}
-    <footer class="inbox__detail-footer">
-        <a href="{{ notification.action_url }}" class="btn btn--primary inbox__detail-action">View Details</a>
-    </footer>
-    {% endif %}
+        {# ---- Advancements: flavour text + badge ---- #}
+        {% if adv %}
+        <p class="inbox__detail-blurb">{{ adv.blurb }}</p>
+        {% if adv.theme %}
+        <p class="inbox__detail-blurb">
+            As a gift for this achievement, you've unlocked the <strong>{{ adv.theme }} theme</strong>.
+            You can equip it on the Settings page.
+        </p>
+        {% endif %}
+        <img src="{{ url_for('static', filename='images/advancements/' ~ adv.image) }}"
+             alt="{{ adv.name }} badge" class="inbox__detail-badge" width="240" height="240">
+        {% endif %}
+
+        {# ---- SL/TP and liquidations: trade summary ---- #}
+        {% if trade %}
+        <div class="inbox__trade">
+            <div class="inbox__trade-head">
+                <img src="{{ url_for('static', filename='images/ores/' ~ trade.icon_filename) }}"
+                     alt="" class="inbox__trade-icon" width="32" height="32">
+                <span class="inbox__trade-ore">{{ trade.ore_name }}</span>
+                <span class="inbox__trade-side inbox__trade-side--{{ trade.side | lower }}">{{ trade.side }}</span>
+            </div>
+            <dl class="inbox__trade-rows">
+                <div class="inbox__trade-row"><dt>Shares</dt><dd>{{ trade.shares }}</dd></div>
+                {% if notification.category == 'liquidation' %}
+                <div class="inbox__trade-row"><dt>Bought back at</dt><dd>${{ "{:,.2f}".format(trade.fill_price) }}</dd></div>
+                <div class="inbox__trade-row"><dt>Buyback cost</dt><dd>${{ "{:,.2f}".format(trade.buyback_cost) }}</dd></div>
+                <div class="inbox__trade-row"><dt>Collateral locked</dt><dd>${{ "{:,.2f}".format(trade.collateral_locked) }}</dd></div>
+                <div class="inbox__trade-row inbox__trade-row--total"><dt>Returned to you</dt><dd>${{ "{:,.2f}".format(trade.returned) }}</dd></div>
+                {% else %}
+                {% if trade.trigger_price is not none %}
+                <div class="inbox__trade-row">
+                    <dt>Your {{ 'stop loss' if notification.category == 'stop_loss' else 'take profit' }}</dt>
+                    <dd>${{ "{:,.2f}".format(trade.trigger_price) }}</dd>
+                </div>
+                {% endif %}
+                <div class="inbox__trade-row inbox__trade-row--total"><dt>Filled at</dt><dd>${{ "{:,.2f}".format(trade.fill_price) }}</dd></div>
+                {% endif %}
+            </dl>
+        </div>
+
+        {% if notification.category == 'stop_loss' %}
+        <p class="inbox__detail-blurb">
+            {% if trade.side == 'Long' %}
+            Your stop loss did its job and sold before the price could fall any further.
+            {% else %}
+            Your stop loss did its job and closed the short before the price could climb any further.
+            {% endif %}
+        </p>
+        {% elif notification.category == 'take_profit' %}
+        <p class="inbox__detail-blurb">Your take profit locked in the gain automatically, no watching required.</p>
+        {% elif notification.category == 'liquidation' %}
+        <p class="inbox__detail-blurb">
+            Fees and margin top-ups come out of your free cash. When it hit $0, the position was closed automatically.
+        </p>
+        <p class="inbox__detail-blurb">
+            To avoid this, keep some free cash as a buffer, or set a stop loss below your squeeze price.
+        </p>
+        {% endif %}
+
+        {% if notification.category != 'liquidation' and trade.trigger_price is not none
+              and (trade.fill_price - trade.trigger_price) | abs >= 0.01 %}
+        <p class="inbox__detail-note">
+            Prices move in steps each market tick, so the fill can land a little past the price you set.
+        </p>
+        {% endif %}
+        {% endif %}
+
+        {# ---- Daily bonus: live 3-day track ---- #}
+        {% if bonus %}
+        <ol class="inbox__bonus-track" aria-label="Beginner bonus progress">
+            {% for d in bonus.days %}
+            <li class="inbox__bonus-day inbox__bonus-day--{{ d.state }}"
+                aria-label="Day {{ d.day }}, ${{ '{:,}'.format(d.amount) }}, {{ {'collected': 'collected', 'ready': 'ready to collect', 'waiting': 'available tomorrow', 'upcoming': 'locked'}[d.state] }}">
+                <span class="inbox__bonus-day-label">Day {{ d.day }}</span>
+                <span class="inbox__bonus-day-amount">${{ "{:,}".format(d.amount) }}</span>
+                <span class="inbox__bonus-day-state">
+                    {% if d.state == 'collected' %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg>
+                    {% elif d.state == 'ready' %}Ready
+                    {% elif d.state == 'waiting' %}Tomorrow
+                    {% else %}Locked{% endif %}
+                </span>
+            </li>
+            {% endfor %}
+        </ol>
+
+        {% if bonus.available %}
+        <p class="inbox__detail-blurb">
+            Day {{ bonus.cycle_day }} of 3 is ready: <strong>${{ "{:,}".format(bonus.amount) }}</strong>.
+            No streak needed. If you skip a day, it'll still be here when you're back.
+        </p>
+        {% elif bonus.complete %}
+        <p class="inbox__detail-blurb">You've collected all three days of your Beginner Bonus. That's the full starter boost.</p>
+        {% else %}
+        <p class="inbox__detail-blurb">
+            Today's bonus is collected. Day {{ bonus.cycle_day }}
+            (<strong>${{ "{:,}".format(bonus.amount) }}</strong>) unlocks at midnight.
+        </p>
+        {% endif %}
+        {% endif %}
+
+        {# ---- Action buttons ---- #}
+        {% if notification.target_url %}
+        {% set target_labels = {
+            '/history': 'View Trade History',
+            '/settings': 'Open Settings',
+            '/profile': 'View Achievements'
+        } %}
+        {# /profile hosts both achievements and the daily bonus, so the bonus category gets its own label #}
+        {% if notification.category == 'bonus' %}
+            {% if bonus and bonus.available %}{% set action_label = 'Collect Bonus' %}
+            {% elif bonus and bonus.complete %}{% set action_label = 'View Profile' %}
+            {% else %}{% set action_label = 'View Bonus' %}{% endif %}
+        {% else %}
+            {% set action_label = target_labels.get(notification.target_url, 'View Details') %}
+        {% endif %}
+        <div class="inbox__detail-cta">
+            <a href="{{ notification.target_url }}" class="btn btn--primary inbox__detail-action">{{ action_label }}</a>
+            {% if adv and adv.theme %}
+            <a href="{{ url_for('profile.overview') }}" class="btn btn--secondary inbox__detail-action">View Achievements</a>
+            {% elif trade and notification.category != 'liquidation' %}
+            <a href="{{ url_for('market.ore_detail', ore_id=trade.ore_id) }}" class="btn btn--secondary inbox__detail-action">Trade {{ trade.ore_name }} again</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
 </div>
 {% else %}
 <div class="inbox__empty-state">

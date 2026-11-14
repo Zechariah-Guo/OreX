@@ -6,7 +6,7 @@ class Config:
     DATABASE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'orex.db')
     DEFAULT_BALANCE = 10000
     TICK_INTERVAL = 20          # seconds
-    MAX_BUY_QUANTITY = 500      # hard cap on single buy order in simple mode (no Advanced Mode)
+    MAX_BUY_QUANTITY = 500      # hard cap on total units held of a single ore in simple mode (no Advanced Mode)
     RATE_LIMIT_WINDOW = 900     # 15 minutes in seconds
     RATE_LIMIT_MAX = 5          # attempts per window
     SESSION_COOKIE_SAMESITE = 'Lax'
@@ -56,7 +56,7 @@ class Config:
     OCI_CONFIG_PATH = os.environ.get('OCI_CONFIG_PATH', '~/.oci/config')
 
     # Daily Bonus
-    BONUS_AMOUNTS = {1: 1000, 2: 10000, 3: 100000}
+    BONUS_AMOUNTS = {1: 1000, 2: 10000, 3: 50000}
 
     # Tutorial System
     TUTORIAL_HIGHLIGHT_PADDING = 8       # pixels around target element

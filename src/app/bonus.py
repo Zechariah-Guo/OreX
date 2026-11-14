@@ -1,6 +1,10 @@
-from datetime import date
+from datetime import date, datetime, time, timedelta
 
-BONUS_AMOUNTS = {1: 1000, 2: 10000, 3: 100000}
+from app.config import Config
+
+# Single source of truth lives in config.py; re-exported here so existing
+# imports of BONUS_AMOUNTS from app.bonus keep working.
+BONUS_AMOUNTS = Config.BONUS_AMOUNTS
 
 
 def is_bonus_available(user_row) -> bool:
@@ -17,6 +21,51 @@ def is_bonus_available(user_row) -> bool:
         return True
 
     return last_collected != date.today().isoformat()
+
+
+def seconds_until_next_bonus() -> int:
+    """Seconds until the next server-local midnight, when the next bonus unlocks.
+
+    Includes a 1s buffer so a client reloading at zero never lands just before
+    the date rolls over.
+    """
+    now = datetime.now()
+    midnight = datetime.combine(now.date() + timedelta(days=1), time.min)
+    return int((midnight - now).total_seconds()) + 1
+
+
+def ensure_bonus_reminder(db, user_id: int) -> None:
+    """Create today's daily-bonus reminder notification if one is due.
+
+    Does nothing unless a bonus is available and no 'bonus' notification has
+    been created yet today. Called from the inbox poll, so it covers both the
+    first page load after login and a tab left open past midnight.
+    """
+    user = db.execute(
+        "SELECT bonus_cycle_day, last_bonus_collected_date FROM users WHERE id = ?",
+        (user_id,)
+    ).fetchone()
+    if user is None or not is_bonus_available(user):
+        return
+
+    already = db.execute(
+        """SELECT 1 FROM notifications
+           WHERE user_id = ? AND category = 'bonus'
+             AND date(created_at) = date('now', 'localtime')
+           LIMIT 1""",
+        (user_id,)
+    ).fetchone()
+    if already:
+        return
+
+    # Imported here to avoid a circular import (models -> ... -> bonus)
+    from app.models import create_notification
+    amount = get_bonus_amount(user['bonus_cycle_day'])
+    create_notification(
+        user_id, 'bonus',
+        f"Your daily bonus of ${amount:,} is ready to collect.",
+        target_url='/profile',
+    )
 
 
 def get_bonus_amount(cycle_day: int) -> int:

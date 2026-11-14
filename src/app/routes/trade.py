@@ -30,14 +30,35 @@ trade_bp = Blueprint('trade', __name__)
 
 
 def _get_buy_cap():
-    """Get the buy quantity cap for the current user.
+    """Get the per-holding buy quantity cap for the current user.
 
     Returns None if advanced mode is active (no cap), otherwise returns
-    the MAX_BUY_QUANTITY config value for standard mode players.
+    the MAX_BUY_QUANTITY config value — the maximum TOTAL units a standard
+    mode player may hold of any single ore.
     """
     if current_user.is_authenticated and is_advanced_active(current_user.id):
         return None
     return current_app.config.get('MAX_BUY_QUANTITY', 500)
+
+
+def _check_holding_cap(ore, quantity):
+    """Enforce the per-holding cap for standard-mode players.
+
+    Returns an error message string if buying ``quantity`` more of ``ore``
+    would push the user's total holding above the cap, otherwise None.
+    Advanced mode (cap is None) always returns None (unlimited).
+    """
+    cap = _get_buy_cap()
+    if cap is None:
+        return None
+    holding = get_holding(current_user.id, ore['id'])
+    current_qty = holding['quantity'] if holding else 0
+    if current_qty + quantity > cap:
+        return (
+            f'You can hold at most {cap:,} {ore["name"]} in standard mode. '
+            f'You currently hold {current_qty:,}.'
+        )
+    return None
 
 
 @trade_bp.route('/trade/buy/<int:ore_id>', methods=['GET', 'POST'])
@@ -52,14 +73,21 @@ def buy(ore_id):
     if request.method == 'POST':
         # Check if this is the confirmation step
         confirmed = request.form.get('confirmed')
-        buy_cap = _get_buy_cap()
 
         if confirmed:
             # Execute the trade
             quantity_str = request.form.get('quantity')
-            quantity, error = validate_quantity(quantity_str, max_quantity=buy_cap)
+            quantity, error = validate_quantity(quantity_str)
             if error:
                 flash(error, 'error')
+                return redirect(url_for('market.ore_detail', ore_id=ore_id))
+
+            # Enforce the per-holding cap (standard mode only). This is the
+            # authoritative backstop for requests that bypass the client-side
+            # input max (devtools/curl); Advanced Mode has no cap.
+            cap_error = _check_holding_cap(ore, quantity)
+            if cap_error:
+                flash(cap_error, 'error')
                 return redirect(url_for('market.ore_detail', ore_id=ore_id))
 
             # Re-fetch current price (may have changed since confirmation page)
@@ -174,9 +202,16 @@ def buy(ore_id):
         else:
             # Show confirmation page
             quantity_str = request.form.get('quantity')
-            quantity, error = validate_quantity(quantity_str, max_quantity=buy_cap)
+            quantity, error = validate_quantity(quantity_str)
             if error:
                 flash(error, 'error')
+                return redirect(url_for('market.ore_detail', ore_id=ore_id))
+
+            # Enforce the per-holding cap (standard mode only) before showing
+            # the confirmation page.
+            cap_error = _check_holding_cap(ore, quantity)
+            if cap_error:
+                flash(cap_error, 'error')
                 return redirect(url_for('market.ore_detail', ore_id=ore_id))
 
             total_cost = quantity * ore['current_price']
@@ -444,6 +479,9 @@ def short_open(ore_id):
             {'share_quantity': quantity, 'locked_collateral': locked_collateral},
             remaining_cash, volatility, ticks_per_hour
         )
+        # Same convention as the buy-bar preview: infinity renders as "—"
+        if squeeze_price == float('inf'):
+            squeeze_price = None
 
         return render_template('pages/short_confirm.html',
                                ore=ore,
@@ -496,10 +534,10 @@ def short_open(ore_id):
         db.execute(
             """INSERT INTO short_positions
                (user_id, ore_id, share_quantity, entry_price, locked_collateral,
-                stop_loss_price, take_profit_price)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                stop_loss_price, take_profit_price, open_factor)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (current_user.id, ore_id, quantity, current_price, locked_collateral,
-             stop_loss, take_profit)
+             stop_loss, take_profit, 1 + collateral_multiplier)
         )
 
         # Record transaction

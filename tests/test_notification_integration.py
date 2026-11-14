@@ -34,6 +34,15 @@ def clear_notifications(app):
     yield
 
 
+@pytest.fixture(autouse=True)
+def disable_bonus_reminder(monkeypatch):
+    """New users always have a daily bonus waiting, so the poll would add a
+    'bonus' reminder to every count in this file. These tests are about other
+    notification behaviour, so switch the reminder off."""
+    monkeypatch.setattr('app.routes.inbox.ensure_bonus_reminder', lambda db, user_id: None)
+    yield
+
+
 # ---------------------------------------------------------------------------
 # Helper: get a CSRF token from any authenticated page
 # ---------------------------------------------------------------------------
@@ -73,8 +82,7 @@ class TestPollingEndpoint:
     """Tests for the GET /inbox/poll endpoint JSON structure."""
 
     def test_poll_returns_correct_json_structure(self, client, app):
-        """Poll endpoint returns JSON with notifications (list), has_unread (bool),
-        and last_id (int)."""
+        """Poll endpoint returns JSON with notifications (list) and has_unread (bool)."""
         register_user(client, 'PollUser', 'Password123!')
 
         # Get user_id
@@ -89,25 +97,23 @@ class TestPollingEndpoint:
             create_notification(user_id, 'achievement', 'Badge earned!')
             create_notification(user_id, 'system', 'Welcome!')
 
-        response = client.get('/inbox/poll?since=0')
+        response = client.get('/inbox/poll')
         assert response.status_code == 200
 
         data = response.get_json()
         assert 'notifications' in data
         assert 'has_unread' in data
-        assert 'last_id' in data
 
         # Type checks
         assert isinstance(data['notifications'], list)
         assert isinstance(data['has_unread'], bool)
-        assert isinstance(data['last_id'], int)
 
         # Should have 2 notifications
         assert len(data['notifications']) == 2
         assert data['has_unread'] is True
 
-    def test_poll_since_filters_correctly(self, client, app):
-        """Poll with since=0 returns all unread; poll with since=last_id returns empty."""
+    def test_poll_only_returns_each_toast_once(self, client, app):
+        """Poll returns pending toasts once; a second poll returns none (toasted flag)."""
         register_user(client, 'PollFilter', 'Password123!')
 
         db_path = app.config['DATABASE_PATH']
@@ -120,17 +126,17 @@ class TestPollingEndpoint:
             create_notification(user_id, 'system', 'First notification')
             create_notification(user_id, 'system', 'Second notification')
 
-        # Poll with since=0 should return all
-        response = client.get('/inbox/poll?since=0')
+        # First poll returns both pending toasts
+        response = client.get('/inbox/poll')
         data = response.get_json()
         assert len(data['notifications']) == 2
 
-        last_id = data['last_id']
-
-        # Poll with since=last_id should return empty (no newer notifications)
-        response = client.get(f'/inbox/poll?since={last_id}')
+        # Second poll returns nothing: they've already been toasted
+        response = client.get('/inbox/poll')
         data = response.get_json()
         assert len(data['notifications']) == 0
+        # They're still unread, so the red dot stays on
+        assert data['has_unread'] is True
 
 
 # ---------------------------------------------------------------------------
@@ -416,3 +422,52 @@ class TestSLTPToastPolling:
         notif = data['notifications'][0]
         assert notif['action_url'] is not None
         assert notif['action_url'].startswith('/inbox?selected=')
+
+
+# ---------------------------------------------------------------------------
+# Daily bonus detail panel
+# ---------------------------------------------------------------------------
+
+class TestBonusDetailPanel:
+    """The bonus detail panel reflects the player's bonus state *now*,
+    not when the reminder was sent."""
+
+    def _setup(self, client, app, username, cycle_day, collected_today):
+        register_user(client, username, 'Password123!')
+        conn = sqlite3.connect(app.config['DATABASE_PATH'])
+        user_id = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()[0]
+        conn.execute(
+            """UPDATE users SET bonus_cycle_day = ?,
+                   last_bonus_collected_date = CASE WHEN ? THEN date('now', 'localtime') ELSE NULL END
+               WHERE id = ?""",
+            (cycle_day, 1 if collected_today else 0, user_id),
+        )
+        conn.commit()
+        conn.close()
+        with app.app_context():
+            notif_id = create_notification(
+                user_id, 'bonus', 'Your daily bonus of $10,000 is ready to collect.',
+                target_url='/profile',
+            )
+        return client.get(f'/inbox/{notif_id}').data.decode('utf-8')
+
+    def test_available_bonus_shows_ready_day_and_collect_button(self, client, app):
+        html = self._setup(client, app, 'BonusReady', cycle_day=2, collected_today=False)
+        assert 'inbox__bonus-day--collected' in html   # day 1
+        assert 'inbox__bonus-day--ready' in html       # day 2
+        assert 'Day 2 of 3 is ready' in html
+        assert 'Collect Bonus' in html
+
+    def test_collected_today_shows_waiting_and_no_collect_button(self, client, app):
+        # Collected day 1 today, so cycle_day is now 2 and it's waiting for midnight
+        html = self._setup(client, app, 'BonusWaiting', cycle_day=2, collected_today=True)
+        assert 'inbox__bonus-day--waiting' in html
+        assert "Today's bonus is collected" in html
+        assert 'Collect Bonus' not in html
+        assert 'View Bonus' in html
+
+    def test_complete_cycle_shows_all_collected(self, client, app):
+        html = self._setup(client, app, 'BonusDone', cycle_day=4, collected_today=False)
+        assert html.count('inbox__bonus-day--collected') == 3
+        assert 'all three days' in html
+        assert 'View Profile' in html

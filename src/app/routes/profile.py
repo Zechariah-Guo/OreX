@@ -2,12 +2,21 @@
 
 import logging
 
-from flask import Blueprint, current_app, flash, render_template, request, url_for
+from flask import (
+    Blueprint, abort, current_app, flash, redirect, render_template, request, url_for,
+)
 from flask_login import login_required, current_user
 
-from app.advancements import get_user_advancements, ADVANCEMENT_KEYS, ADVANCEMENT_METADATA
-from app.avatar import validate_avatar, process_avatar
-from app.bonus import is_bonus_available, get_bonus_amount, is_bonus_complete, collect_bonus
+from app.advancements import (
+    get_user_advancements, ADVANCEMENT_KEYS, ADVANCEMENT_METADATA, ADVANCEMENT_IMAGES,
+)
+from app.avatar import (
+    validate_avatar, process_avatar, get_avatar_color_hex, get_avatar_text_color,
+)
+from app.bonus import (
+    is_bonus_available, get_bonus_amount, is_bonus_complete, collect_bonus,
+    seconds_until_next_bonus,
+)
 from app.database import get_db
 from app.storage import get_storage_backend
 
@@ -15,41 +24,74 @@ logger = logging.getLogger(__name__)
 
 profile_bp = Blueprint('profile', __name__)
 
+# Bot accounts are created with this placeholder hash (see market/bots.py)
+BOT_PASSWORD_HASH = 'BOT_NO_LOGIN'
+
 
 @profile_bp.route('/profile')
 @login_required
 def overview():
-    """Render the profile page with avatar, stats, bonus, and achievements."""
+    """Render the current player's own profile (editable avatar, daily bonus)."""
+    return _render_profile(current_user.id, is_own_profile=True)
+
+
+@profile_bp.route('/player/<username>')
+@login_required
+def player(username):
+    """Read-only public profile of another player, linked from the leaderboard.
+
+    Usernames are case-sensitive in the DB, so an exact match wins. Otherwise a
+    case-insensitive match redirects to the canonical URL, but only when it is
+    unambiguous. Bots have no profile, and your own name redirects to /profile.
+    """
+    db = get_db()
+    row = db.execute(
+        "SELECT id, username, password_hash FROM users WHERE username = ?",
+        (username,),
+    ).fetchone()
+
+    if row is None:
+        matches = db.execute(
+            "SELECT id, username, password_hash FROM users WHERE username = ? COLLATE NOCASE",
+            (username,),
+        ).fetchall()
+        if len(matches) != 1:
+            abort(404)
+        return redirect(url_for('profile.player', username=matches[0]['username']))
+
+    if row['password_hash'] == BOT_PASSWORD_HASH:
+        abort(404)
+
+    if row['id'] == current_user.id:
+        return redirect(url_for('profile.overview'))
+
+    return _render_profile(row['id'], is_own_profile=False)
+
+
+def _render_profile(user_id, is_own_profile):
+    """Shared renderer for /profile (own) and /player/<username> (others).
+
+    Other players' pages never get the daily bonus or avatar-upload controls.
+    """
     db = get_db()
 
     user = db.execute(
-        """SELECT username, balance, created_at, avatar_path,
+        """SELECT id, username, balance, created_at, avatar_path, avatar_color,
                   bonus_cycle_day, last_bonus_collected_date,
                   play_time, login_streak, peak_net_worth
            FROM users WHERE id = ?""",
-        (current_user.id,),
+        (user_id,),
     ).fetchone()
+    if user is None:
+        abort(404)
 
     trade_count = db.execute(
         "SELECT COUNT(*) as cnt FROM transactions WHERE user_id = ?",
-        (current_user.id,),
+        (user_id,),
     ).fetchone()['cnt']
 
-    # Image filename mapping (keys -> actual filenames in static/images/advancements/)
-    ADVANCEMENT_IMAGES = {
-        'millionaire': 'Millionaire.png',
-        'multimillionaire': 'Multimillionaire.png',
-        'the_big_short': 'The Big Short.png',
-        'dedicated': 'Dedicated.png',
-        'day_trader': 'What a Deal!.png',
-        'budding_enthusiast': 'Suit Up.png',
-        'completionist': 'Completionist.png',
-        'tragedy': 'Post Mortem.png',
-        'best_of_the_rest': 'Go for Diamond!.png',
-    }
-
     # Merge earned advancements with full metadata for template display
-    earned = get_user_advancements(db, current_user.id)
+    earned = get_user_advancements(db, user_id)
     earned_keys = {a['key'] for a in earned}
     achievements = []
     for key in ADVANCEMENT_KEYS:
@@ -66,22 +108,30 @@ def overview():
         }
         achievements.append(entry)
 
-    bonus_available = is_bonus_available(user)
-    bonus_amount = get_bonus_amount(user['bonus_cycle_day'])
-    bonus_complete = is_bonus_complete(user['bonus_cycle_day'])
-
-    return render_template(
-        'pages/profile.html',
-        user=user,
-        trade_count=trade_count,
-        achievements=achievements,
-        bonus_available=bonus_available,
-        bonus_amount=bonus_amount,
-        bonus_complete=bonus_complete,
+    # Fallback avatar colours for THIS profile's owner. Deliberately not the
+    # user_avatar_* context values: those belong to the viewer's nav avatar.
+    color_key = user['avatar_color'] or 'coal'
+    context = {
+        'user': user,
+        'trade_count': trade_count,
+        'achievements': achievements,
+        'is_own_profile': is_own_profile,
+        'profile_avatar_hex': get_avatar_color_hex(color_key),
+        'profile_avatar_text': get_avatar_text_color(color_key),
         # The achievement-orbit animation on this page uses Alpine.js directly,
         # independent of the tutorial system, so it must load it unconditionally.
-        needs_alpine=True,
-    )
+        'needs_alpine': True,
+    }
+
+    if is_own_profile:
+        context.update(
+            bonus_available=is_bonus_available(user),
+            bonus_amount=get_bonus_amount(user['bonus_cycle_day']),
+            bonus_complete=is_bonus_complete(user['bonus_cycle_day']),
+            bonus_seconds_left=seconds_until_next_bonus(),
+        )
+
+    return render_template('pages/profile.html', **context)
 
 
 @profile_bp.route('/profile/avatar', methods=['POST'])
@@ -188,6 +238,7 @@ def collect_bonus_route():
         bonus_available=bonus_available,
         bonus_amount=bonus_amount,
         bonus_complete=bonus_complete,
+        bonus_seconds_left=seconds_until_next_bonus(),
     )
 
 

@@ -4,7 +4,7 @@ A hidden, no-frills testing page with NO navigation links anywhere in the app.
 Only accessible by manually typing /advancements in the URL bar.
 """
 
-from flask import Blueprint, render_template, redirect, url_for, request
+from flask import Blueprint, abort, current_app, render_template, redirect, url_for, request
 from flask_login import login_required, current_user
 
 from app.database import get_db
@@ -48,6 +48,10 @@ def advancements_test():
     bonus_cycle_day = bonus_row['bonus_cycle_day'] if bonus_row else 1
     last_bonus_date = bonus_row['last_bonus_collected_date'] if bonus_row else None
 
+    free_cash = db.execute(
+        "SELECT balance FROM users WHERE id = ?", (current_user.id,)
+    ).fetchone()['balance']
+
     return render_template(
         'pages/advancements_test.html',
         advancements=advancements_data,
@@ -55,7 +59,47 @@ def advancements_test():
         gold_theme=gold_theme,
         bonus_cycle_day=bonus_cycle_day,
         last_bonus_date=last_bonus_date,
+        free_cash=free_cash,
+        cash_tools_enabled=current_app.debug,
+        cash_grant_amount=DEV_CASH_GRANT,
     )
+
+
+# --- Free cash dev tools (debug mode only) ---
+# These edit a player's money, so unlike the rest of this page they refuse to
+# run outside debug mode: a production player typing the URL gets a 404.
+
+DEV_CASH_GRANT = 100_000
+
+
+def _require_debug():
+    if not current_app.debug:
+        abort(404)
+
+
+@advancements_bp.route('/advancements/cash/drain', methods=['POST'])
+@login_required
+def drain_free_cash():
+    """Set free cash to $0. With an open short, the next tick fee-liquidates it."""
+    _require_debug()
+    db = get_db()
+    db.execute("UPDATE users SET balance = 0 WHERE id = ?", (current_user.id,))
+    db.commit()
+    return redirect(url_for('advancements.advancements_test'))
+
+
+@advancements_bp.route('/advancements/cash/grant', methods=['POST'])
+@login_required
+def grant_free_cash():
+    """Add DEV_CASH_GRANT to free cash."""
+    _require_debug()
+    db = get_db()
+    db.execute(
+        "UPDATE users SET balance = balance + ? WHERE id = ?",
+        (DEV_CASH_GRANT, current_user.id),
+    )
+    db.commit()
+    return redirect(url_for('advancements.advancements_test'))
 
 
 @advancements_bp.route('/advancements/reset/<key>', methods=['POST'])

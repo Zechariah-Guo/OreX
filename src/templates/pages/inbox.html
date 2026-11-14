@@ -55,7 +55,7 @@
 
         <section class="inbox__detail" aria-label="Notification detail" aria-live="polite">
             {% if selected_notification %}
-                {% with notification=selected_notification, css_class=selected_css_class, icon=selected_icon %}
+                {% with notification=selected_notification, css_class=selected_css_class, icon=selected_icon, advancement=selected_advancement, trade=selected_trade, bonus=selected_bonus %}
                     {% include 'partials/inbox_detail.html' %}
                 {% endwith %}
             {% else %}

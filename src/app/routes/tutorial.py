@@ -62,7 +62,10 @@ def get_track(track_id):
 @login_required
 def get_state():
     """Return the in-progress tutorial state for client init, or null."""
-    active = pick_active_state(get_all_tutorial_states(current_user.id))
+    active = pick_active_state(
+        get_all_tutorial_states(current_user.id),
+        get_advanced_status(current_user.id)["active"],
+    )
     if active is None:
         return jsonify(None)
     return jsonify({

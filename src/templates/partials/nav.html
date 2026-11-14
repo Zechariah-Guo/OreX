@@ -28,7 +28,7 @@
                 <li class="nav__profile-group">
                     <div class="nav__profile-pill">
                         {% if is_advanced_active %}
-                            <a href="{{ url_for('finances.overview') }}" class="nav__balance nav__balance--link" id="nav-balance">
+                            <a href="{{ url_for('finances.overview') }}" class="nav__balance nav__balance--link" id="nav-balance" draggable="false">
                                 ${{ "%.2f" | format(current_user.balance) }}
                             </a>
                         {% else %}

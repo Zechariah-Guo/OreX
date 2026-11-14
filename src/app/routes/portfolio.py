@@ -155,6 +155,12 @@ def overview():
     total_profit_loss = total_current_value - total_invested
     total_portfolio_value = user.balance + total_current_value
 
+    # Which Longs/Shorts tab to render as active. Comes from ?tab= on a normal
+    # load (e.g. the Finances "Manage in Portfolio" link) and from the htmx
+    # auto-refresh, which sends the tab the player currently has open. Rendering
+    # it server-side means a refresh never flashes back to Longs.
+    active_tab = 'shorts' if (advanced_active and request.args.get('tab') == 'shorts') else 'longs'
+
     # HTMX partial: return only the live content
     if request.headers.get('HX-Request'):
         return render_template('partials/portfolio_live.html',
@@ -162,6 +168,7 @@ def overview():
                                holdings=holdings_data,
                                short_positions=short_positions,
                                is_advanced_active=advanced_active,
+                               active_tab=active_tab,
                                total_current_value=total_current_value,
                                total_profit_loss=total_profit_loss,
                                total_portfolio_value=total_portfolio_value)
@@ -171,6 +178,7 @@ def overview():
                            holdings=holdings_data,
                            short_positions=short_positions,
                            is_advanced_active=advanced_active,
+                           active_tab=active_tab,
                            total_invested=total_invested,
                            total_current_value=total_current_value,
                            total_profit_loss=total_profit_loss,

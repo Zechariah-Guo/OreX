@@ -341,9 +341,11 @@ def _bot_open_short(db, bot_id: int, ore_id: int, quantity: int, price: float) -
     db.execute(
         """INSERT INTO short_positions
            (user_id, ore_id, share_quantity, entry_price, locked_collateral,
-            stop_loss_price, take_profit_price, cumulative_fees_paid, opened_at, status)
-           VALUES (?, ?, ?, ?, ?, ?, NULL, 0.0, ?, 'active')""",
-        (bot_id, ore_id, quantity, price, locked_collateral, stop_loss_price, now)
+            stop_loss_price, take_profit_price, cumulative_fees_paid, opened_at, status,
+            open_factor)
+           VALUES (?, ?, ?, ?, ?, ?, NULL, 0.0, ?, 'active', ?)""",
+        (bot_id, ore_id, quantity, price, locked_collateral, stop_loss_price, now,
+         1 + multiplier)
     )
 
     # Record transaction

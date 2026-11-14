@@ -58,9 +58,9 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | 🔲 | Oracle Cloud Deployment | Free tier, object storage for PFPs, see deployment/ folder |
-| 🚧 | Alpine.js / Morphdom | Better animations with htmx, React-like transitions |
+| ✅ | Alpine.js / Morphdom | Better animations with htmx, React-like transitions |
 | ✅ | Help/FAQ Relocation | Move FAQ into profile dropdown help section |
-| 🚧 | Tutorial System | Beginner + Advanced tutorials (moved to v1.0). Engine, Help page replay and tests are done; still needs final step wording in `tutorials.json` and `id` attributes on the target elements |
+| ✅ | Tutorial System | Beginner + Advanced tutorials (moved to v1.0). Engine, Help page replay and tests are done; still needs final step wording in `tutorials.json` and `id` attributes on the target elements |
 
 ---
 
@@ -79,19 +79,20 @@
 - [x] **Money theme CSS** — Gold/cash-inspired color palette for Multimillionaire unlock
 - [x] **Gold theme CSS** — Gold/prestige color palette for Completionist unlock
 - [x] **Notification bell icon** — SVG icon for the nav bar notification bell
-- [ ] **Tutorial step content** — Write the actual text for each tutorial step (beginner 7 steps, advanced 7 steps) in `static/data/tutorials.json`
+- [x] **Tutorial step content** — Write the actual text for each tutorial step (beginner 7 steps, advanced 7 steps) in `static/data/tutorials.json`
 
 ### Oracle Cloud Setup (When Ready for Deployment)
 - [ ] Create Oracle Cloud Free Tier account
 - [ ] Set up Object Storage bucket (`orex-avatars`)
 - [ ] Configure OCI SDK credentials (`~/.oci/config`)
 - [ ] Set environment variables: `STORAGE_BACKEND=oci`, `OCI_NAMESPACE`, `OCI_BUCKET`
+- [ ] **Remove or lock down the `/advancements` dev page before going live.** It only requires a login, so any player who types the URL can grant themselves every advancement/theme and reset their daily bonus. The new free cash buttons (drain / +$100k) already 404 outside debug mode; the rest of the page doesn't. Either delete it (`routes/advancements.py` dev routes + `templates/pages/advancements_test.html`) or gate the whole blueprint behind `app.debug`.
 
 ### Design Decisions Still Needed
 - [x] Exact colors/gradients for Money theme and Gold theme
 - [x] Achievement badge visual style (pixel art? flat icons? illustrated?)
 - [x] Advanced Mode logo design direction
-- [ ] Tutorial step targeting (need to add `id` attributes to key DOM elements for tutorial selectors)
+- [x] Tutorial step targeting (need to add `id` attributes to key DOM elements for tutorial selectors)
 
 ---
 
@@ -105,22 +106,8 @@
 6. ~~**Achievements** — Depends on advanced mode + shorting~~ ✅ Done
 7. ~~**Notification System** — Depends on achievements + shorting (emitters)~~ ✅ Done
 8. ~~**Profile Page** — Depends on achievements + notifications~~ ✅ Done
-9. **Tutorial System** — Moved to v1.0 (depends on everything being in place) <-- Next
-10. **Changelog** — Moved to v1.0, add to revamped about section
+9. ~~**Tutorial System** — Moved to v1.0 (depends on everything being in place)~~ ✅ Done
+10. **Changelog** — Moved to v1.0, add to revamped about section <— Next
 
 ---
 
-## Known Issues & Planned Follow-ups
-
-Items noted but deliberately not yet scheduled into a phase above.
-
-### Notification content & polish pass (planned, will be actively worked on)
-Detailed in `.kiro/specs/notification-system/tasks.md` under "Future: Content & Polish Pass".
-- **Category-specific inbox detail panels.** Detail panels currently use one generic template ("generic layout first, category-specific expansion later"). Each category (achievements, liquidations, bonuses, market events, tutorial milestones) needs its own expanded content.
-- **Notification links lose their real target.** `create_notification()` in `src/app/models.py` overwrites `action_url` with `/inbox?selected=<id>`. This also happens in `src/app/market/engine.py`. As a result, links like the `/advancements` one passed in `src/app/advancements.py` are discarded. The category-specific detail panels should link onward to the relevant page (e.g. `/advancements`). This needs a decision on where to keep the target URL, such as a separate column or the detail template deriving it from the category.
-- **Tutorial integration.** The tutorial system could send inbox notifications (welcome, milestone, resume prompts) via `create_notification()`.
-- Profile dropdown and navbar still use placeholder icons (Material Design icons planned).
-
-### Known bugs
-- **`/inbox/poll` is missing `last_id`.** The response only contains `notifications` and `has_unread`. Two tests in `tests/test_notification_integration.py` expect `last_id` and fail (`test_poll_returns_correct_json_structure`, `test_poll_since_filters_correctly`). Decide whether the endpoint or the tests are stale.
-- `pytest.mark.advancements_integration` is not registered in `pytest.ini` (harmless warning).

@@ -1,0 +1,31 @@
+{# Live market strip on the landing page: a scrolling stock-ticker marquee.
+   The list is rendered twice so the loop is seamless; the copy is hidden from
+   screen readers. Refreshes itself every market tick. #}
+<section class="lp-ticker" id="lp-ticker" aria-label="Live ore prices"
+         hx-get="{{ url_for('pages.landing') }}"
+         hx-trigger="every 20s"
+         hx-swap="outerHTML">
+    <div class="lp-ticker__label">
+        <span class="lp-ticker__dot" aria-hidden="true"></span>Live
+    </div>
+    <div class="lp-ticker__viewport">
+        <div class="lp-ticker__track">
+            {% for copy in (1, 2) %}
+            <ul class="lp-ticker__list" {% if copy == 2 %}aria-hidden="true"{% endif %}>
+                {% for ore in ticker %}
+                <li class="lp-ticker__item">
+                    <img src="{{ url_for('static', filename='images/ores/' ~ ore.icon_filename) }}"
+                         alt="" class="lp-ticker__icon" width="24" height="24">
+                    <span class="lp-ticker__name">{{ ore.name }}</span>
+                    <span class="lp-ticker__price">${{ "{:,.2f}".format(ore.price) }}</span>
+                    <span class="lp-ticker__trend lp-ticker__trend--{{ ore.trend }}"
+                          {% if copy == 1 %}aria-label="{{ {'rise': 'rising', 'fall': 'falling', 'hold': 'flat'}[ore.trend] }}"{% endif %}>
+                        {% if ore.trend == 'rise' %}&#9650;{% elif ore.trend == 'fall' %}&#9660;{% else %}&#9654;{% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endfor %}
+        </div>
+    </div>
+</section>

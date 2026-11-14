@@ -212,11 +212,13 @@ def evaluate_stop_loss_take_profit(db):
 
             # Record the auto-sell transaction
             now = datetime.now().isoformat()
-            db.execute(
+            txn_cursor = db.execute(
                 """INSERT INTO transactions (user_id, ore_id, type, quantity, price_at_trade, total_value, created_at)
                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (order['user_id'], order['ore_id'], 'sell', quantity, current_price, total_value, now)
             )
+            transaction_id = txn_cursor.lastrowid
+            trigger_price = order['stop_loss'] if trigger_type == 'stop_loss' else order['take_profit']
 
             # Create notification for the SL/TP trigger
             if trigger_type == 'stop_loss':
@@ -228,9 +230,10 @@ def evaluate_stop_loss_take_profit(db):
 
             # Insert notification (action_url set after we get the ID)
             notif_cursor = db.execute(
-                """INSERT INTO notifications (user_id, category, message, action_url, is_read, created_at)
-                   VALUES (?, ?, ?, NULL, 0, datetime('now', 'localtime'))""",
-                (order['user_id'], notif_category, notif_message)
+                """INSERT INTO notifications (user_id, category, message, action_url, target_url,
+                                             transaction_id, trigger_price, is_read, created_at)
+                   VALUES (?, ?, ?, NULL, '/history', ?, ?, 0, datetime('now', 'localtime'))""",
+                (order['user_id'], notif_category, notif_message, transaction_id, trigger_price)
             )
             notif_id = notif_cursor.lastrowid
 
