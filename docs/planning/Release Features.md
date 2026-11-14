@@ -106,7 +106,7 @@
 6. ~~**Achievements** — Depends on advanced mode + shorting~~ ✅ Done
 7. ~~**Notification System** — Depends on achievements + shorting (emitters)~~ ✅ Done
 8. ~~**Profile Page** — Depends on achievements + notifications~~ ✅ Done
-9. ~~**Tutorial System** — Moved to v1.0 (depends on everything being in place)~~ ✅ Done
+9. ~~**Tutorial System** — Moved to v1.0 (depends on everything being in place)~~ ✅ Done[']
 10. ~~**Changelog** — Moved to v1.0, add to revamped about section~~ ✅ Done
 
 ---

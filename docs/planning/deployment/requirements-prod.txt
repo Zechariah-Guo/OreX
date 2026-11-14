@@ -3,3 +3,6 @@
 
 # WSGI server
 gunicorn==23.0.0
+
+# Avatar storage on Oracle Object Storage (STORAGE_BACKEND=oci)
+oci==2.191.0

@@ -34,6 +34,8 @@ SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 echo "=== Creating environment file ==="
 cat > /home/ubuntu/orex/.env << EOF
 SECRET_KEY=${SECRET_KEY}
+# Trust Nginx's X-Forwarded-For/-Proto (one hop) for client IP and https
+OREX_TRUST_PROXY=1
 EOF
 
 echo "=== Creating systemd service (port 4000) ==="
@@ -69,6 +71,10 @@ server {
     listen 80;
     server_name orex.mochizou.works;
 
+    # Requests arrive from cloudflared on 127.0.0.1: take the real client IP from Cloudflare
+    set_real_ip_from 127.0.0.1;
+    real_ip_header CF-Connecting-IP;
+
     location /static/ {
         alias /home/ubuntu/orex/src/static/;
         expires 7d;
@@ -79,8 +85,9 @@ server {
         proxy_pass http://127.0.0.1:4000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        # One trusted hop for the app's ProxyFix (OREX_TRUST_PROXY=1): client IP + Cloudflare's https
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
         proxy_read_timeout 120s;
         proxy_buffering on;
     }

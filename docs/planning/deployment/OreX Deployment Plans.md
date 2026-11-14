@@ -166,6 +166,8 @@ SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 # Create .env file
 cat > /home/ubuntu/orex/.env << EOF
 SECRET_KEY=${SECRET_KEY}
+# Trust Nginx's X-Forwarded-For/-Proto (one hop) for client IP and https
+OREX_TRUST_PROXY=1
 EOF
 ```
 
@@ -215,6 +217,10 @@ sudo tee /etc/nginx/sites-available/orex > /dev/null << 'EOF'
 server {
     listen 80;
     server_name orex.mochizou.works;
+
+    # Requests arrive from cloudflared on 127.0.0.1: take the real client IP from Cloudflare
+    set_real_ip_from 127.0.0.1;
+    real_ip_header CF-Connecting-IP;
 
     # Serve static files directly — bypass Gunicorn entirely
     location /static/ {
@@ -413,21 +419,18 @@ sudo systemctl restart orex
 The database lives at `/home/ubuntu/orex/src/data/orex.db`.
 
 ### Initial Setup
-If your schema auto-generates on first run, just let the app create a fresh database on the cloud VM.
-
-### Migrating Local Data
-To copy existing player data to the VM:
-```bash
-scp -i /path/to/key.pem ./src/data/orex.db ubuntu@YOUR_INSTANCE_IP:/home/ubuntu/orex/src/data/orex.db
-```
+The repo ships no database (`src/data/*.db` is gitignored). On first start the app creates `orex.db` from `schema.sql` and `seed.sql`.
 
 ### Automated Backups
 ```bash
+sudo apt install -y sqlite3
 mkdir -p /home/ubuntu/backups
 crontab -e
 # Add:
-0 3 * * * cp /home/ubuntu/orex/src/data/orex.db /home/ubuntu/backups/orex-$(date +\%Y\%m\%d).db
+0 3 * * * sqlite3 /home/ubuntu/orex/src/data/orex.db ".backup '/home/ubuntu/backups/orex-$(date +\%Y\%m\%d).db'"
 ```
+
+`sqlite3 ... ".backup"` takes a consistent snapshot while the app is running. A plain `cp` can miss recent writes because the database runs in WAL mode (recent changes sit in `orex.db-wal` until a checkpoint).
 
 ---
 
