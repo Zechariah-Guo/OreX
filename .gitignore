@@ -49,3 +49,6 @@ src/static/uploads/avatars/*
  
 # Local secrets (see .env.example) 
 .env 
+
+# Workflow agent scratch reports
+.agents/
