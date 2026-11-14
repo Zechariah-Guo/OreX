@@ -33,6 +33,27 @@ Then read `.kiro/tmp/test_output.txt` to see results.
 - **pip install**: `.venv\Scripts\python.exe -m pip install <pkg> > .kiro/tmp/pip_output.txt 2>&1`
 - **general**: `<command> > .kiro/tmp/cmd_output.txt 2>&1`
 
+## Waiting for Commands (sentinel file, REQUIRED)
+
+The terminal often returns early or shows nothing. NEVER poll with ping, sleep loops, or repeated "check again" commands. Queued waits lock up the terminal.
+
+1. Run the command in the background with a done-marker (`run_in_background: true`):
+   ```
+   cmd /c "<command> > .kiro\tmp\out.txt 2>&1 & echo done > .kiro\tmp\done.flag"
+   ```
+2. Make exactly ONE wait call, with `timeout` of 120000 or more:
+   ```
+   powershell -NoProfile -Command "while (-not (Test-Path .kiro\tmp\done.flag)) { Start-Sleep 1 }"
+   ```
+3. Only after the wait returns, read `.kiro/tmp/out.txt` with the file reading tool.
+4. Delete `out.txt` and `done.flag`.
+
+Rules:
+- Never have more than one wait command running at a time.
+- Never read the output file before the wait call returns.
+- If the wait times out, report that to the user and stop. Do NOT queue another wait or ping.
+- Delete any stale `.kiro\tmp\done.flag` before starting a new command.
+
 ## Python Virtual Environment
 
 - NEVER use `activate` scripts
