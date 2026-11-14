@@ -32,3 +32,11 @@ ENV/
 # GENERATED OUTPUT
 ###############################################
 screenshots/
+
+###############################################
+# LOCAL DEV DATABASE
+###############################################
+src/data/*.db
+src/data/*.db-shm
+src/data/*.db-wal
+src/data/*.db.bak*
