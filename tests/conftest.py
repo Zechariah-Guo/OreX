@@ -36,8 +36,7 @@ def app():
 
     from app import create_app
 
-    test_app = create_app()
-    test_app.config.update({
+    test_app = create_app({
         'TESTING': True,
         'DATABASE_PATH': db_path,
         'SECRET_KEY': 'test-secret-key',

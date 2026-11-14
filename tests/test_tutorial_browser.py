@@ -66,6 +66,9 @@ def site():
         patcher.setattr(Config, 'TUTORIAL_DATA_PATH', FIXTURE_TRACKS)   # absolute path overrides src/
         patcher.setattr(engine, 'start_engine', lambda app: None)
 
+        patcher.setenv('OREX_ALLOW_DEFAULT_SECRET', '1')   # not debug/testing, so allow the dev secret
+        patcher.setenv('SESSION_COOKIE_SECURE', '0')       # served over plain http
+
         from app import create_app
         from werkzeug.serving import make_server
         flask_app = create_app()

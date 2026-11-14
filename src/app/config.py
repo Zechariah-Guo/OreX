@@ -1,8 +1,11 @@
 import os
 
 
+DEFAULT_SECRET_KEY = 'orex-local-dev-secret-change-in-production'
+
+
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'orex-local-dev-secret-change-in-production')
+    SECRET_KEY = os.environ.get('SECRET_KEY', DEFAULT_SECRET_KEY)
     DATABASE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'orex.db')
     DEFAULT_BALANCE = 10000
     TICK_INTERVAL = 20          # seconds
@@ -11,7 +14,9 @@ class Config:
     RATE_LIMIT_MAX = 5          # attempts per window
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SECURE = False   # Set True in production with HTTPS
+    # SESSION_COOKIE_SECURE is resolved in create_app(): the SESSION_COOKIE_SECURE env var
+    # wins, otherwise True in production (not debug, not testing) and False elsewhere.
+    SESSION_COOKIE_SECURE = False
 
     # Advanced Mode
     ADVANCED_MODE_THRESHOLD = 100_000    # Net worth eligibility threshold

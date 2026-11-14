@@ -342,6 +342,9 @@ def start_app(db_path, live_market):
     if not live_market:
         import app.market.engine as engine
         engine.start_engine = lambda app: None
+    # Local script served over plain http: allow the dev secret and non-secure cookies
+    os.environ.setdefault('OREX_ALLOW_DEFAULT_SECRET', '1')
+    os.environ.setdefault('SESSION_COOKIE_SECURE', '0')
     from app import create_app
     from werkzeug.serving import make_server
     logging.getLogger('werkzeug').setLevel(logging.ERROR)

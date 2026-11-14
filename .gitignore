@@ -40,3 +40,12 @@ src/data/*.db
 src/data/*.db-shm
 src/data/*.db-wal
 src/data/*.db.bak*
+
+###############################################
+# USER-UPLOADED AVATARS (folder kept via .gitkeep)
+###############################################
+src/static/uploads/avatars/*
+!src/static/uploads/avatars/.gitkeep
+ 
+# Local secrets (see .env.example) 
+.env 

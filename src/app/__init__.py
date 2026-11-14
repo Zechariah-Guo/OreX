@@ -1,14 +1,53 @@
+import os
+
 from flask import Flask
 from flask_login import LoginManager, current_user
 from flask_wtf.csrf import CSRFProtect
 
+from app.config import DEFAULT_SECRET_KEY
 
-def create_app():
+
+def _env_flag(name):
+    """Return True/False for a set env var ('1', 'true', 'yes', 'on'), None if unset/blank."""
+    value = os.environ.get(name, '').strip().lower()
+    if not value:
+        return None
+    return value in ('1', 'true', 'yes', 'on')
+
+
+def create_app(test_config=None):
     app = Flask(__name__,
                 template_folder='../templates',
                 static_folder='../static')
 
     app.config.from_object('app.config.Config')
+    if test_config:
+        app.config.update(test_config)
+
+    # Production = not debug and not testing. Local dev (run.py sets FLASK_DEBUG=1)
+    # and the test suite are never production.
+    is_production = not app.debug and not app.config.get('TESTING')
+
+    # Refuse to start in production with a missing or public fallback secret key.
+    # OREX_ALLOW_DEFAULT_SECRET=1 is an explicit opt-out for local scripts.
+    if (is_production
+            and not _env_flag('OREX_ALLOW_DEFAULT_SECRET')
+            and app.config.get('SECRET_KEY') in (None, '', DEFAULT_SECRET_KEY)):
+        raise RuntimeError(
+            'SECRET_KEY must be set to a private value in production '
+            '(env var SECRET_KEY missing or equal to the public default).'
+        )
+
+    # Session cookie Secure flag: env var wins, otherwise secure only in production.
+    cookie_secure = _env_flag('SESSION_COOKIE_SECURE')
+    app.config['SESSION_COOKIE_SECURE'] = is_production if cookie_secure is None else cookie_secure
+
+    # Trust exactly one proxy hop (Nginx) for client IP and scheme. Off unless
+    # OREX_TRUST_PROXY is set, because otherwise clients could spoof X-Forwarded-*.
+    # request.remote_addr (used by the login rate limiter) is rewritten by ProxyFix.
+    if _env_flag('OREX_TRUST_PROXY'):
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=0, x_port=0, x_prefix=0)
 
     # Initialise extensions
     csrf = CSRFProtect(app)

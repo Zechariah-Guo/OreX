@@ -1,7 +1,8 @@
 """Advancements testing page (developer tool).
 
 A hidden, no-frills testing page with NO navigation links anywhere in the app.
-Only accessible by manually typing /advancements in the URL bar.
+Only accessible by manually typing /advancements in the URL bar, and only in
+debug mode (every route 404s otherwise, see _dev_page_debug_only).
 """
 
 from flask import Blueprint, abort, current_app, render_template, redirect, url_for, request
@@ -11,6 +12,17 @@ from app.database import get_db
 from app.advancements import ADVANCEMENT_KEYS, ADVANCEMENT_METADATA, get_user_advancements
 
 advancements_bp = Blueprint('advancements', __name__)
+
+
+@advancements_bp.before_request
+def _dev_page_debug_only():
+    """The whole dev page (every /advancements* route) exists only in debug mode.
+
+    Blueprint-level so new routes added here are gated automatically. Runs
+    before login_required, so outside debug even anonymous users get a plain 404.
+    """
+    if not current_app.debug:
+        abort(404)
 
 
 @advancements_bp.route('/advancements')

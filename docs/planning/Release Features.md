@@ -49,7 +49,7 @@
 | ✅ | Login Streak Tracking | For Dedicated badge |
 | ✅ | Play Time Tracking | For Budding Enthusiast badge |
 | ✅ | Notification System | Bell icon, tray, toast delivery, replaces placeholder |
-| 🚧 | Changelogs | Major version notes, in-app display (moved to v1.0) |
+| ✅ | Changelogs | Major version notes, in-app display (moved to v1.0) |
 
 ---
 
@@ -107,7 +107,7 @@
 7. ~~**Notification System** — Depends on achievements + shorting (emitters)~~ ✅ Done
 8. ~~**Profile Page** — Depends on achievements + notifications~~ ✅ Done
 9. ~~**Tutorial System** — Moved to v1.0 (depends on everything being in place)~~ ✅ Done
-10. **Changelog** — Moved to v1.0, add to revamped about section <— Next
+10. ~~**Changelog** — Moved to v1.0, add to revamped about section~~ ✅ Done
 
 ---
 

@@ -9,6 +9,9 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
+# Local maintenance script: allow the public dev secret (create_app() otherwise refuses in production mode)
+os.environ.setdefault('OREX_ALLOW_DEFAULT_SECRET', '1')
+
 from app import create_app
 from app.models import delete_account, get_db
 
