@@ -123,17 +123,7 @@ sudo nginx -t
 sudo systemctl enable nginx
 sudo systemctl restart nginx
 
-echo "=== Creating maintenance page ==="
-cat > /home/ubuntu/orex/src/static/maintenance.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head><title>OreX - Maintenance</title></head>
-<body style="font-family: sans-serif; text-align: center; padding: 50px;">
-  <h1>OreX is temporarily down for maintenance</h1>
-  <p>We'll be back shortly.</p>
-</body>
-</html>
-EOF
+# The maintenance page (src/static/maintenance.html) ships with the repo.
 
 echo "=== Installing cloudflared ==="
 curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64.deb -o /tmp/cloudflared.deb

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<!--
+    Served by Nginx (error_page 502/503/504) when Gunicorn is down, so it must
+    work without Flask: no Jinja, no url_for. CSS is inlined so later changes to
+    global.css can't break it. Images under /static/ still load because Nginx
+    serves those directly.
+
+    The tips below hard-code game numbers from src/app/config.py
+    (TICK_INTERVAL, MAX_BUY_QUANTITY, ADVANCED_MODE_*, BONUS_AMOUNTS).
+    Update them here if those change.
+-->
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Maintenance - OreX</title>
+    <link rel="icon" type="image/png" href="/static/images/logo.png">
+    <script>
+        // Match the player's saved theme (same key as base.html).
+        (function () {
+            var theme = localStorage.getItem('orex-theme') || 'light';
+            if (theme === 'system') {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --colour-accent: #2ecc71;
+            --colour-accent-hover: #27ae60;
+            --colour-accent-shadow: #1e8449;
+            --colour-tip-heading: #219a52;
+            --colour-bg: #f5f2f9;
+            --colour-surface: #ffffff;
+            --colour-text: #1a1025;
+            --colour-text-muted: #6b5f7a;
+            --colour-border: #c4b8d9;
+        }
+
+        html[data-theme="dark"] {
+            --colour-tip-heading: #2ecc71;
+            --colour-bg: #241533;
+            --colour-surface: #33234a;
+            --colour-text: #f0ecf5;
+            --colour-text-muted: #a89bb8;
+            --colour-border: #4a3d5e;
+        }
+
+        html { font-size: 16px; line-height: 1.6; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--colour-bg);
+            color: var(--colour-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 1.5rem 1rem 0;
+        }
+
+        /* ===== Header ===== */
+        .maintenance__logo {
+            display: block;
+            width: 100%;
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        .maintenance__title {
+            font-size: 1.5rem;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        .maintenance__text {
+            color: var(--colour-text-muted);
+            max-width: 360px;
+        }
+
+        /* ===== Tips ===== */
+        .tips {
+            width: 100%;
+            max-width: 460px;
+            margin: 1.75rem 0 1.5rem;
+            background-color: var(--colour-surface);
+            border: 1px solid var(--colour-border);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+        }
+
+        .tips__heading {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--colour-tip-heading);
+            margin-bottom: 0.75rem;
+        }
+
+        .tips__icon {
+            width: 1.5em;
+            height: 1.5em;
+            fill: currentColor;   /* same green as the heading text */
+            flex-shrink: 0;
+        }
+
+        .tips__text {
+            min-height: 4.8em;   /* three lines, so the page doesn't jump between tips */
+            transition: opacity 0.3s;
+        }
+
+        .tips__text--hidden { opacity: 0; }
+
+        /* ===== Bottom: chest with the button in its lid ===== */
+        .chest {
+            position: relative;
+            margin-top: auto;    /* pin to the bottom of the viewport */
+            width: min(340px, 90vw);
+            flex-shrink: 0;
+        }
+
+        .chest__image {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .chest__button {
+            position: absolute;
+            top: 26%;
+            left: 50%;
+            transform: translateX(-50%);
+            /* Extra bottom padding clears the 0.25em shadow so the text sits
+               in the middle of the light green face. */
+            padding: 0.3em 0.9em 0.55em;
+            border: none;
+            border-radius: 2px;
+            box-shadow: inset 0 -0.25em 0 var(--colour-accent-shadow);
+            background-color: var(--colour-accent);
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 1.3rem;
+            font-weight: 600;
+            line-height: 1.2;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .chest__button:hover { background-color: var(--colour-accent-hover); }
+
+        .chest__button:active {
+            padding-top: 0.4em;
+            padding-bottom: 0.45em;
+            box-shadow: inset 0 -0.15em 0 var(--colour-accent-shadow);
+        }
+
+        .chest__button:focus-visible {
+            outline: 2px solid var(--colour-text);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .tips__text { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <img class="maintenance__logo" src="/static/images/logo-expanded.png" alt="OreX">
+    <h1 class="maintenance__title">OreX is down for maintenance</h1>
+    <p class="maintenance__text">The market is paused while we work on it. Please check back shortly.</p>
+
+    <section class="tips">
+        <h2 class="tips__heading">
+            <!-- Material Symbols "lightbulb_2" (Apache 2.0) -->
+            <svg class="tips__icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M400-240q-33 0-56.5-23.5T320-320v-50q-57-39-88.5-100T200-600q0-117 81.5-198.5T480-880q117 0 198.5 81.5T760-600q0 69-31.5 129.5T640-370v50q0 33-23.5 56.5T560-240H400Zm0-80h160v-92l34-24q41-28 63.5-71.5T680-600q0-83-58.5-141.5T480-800q-83 0-141.5 58.5T280-600q0 49 22.5 92.5T366-436l34 24v92Zm0 240q-17 0-28.5-11.5T360-120v-40h240v40q0 17-11.5 28.5T560-80H400Zm80-520Z"/></svg>
+            Tips while you wait:
+        </h2>
+        <p class="tips__text" id="tip" aria-live="polite">Prices move every 20 seconds, even when you are confirming a trade. Always check your receipt before you confirm.</p>
+    </section>
+
+    <div class="chest">
+        <img class="chest__image" src="/static/images/Ore-Chest.png" alt="" width="255" height="180">
+        <button class="chest__button" type="button" onclick="location.reload()">Try again</button>
+    </div>
+
+    <script>
+        // Rotate through a few static tips. The first one is already in the HTML.
+        (function () {
+            var tips = [
+                'Prices move every 20 seconds, even when you are confirming a trade. Always check your receipt before you confirm.',
+                'Set a stop-loss or take-profit on a holding and the market will sell it for you when the price is hit.',
+                'In standard mode you can hold up to 500 units of each ore.',
+                'Reach $100,000 net worth to unlock Advanced Mode, which lifts the holding cap and lets you short ores.',
+                'Collect your daily bonus: $1,000 on day one, $10,000 on day two, and $50,000 on day three.',
+                'Tutorials are always available on the Help page.',
+                'Nine bot traders influence the market. See if you can beat them on the leaderboard.'
+            ];
+            var el = document.getElementById('tip');
+            var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            var index = 0;
+
+            setInterval(function () {
+                index = (index + 1) % tips.length;
+                if (reduceMotion) {
+                    el.textContent = tips[index];
+                    return;
+                }
+                el.classList.add('tips__text--hidden');
+                setTimeout(function () {
+                    el.textContent = tips[index];
+                    el.classList.remove('tips__text--hidden');
+                }, 300);
+            }, 8000);
+        })();
+    </script>
+</body>
+</html>
