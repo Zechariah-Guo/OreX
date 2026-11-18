@@ -12,7 +12,6 @@ docs
 tests
 scripts
 migrations
-slow tests
 **/__pycache__
 **/*.pyc
 .pytest_cache

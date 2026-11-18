@@ -8,6 +8,7 @@ Requires database access via the `app` and `db_reset` fixtures from conftest.py.
 import string
 import uuid
 
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -25,6 +26,9 @@ from app.models import (
     store_backup_codes,
 )
 from app.totp import hash_backup_code, verify_backup_code
+
+# Every example creates a user (password hash) and most hash backup codes.
+pytestmark = pytest.mark.slow
 
 
 # ---------------------------------------------------------------------------

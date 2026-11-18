@@ -138,6 +138,8 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
+Some 2FA property tests are slow because they hash many passwords. Skip them with `pytest -m "not slow"`, and skip the real-browser tests with `-m "not browser"`.
+
 ## Pages
 
 | Route | Description |
