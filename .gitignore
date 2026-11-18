@@ -19,9 +19,11 @@ __pycache__/
 Thumbs.db
 .vscode/
 .idea/
+.kiro/tmp/
+.kiro/steering/
 
 ###############################################
-# ENVIRONMENTS (students should not commit these)
+# ENVIRONMENTS
 ###############################################
 .venv/
 venv/
