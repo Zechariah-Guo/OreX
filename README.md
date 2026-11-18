@@ -4,7 +4,7 @@
 
 A Minecraft-themed stock market simulation built with Python and Flask. Trade ores like stocks: buy low, sell high, and grow your fortune as prices move every 20 seconds alongside a cast of bot traders.
 
-![OreX Market](docs\assets\Feature-Display.png)
+![OreX Features](docs/assets/Feature-Display.png)
 
 ## Status
 
