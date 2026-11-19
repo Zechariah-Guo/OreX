@@ -111,3 +111,15 @@
 
 ---
 
+## Now also including 1.1 features due to delayed deployment
+
+### Mobile Support
+- Change UI for mobile sized screens <— In progress (still needs leaderboard, history, portfolio, profile) 
+- Turn into PWA (add option in settings to download)
+- Maybe get push notifications working on the PWA (bit more complex)
+
+### QoL
+- Allow "forgot password" functionality by leveraging the existing 2fa system
+- Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc) (use python uv library)
+- Implement celery and redis for background profile picture processing and storage
+- Migrate all images to avif with webp fallback (use magick)

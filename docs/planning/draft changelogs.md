@@ -63,7 +63,7 @@
 
 ## Version 1.0 (Release)
 
-*Full production deployment with guided onboarding and polish.*
+*Full production deployment with guided onboarding, mobile support and polish.*
 
 > Beta features plus changes to accommodate a full production deployment
 
@@ -86,22 +86,18 @@
 - **Smoother updates** — Live pages refresh without flicker
 - **Chart fixes** — Switching time ranges is reliable and axis labels are no longer cut off
 
-## Version 1.1 
-
-*QoL update including mobile support*
-
 ### Mobile Support
-- Change UI basically for mobile sized screens
+- Change UI for mobile sized screens
 - Turn into PWA (add option in settings to download)
 - Maybe get push notifications working on the PWA (bit more complex)
 
 ### QoL
 - Allow "forgot password" functionality by leveraging the existing 2fa system
-- (Maybe) Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc) (use python uv library)
+- Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc) (use python uv library)
 - Implement celery and redis for background profile picture processing and storage
-- Migrate all images to avif with webp fallback
+- Migrate all images to avif with webp fallback (use magick)
 
-## Version 1.2
+## Version 1.1
 
 *Big gamemode update introducing additional "fun" ways to experience the game. (Also likely the last big update)*
 
