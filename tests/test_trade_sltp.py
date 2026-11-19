@@ -421,8 +421,9 @@ class TestSLTPModification:
 class TestUnauthorizedSLTPModification:
     """Tests for unauthorized access to /trade/sltp/<holding_id>."""
 
-    def test_modify_other_users_holding_returns_403(self, authenticated_client, app):
-        """Attempting to modify SL/TP on another user's holding returns 403.
+    def test_modify_other_users_holding_is_refused_without_revealing(self, authenticated_client, app):
+        """Another user's holding is not modified and gets the same response as a
+        closed/nonexistent holding (no 403, so existence is not revealed).
 
         Requirements: 6.7
         """
@@ -460,4 +461,108 @@ class TestUnauthorizedSLTPModification:
             'take_profit': '20.00',
         }, follow_redirects=False)
 
-        assert response.status_code == 403
+        assert response.status_code == 302
+        assert '/portfolio' in response.headers['Location']
+        assert _get_sltp_records(app, other_holding_id) == []
+
+        # Same outcome as an id that does not exist at all
+        missing = authenticated_client.post('/trade/sltp/999999', data={
+            'csrf_token': token,
+            'stop_loss': '5.00',
+            'take_profit': '20.00',
+        }, follow_redirects=False)
+        assert missing.status_code == response.status_code
+        assert missing.headers['Location'] == response.headers['Location']
+
+
+# ---------------------------------------------------------------------------
+# Tests: Position closed while the SL/TP modal was open
+# ---------------------------------------------------------------------------
+
+CLOSED_MSG = b'already closed, so the stop loss / take profit was not changed'
+
+
+def _create_short(app, user_id, ore_id=1, status='active'):
+    """Insert a short position directly. Returns the position ID."""
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    cursor = conn.execute(
+        """INSERT INTO short_positions
+           (user_id, ore_id, share_quantity, entry_price, locked_collateral,
+            stop_loss_price, take_profit_price, status)
+           VALUES (?, ?, 10, 10.00, 100.0, 15.00, 5.00, ?)""",
+        (user_id, ore_id, status),
+    )
+    conn.commit()
+    pos_id = cursor.lastrowid
+    conn.close()
+    return pos_id
+
+
+class TestSLTPOnClosedPosition:
+    """Submitting SL/TP after the engine closed the position is not a 403."""
+
+    def test_long_closed_by_engine_gets_friendly_redirect(self, authenticated_client, app):
+        _set_user_state(app, balance=50000.0, advanced_eligible=1,
+                        advanced_purchased=1, advanced_active=1)
+        user_id = _get_user_id(app)
+        holding_id = _create_holding(app, user_id, ore_id=1, quantity=10, avg_price=10.00)
+        _create_sltp(app, holding_id, stop_loss=5.00, take_profit=15.00)
+        token = get_csrf_token(authenticated_client.get('/settings'))
+
+        # Engine triggers SL/TP: the holding row is deleted
+        conn = sqlite3.connect(app.config['DATABASE_PATH'])
+        conn.execute("DELETE FROM holdings WHERE id = ?", (holding_id,))
+        conn.commit()
+        conn.close()
+
+        response = authenticated_client.post(f'/trade/sltp/{holding_id}', data={
+            'csrf_token': token, 'stop_loss': '7.00', 'take_profit': '18.00',
+        }, follow_redirects=True)
+
+        assert response.status_code == 200
+        assert CLOSED_MSG in response.data
+
+    def test_short_closed_gets_friendly_redirect(self, authenticated_client, app):
+        _set_user_state(app, balance=50000.0, advanced_eligible=1,
+                        advanced_purchased=1, advanced_active=1)
+        user_id = _get_user_id(app)
+        position_id = _create_short(app, user_id, status='closed')
+        token = get_csrf_token(authenticated_client.get('/settings'))
+
+        response = authenticated_client.post(f'/trade/short/edit/{position_id}', data={
+            'csrf_token': token, 'stop_loss': '16.00', 'take_profit': '4.00',
+        }, follow_redirects=True)
+
+        assert response.status_code == 200
+        assert CLOSED_MSG in response.data
+
+    def test_other_users_short_is_refused_without_revealing(self, authenticated_client, app):
+        _set_user_state(app, balance=50000.0, advanced_eligible=1,
+                        advanced_purchased=1, advanced_active=1)
+        conn = sqlite3.connect(app.config['DATABASE_PATH'])
+        cursor = conn.execute(
+            "INSERT INTO users (username, password_hash, balance) VALUES (?, ?, ?)",
+            ('OtherUser', 'fakehash', 50000.0))
+        other_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        position_id = _create_short(app, other_id)
+        token = get_csrf_token(authenticated_client.get('/settings'))
+
+        response = authenticated_client.post(f'/trade/short/edit/{position_id}', data={
+            'csrf_token': token, 'stop_loss': '16.00', 'take_profit': '4.00',
+        }, follow_redirects=False)
+        missing = authenticated_client.post('/trade/short/edit/999999', data={
+            'csrf_token': token, 'stop_loss': '16.00', 'take_profit': '4.00',
+        }, follow_redirects=False)
+
+        assert response.status_code == 302
+        assert missing.status_code == 302
+        assert missing.headers['Location'] == response.headers['Location']
+
+        conn = sqlite3.connect(app.config['DATABASE_PATH'])
+        row = conn.execute(
+            "SELECT stop_loss_price, take_profit_price FROM short_positions WHERE id = ?",
+            (position_id,)).fetchone()
+        conn.close()
+        assert row == (15.00, 5.00)

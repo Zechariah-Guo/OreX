@@ -28,6 +28,9 @@ from app.advancements import evaluate_trade_advancement, evaluate_short_advancem
 
 trade_bp = Blueprint('trade', __name__)
 
+_POSITION_CLOSED_MSG = ('That position was already closed, so the stop loss / '
+                        'take profit was not changed.')
+
 
 def _get_buy_cap():
     """Get the per-holding buy quantity cap for the current user.
@@ -336,13 +339,17 @@ def modify_sltp(holding_id):
     """Modify or remove stop loss / take profit on an existing holding."""
     db = get_db()
 
-    # Fetch holding and verify ownership
+    # Look the holding up scoped to the current user. A missing row (already
+    # sold/closed by the engine) and another user's id are indistinguishable,
+    # so the response never reveals whether the id exists.
     holding = db.execute(
-        "SELECT * FROM holdings WHERE id = ?", (holding_id,)
+        "SELECT * FROM holdings WHERE id = ? AND user_id = ?",
+        (holding_id, current_user.id)
     ).fetchone()
 
-    if not holding or holding['user_id'] != current_user.id:
-        abort(403)
+    if not holding:
+        flash(_POSITION_CLOSED_MSG, 'info')
+        return redirect(url_for('portfolio.overview'))
 
     # Get current ore price for validation
     ore = get_ore_by_id(holding['ore_id'])
@@ -744,21 +751,15 @@ def short_edit_sltp(position_id):
     """Update SL/TP values on an existing short position."""
     db = get_db()
 
-    # Look up the short position
+    # Look up the short position scoped to the current user. Missing, closed
+    # and other-user's positions all get the same response (no existence leak).
     position = db.execute(
-        "SELECT * FROM short_positions WHERE id = ?", (position_id,)
+        "SELECT * FROM short_positions WHERE id = ? AND user_id = ?",
+        (position_id, current_user.id)
     ).fetchone()
 
-    if not position:
-        abort(404)
-
-    # Verify ownership
-    if position['user_id'] != current_user.id:
-        abort(403)
-
-    # Verify position is active
-    if position['status'] != 'active':
-        flash('This position is not active and cannot be edited.', 'error')
+    if not position or position['status'] != 'active':
+        flash(_POSITION_CLOSED_MSG, 'info')
         return redirect(url_for('portfolio.overview'))
 
     # Get current ore price for validation
