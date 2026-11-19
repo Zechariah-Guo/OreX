@@ -59,6 +59,11 @@
             avatarBtn.style.color = getContrastingTextColour(bgColour);
         }
 
+        function closeMenu() {
+            dropdown.classList.remove('nav__dropdown--open');
+            avatarBtn.setAttribute('aria-expanded', 'false');
+        }
+
         // Toggle dropdown on click
         avatarBtn.addEventListener('click', function (e) {
             e.stopPropagation();
@@ -69,18 +74,221 @@
         // Close dropdown when clicking outside
         document.addEventListener('click', function (e) {
             if (!dropdown.contains(e.target) && e.target !== avatarBtn) {
-                dropdown.classList.remove('nav__dropdown--open');
-                avatarBtn.setAttribute('aria-expanded', 'false');
+                closeMenu();
             }
         });
 
         // Close on Escape key
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
-                dropdown.classList.remove('nav__dropdown--open');
-                avatarBtn.setAttribute('aria-expanded', 'false');
+                closeMenu();
             }
         });
+
+        // Close when a menu link is followed, and when returning via bfcache
+        dropdown.addEventListener('click', function (e) {
+            if (e.target.closest('a')) closeMenu();
+        });
+        window.addEventListener('pageshow', closeMenu);
+
+        initPhoneBars(dropdown, closeMenu);
+        initLongPress();
+    }
+
+    /**
+     * Phone only (max-width: 640px): hide the bars on scroll down, show on
+     * scroll up. Close the avatar menu on scroll.
+     */
+    function initPhoneBars(dropdown, closeMenu) {
+        const phone = window.matchMedia('(max-width: 640px)');
+        const root = document.documentElement;
+        if (!document.querySelector('.main-nav--auth')) return;
+
+        const THRESHOLD = 10;
+        let lastY = Math.max(0, window.scrollY);
+        let ticking = false;
+
+        function show() { root.classList.remove('nav-hidden'); }
+
+        function maxScroll() {
+            return Math.max(0, root.scrollHeight - window.innerHeight);
+        }
+
+        function update() {
+            ticking = false;
+            if (!phone.matches) return;
+
+            // Clamp to ignore iOS rubber-banding
+            const y = Math.min(Math.max(0, window.scrollY), maxScroll());
+            const dy = y - lastY;
+
+            if (y <= THRESHOLD) {
+                show();
+                lastY = y;
+                return;
+            }
+            if (Math.abs(dy) < THRESHOLD) return;
+            lastY = y;
+
+            if (dropdown.classList.contains('nav__dropdown--open')) {
+                closeMenu();
+                return;
+            }
+            if (root.classList.contains('tutorial-active')) { show(); return; }
+            if (maxScroll() <= 80) { show(); return; }
+
+            if (dy > 0) {
+                root.classList.add('nav-hidden');
+            } else {
+                show();
+            }
+        }
+
+        window.addEventListener('scroll', function () {
+            if (!phone.matches || ticking) return;
+            ticking = true;
+            window.requestAnimationFrame(update);
+        }, { passive: true });
+
+        document.addEventListener('focusin', function (e) {
+            if (phone.matches && e.target.closest &&
+                e.target.closest('.nav__links, .nav__brand, #nav-dropdown')) {
+                show();
+            }
+        });
+
+        phone.addEventListener('change', function () {
+            if (!phone.matches) show();
+        });
+    }
+
+    /**
+     * Phone only: holding a nav icon (touch) for 450ms shows its label; the
+     * click that follows the release is suppressed so peeking never navigates.
+     */
+    function initLongPress() {
+        const phone = window.matchMedia('(max-width: 640px)');
+        const SELECTOR = '.nav__dropdown-icon, .nav__dropdown-item, .nav__tab-link';
+        let tooltip = null;
+        let timer = null;
+        let shown = false;
+        let target = null;
+        let startX = 0;
+        let startY = 0;
+
+        function getTooltip() {
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.className = 'nav__tooltip';
+                tooltip.setAttribute('role', 'tooltip');
+                document.body.appendChild(tooltip);
+            }
+            return tooltip;
+        }
+
+        function labelFor(el) {
+            const label = el.querySelector('.nav__dropdown-label');
+            if (label) return label.textContent.trim();
+            return el.getAttribute('aria-label') || el.getAttribute('title') || '';
+        }
+
+        function showLabel(el) {
+            const text = labelFor(el);
+            if (!text) return;
+            const tip = getTooltip();
+            tip.textContent = text;
+            tip.classList.add('nav__tooltip--visible');
+            const r = el.getBoundingClientRect();
+            const w = tip.offsetWidth;
+            const h = tip.offsetHeight;
+            const inBottomBar = !!el.closest('.nav__links') && !el.closest('#nav-dropdown');
+            let left = r.left + r.width / 2 - w / 2;
+            left = Math.max(4, Math.min(left, window.innerWidth - w - 4));
+            let top = inBottomBar ? r.top - h - 8 : r.bottom + 8;
+            top = Math.max(4, Math.min(top, window.innerHeight - h - 4));
+            tip.style.left = left + 'px';
+            tip.style.top = top + 'px';
+            shown = true;
+        }
+
+        function hideLabel() {
+            if (tooltip) tooltip.classList.remove('nav__tooltip--visible');
+        }
+
+        function cancel() {
+            clearTimeout(timer);
+            timer = null;
+            target = null;
+            hideLabel();
+        }
+
+        function suppressNextClick() {
+            function swallow(ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+            }
+            document.addEventListener('click', swallow, { capture: true, once: true });
+            // If no click follows (e.g. pointer moved away), drop the guard.
+            setTimeout(function () {
+                document.removeEventListener('click', swallow, true);
+            }, 400);
+        }
+
+        function release() {
+            const wasShown = shown;
+            cancel();
+            shown = false;
+            if (wasShown) suppressNextClick();
+        }
+
+        document.addEventListener('pointerdown', function (e) {
+            if (!phone.matches || e.pointerType !== 'touch') return;
+            const el = e.target.closest && e.target.closest(SELECTOR);
+            if (!el || !el.closest('.main-nav--auth')) return;
+            cancel();
+            shown = false;
+            target = el;
+            startX = e.clientX;
+            startY = e.clientY;
+            timer = setTimeout(function () {
+                timer = null;
+                showLabel(el);
+            }, 450);
+        });
+
+        document.addEventListener('pointermove', function (e) {
+            if (!target) return;
+            const moved = Math.hypot(e.clientX - startX, e.clientY - startY) > 10;
+            const left = !target.contains(document.elementFromPoint(e.clientX, e.clientY));
+            if (moved || left) {
+                cancel();
+                shown = false;
+            }
+        });
+
+        document.addEventListener('pointerup', function () { if (target || shown) release(); });
+        document.addEventListener('pointercancel', function () { cancel(); shown = false; });
+
+        // The browser's own long-press (context menu / link preview / drag)
+        // would otherwise end the press (pointercancel) while the finger is down.
+        document.addEventListener('contextmenu', function (e) {
+            if (!phone.matches) return;
+            if (timer || shown || target ||
+                (e.target.closest && e.target.closest(SELECTOR) && e.target.closest('.main-nav--auth'))) {
+                e.preventDefault();
+            }
+        });
+        document.addEventListener('dragstart', function (e) {
+            if (phone.matches && e.target.closest && e.target.closest('.main-nav--auth')) e.preventDefault();
+        });
+        document.addEventListener('selectstart', function (e) {
+            if (phone.matches && (timer || shown || target)) e.preventDefault();
+        });
+
+        // Dismiss the label when the finger lifts (touchend is the reliable
+        // signal on iOS where pointerup can be skipped after a long press).
+        document.addEventListener('touchend', function () { if (target || shown) release(); }, { passive: true });
+        document.addEventListener('touchcancel', function () { cancel(); shown = false; }, { passive: true });
     }
 
     if (document.readyState === 'loading') {

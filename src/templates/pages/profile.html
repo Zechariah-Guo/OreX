@@ -624,6 +624,13 @@
     }
 
     @media (max-width: 600px) {
+        /* The (invisible) hover tooltips of the orbiting badges stick out past
+           the right edge and widened the layout viewport, which moved the
+           fixed nav bars (the avatar) sideways. Clip them here. */
+        .profile {
+            overflow-x: clip;
+        }
+
         .profile__showcase {
             grid-template-columns: 1fr;
             grid-template-rows: auto auto auto auto;

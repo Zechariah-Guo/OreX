@@ -57,6 +57,9 @@ VIEWPORT_PRESETS = {
     'laptop': (1440, 900),
     'tablet': (820, 1180),
     'mobile': (390, 844),
+    'small-mobile': (360, 844),
+    'short-mobile': (375, 667),
+    'tablet-portrait': (768, 844),
 }
 PASSWORD = 'Password123!'
 MAX_FULL_PAGE_HEIGHT = 16000  # browsers fail to capture taller images
@@ -506,7 +509,9 @@ def capture(cdp, page, base_url, args, out_path):
     return warnings
 
 
-TUTORIAL_STATE = "Alpine.$data(document.querySelector('.tutorial-root'))"
+# Guarded: a tour can navigate on its own (e.g. after skipping steps whose
+# target has no box), and polling during that page load runs before Alpine exists.
+TUTORIAL_STATE = "(window.Alpine && Alpine.$data(document.querySelector('.tutorial-root')))"
 
 
 def walk_tutorial(cdp, base_url, track_id, out_dir, viewport_name):

@@ -544,6 +544,8 @@
                     this.setHighlight({ top: 0, left: 0, width: this.vw, height: this.vh });
                     this.highlightVisible = true;
                     this.showOverlay = true;
+                    // nav.js keeps the phone bars visible while a tutorial runs
+                    document.documentElement.classList.add('tutorial-active');
                     await nextFrame();
                     await nextFrame();
                     if (token !== this._stepToken) return;
@@ -907,6 +909,7 @@
                 this.showCard = false;
                 this.showConfirmSkip = false;
                 this.showOverlay = false;
+                document.documentElement.classList.remove('tutorial-active');
                 this.highlightVisible = false;
                 this.active = false;
                 // Next tour run (replay) should open its own demo short afresh.

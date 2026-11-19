@@ -33,8 +33,8 @@
                 {
                     "selector": ".nav__dropdown-icons",
                     "route": "/dashboard",
-                    "title": "Portfolio, Inbox & History",
-                    "description": "These icons open your holdings, your notifications, and your trade history. You will need these frequently in your trading journey.",
+                    "title": "Leaderboard, Inbox & History",
+                    "description": "These icons open the leaderboard, your notifications, and your trade history. You will need these frequently in your trading journey.",
                     "position": "left",
                     "action": null,
                     "reveal": "menu"

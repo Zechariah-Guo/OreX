@@ -50,15 +50,21 @@
 
         // ─── Swipe / Drag Right to Dismiss ───────────────────────────────────
         var startX = 0;
+        var startY = 0;
         var currentX = 0;
+        var currentY = 0;
         var isDragging = false;
         var DISMISS_THRESHOLD = 100; // px to swipe right before dismissing
+        var DISMISS_THRESHOLD_Y = 50; // phone: px to swipe down before dismissing
+        var phoneQuery = window.matchMedia('(max-width: 640px)');
 
         function onPointerDown(e) {
             if (removed) return;
             isDragging = true;
             startX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+            startY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
             currentX = 0;
+            currentY = 0;
             // Kill the entrance animation so inline styles can take effect
             toast.style.animation = 'none';
             toast.style.opacity = '1';
@@ -69,18 +75,30 @@
         function onPointerMove(e) {
             if (!isDragging || removed) return;
             var clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-            currentX = clientX - startX;
+            var clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+            var dx = clientX - startX;
+            var dy = clientY - startY;
+            toast.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+            if (phoneQuery.matches && dy > 0 && dy > Math.abs(dx)) {
+                // Phone: toasts sit at the bottom, so swiping down dismisses
+                currentX = 0;
+                currentY = dy;
+                toast.style.transform = 'translateY(' + currentY + 'px)';
+                toast.style.opacity = String(1 - (currentY / (DISMISS_THRESHOLD_Y * 3)));
+                return;
+            }
+            currentY = 0;
+            currentX = dx;
             // Only allow dragging to the right (positive direction)
             if (currentX < 0) currentX = 0;
             toast.style.transform = 'translateX(' + currentX + 'px)';
-            toast.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
             toast.style.opacity = String(1 - (currentX / (DISMISS_THRESHOLD * 2)));
         }
 
         function onPointerUp() {
             if (!isDragging || removed) return;
             isDragging = false;
-            if (currentX >= DISMISS_THRESHOLD) {
+            if (currentX >= DISMISS_THRESHOLD || currentY >= DISMISS_THRESHOLD_Y) {
                 // Swiped far enough — dismiss
                 toast.style.transition = '';
                 dismiss();

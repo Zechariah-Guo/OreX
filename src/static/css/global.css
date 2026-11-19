@@ -31,6 +31,8 @@
     --spacing-lg: 2rem;
     --spacing-xl: 3rem;
     --max-width: 1200px;
+    --nav-top-h: 48px;
+    --nav-bottom-h: 0px;
 }
 
 /* Dark theme overrides */
@@ -153,7 +155,11 @@ html[data-theme="dark"] .nav__brand {
     gap: var(--spacing-md);
 }
 
-/* --- Tab links (Dashboard, Market, Leaderboard) --- */
+/* --- Tab links (Dashboard, Market, Portfolio) --- */
+
+.nav__tab-icon {
+    display: none;
+}
 .nav__tab-link {
     color: var(--colour-text-muted);
     padding: var(--spacing-sm) var(--spacing-md);
@@ -383,6 +389,11 @@ html[data-theme="dark"] .nav__brand {
 .nav__dropdown-icon:hover {
     background-color: var(--colour-surface-hover);
     text-decoration: none;
+}
+
+/* Labels on the icon row are for the wide phone layout only */
+.nav__dropdown-icon .nav__dropdown-label {
+    display: none;
 }
 
 .nav__dropdown-icon--unread::after {
@@ -638,6 +649,31 @@ html[data-theme="dark"] .nav__brand {
     to {
         opacity: 0;
         transform: translateX(6rem) translateY(0);
+    }
+}
+
+/* Phone toasts rise from the bottom and leave downwards */
+@keyframes flashToastInUp {
+    from {
+        opacity: 0;
+        transform: translateY(1.5rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes flashToastOutDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(2.5rem);
     }
 }
 
@@ -1701,7 +1737,7 @@ input::-webkit-inner-spin-button {
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 1fr));
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
 }
@@ -1958,6 +1994,551 @@ input::-webkit-inner-spin-button {
         height: 28px;
     }
 
+}
+
+/* Long-press label (nav.js). Only exists on phones. */
+.nav__tooltip {
+    display: none;
+}
+
+/* PHONE BREAKPOINT 640px: the single phone vs larger breakpoint. Keep 768/860 rules as they are. */
+@media (max-width: 640px) {
+    body:has(.main-nav--auth) {
+        --nav-top-h: 64px;
+        --nav-bottom-h: calc(64px + env(safe-area-inset-bottom));
+        --nav-radius: 20px;
+        --nav-edge: color-mix(in srgb, var(--colour-border) 55%, var(--colour-text));
+        padding-top: var(--nav-top-h);
+    }
+
+    main {
+        padding: var(--spacing-md) 0.75rem;
+    }
+
+    .main-footer {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .footer__container {
+        gap: 0;
+        line-height: 1.3;
+    }
+
+    .footer__links {
+        gap: var(--spacing-md);
+    }
+
+    .footer__links a {
+        font-size: 0.8rem;
+    }
+
+    .footer__copy {
+        font-size: 0.7rem;
+    }
+
+    body:has(.main-nav--auth) .main-footer {
+        padding-bottom: calc(var(--nav-bottom-h) + var(--spacing-xs));
+    }
+
+    .main-nav--auth a,
+    .main-nav--auth button {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+    }
+
+    .main-nav--auth a:focus:not(:focus-visible),
+    .main-nav--auth button:focus:not(:focus-visible),
+    .main-nav--auth .nav__brand:active {
+        outline: none;
+    }
+
+    /* No ancestor of a fixed bar element may be transformed, so the nav
+       wrappers collapse (display: contents) and each piece is a fixed leaf. */
+    .main-nav--auth,
+    .main-nav--auth.main-nav--scrolled {
+        position: static;
+        height: 0;
+        padding: 0;
+        background: none !important;
+        border: 0 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    .main-nav--auth .nav__container,
+    .main-nav--auth .nav__profile-group,
+    .main-nav--auth .nav__profile-pill {
+        display: contents;
+    }
+
+    /* Top bar background. It lives on .nav__links::after (not the nav's own
+       ::before) so it shares a stacking context with the avatar and the
+       menu: avatar above the bar, menu behind it. */
+    .main-nav--auth .nav__links::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--nav-top-h);
+        background: var(--colour-surface);
+        border-bottom: 1px solid var(--nav-edge);
+        border-radius: 0 0 var(--nav-radius) var(--nav-radius);
+        z-index: 1000;
+    }
+
+    .main-nav--auth .nav__brand {
+        position: fixed;
+        top: 10px;
+        left: 8px;
+        z-index: 1001;
+        padding: 4px 8px !important;
+        line-height: 0;
+        touch-action: manipulation;
+    }
+
+    .main-nav--auth .nav__logo {
+        height: 36px;
+    }
+
+    .main-nav--auth #nav-avatar-btn {
+        position: fixed;
+        top: calc((var(--nav-top-h) - 36px) / 2);
+        right: 14px;
+        z-index: 1001;
+        pointer-events: auto;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .main-nav--auth #nav-avatar-btn:hover {
+        transform: none;
+    }
+
+    .nav__avatar::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+    }
+
+    .nav__avatar[aria-expanded="true"],
+    .nav__avatar:active {
+        box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.18);
+    }
+
+    html[data-theme="dark"] .nav__avatar[aria-expanded="true"],
+    html[data-theme="dark"] .nav__avatar:active {
+        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.12);
+    }
+
+    /* Avatar menu: one row under the top bar */
+    .main-nav--auth .nav__dropdown {
+        position: fixed;
+        /* Flush with the top bar's bottom edge, full width, square top corners.
+           It starts one radius higher so it also fills behind the bar's
+           rounded bottom corners (no gap shows there). */
+        top: calc(var(--nav-top-h) - var(--nav-radius));
+        left: 0;
+        right: 0;
+        width: auto;
+        min-width: 0;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        padding: calc(4px + var(--nav-radius)) 8px 4px;
+        border-radius: 0 0 var(--nav-radius) var(--nav-radius);
+        border: 1px solid var(--nav-edge);
+        border-width: 0 0 1px;
+        pointer-events: auto;
+        /* Slides down from behind the top bar (bar is z-index 1000) */
+        z-index: 999;
+        opacity: 1;
+        transform: translateY(calc(-100% - var(--nav-top-h) - 8px));
+        transition: transform 0.25s ease, visibility 0s linear 0.25s;
+    }
+
+    .main-nav--auth .nav__dropdown.nav__dropdown--open {
+        transform: translateY(0);
+        transition: transform 0.25s ease, visibility 0s;
+    }
+
+    .main-nav--auth .nav__dropdown-icons,
+    .main-nav--auth .nav__dropdown-items {
+        display: contents;
+    }
+
+    .main-nav--auth .nav__dropdown-icons > a:nth-child(1) { order: 1; }
+    .main-nav--auth .nav__dropdown-icons > a:nth-child(2) { order: 2; }
+    .main-nav--auth .nav__dropdown-icons > a:nth-child(3) { order: 3; }
+    .main-nav--auth .nav__dropdown > .nav__dropdown-divider { order: 4; }
+    .main-nav--auth .nav__dropdown-items > a:nth-child(3) { order: 5; }
+    .main-nav--auth .nav__dropdown-items > a:nth-child(2) { order: 6; }
+    .main-nav--auth .nav__dropdown-items > a:nth-child(1) { order: 7; }
+    .main-nav--auth .nav__dropdown-items > .nav__dropdown-divider { order: 8; }
+    .main-nav--auth .nav__dropdown-items > .nav__dropdown-item--danger { order: 9; }
+
+    .main-nav--auth .nav__dropdown-divider {
+        flex: 0 0 1px;
+        width: 1px;
+        height: 28px;
+        margin: 0 4px;
+        border: 0;
+        background: var(--colour-border);
+        align-self: center;
+    }
+
+    .main-nav--auth .nav__dropdown-icon,
+    .main-nav--auth .nav__dropdown-item {
+        flex: 1 1 0;
+        min-width: 44px;
+        max-width: 52px;
+        height: 44px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 12px;
+        -webkit-touch-callout: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .main-nav--auth .nav__dropdown-icon svg,
+    .main-nav--auth .nav__dropdown-item svg {
+        width: 22px;
+        height: 22px;
+        /* The Material glyphs are solid fills and read heavy at this size.
+           A stroke in the menu's own background colour erodes ~0.25px off
+           every edge, which thins them to match the tab icons. */
+        stroke: var(--colour-surface);
+        stroke-width: 24;
+    }
+
+    /* Holding a control shows its label (nav.js): stop the browser from
+       treating the hold as a scroll, text selection or link preview. */
+    .main-nav--auth .nav__dropdown-icon,
+    .main-nav--auth .nav__dropdown-item,
+    .main-nav--auth .nav__tab-link {
+        touch-action: none;
+    }
+
+    .main-nav--auth .nav__dropdown-label,
+    .main-nav--auth .nav__dropdown-icon .nav__dropdown-label {
+        display: none;
+    }
+
+    /* Wide phones / small tablets still on the phone layout: the icons spread
+       out with a lot of empty space, so show a label under each one. */
+    @media (min-width: 480px) {
+        .main-nav--auth .nav__dropdown-icon,
+        .main-nav--auth .nav__dropdown-item {
+            flex-direction: column;
+            gap: 2px;
+            height: 56px;
+            max-width: 96px;
+            padding: 4px 0;
+        }
+
+        /* The icon box is wider than the glyph here, so pull the unread dot
+           in to the icon's top-right corner instead of the box corner. */
+        .main-nav--auth .nav__dropdown-icon--unread::after {
+            right: auto;
+            left: calc(50% + 6px);
+            top: 6px;
+        }
+
+        .main-nav--auth .nav__dropdown-icon .nav__dropdown-label,
+        .main-nav--auth .nav__dropdown-item .nav__dropdown-label {
+            display: block;
+            font-size: 0.7rem;
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+    }
+
+    .main-nav--auth .nav__dropdown-icon:active,
+    .main-nav--auth .nav__dropdown-item:active {
+        background-color: rgba(0, 0, 0, 0.14);
+    }
+
+    html[data-theme="dark"] .main-nav--auth .nav__dropdown-icon:active,
+    html[data-theme="dark"] .main-nav--auth .nav__dropdown-item:active {
+        background-color: rgba(255, 255, 255, 0.14);
+    }
+
+    @media (hover: none) {
+        .main-nav--auth .nav__dropdown-icon:hover,
+        .main-nav--auth .nav__dropdown-item:hover {
+            background-color: transparent;
+        }
+
+        .main-nav--auth .nav__dropdown-icon:active,
+        .main-nav--auth .nav__dropdown-item:active {
+            background-color: rgba(0, 0, 0, 0.14);
+        }
+
+        html[data-theme="dark"] .main-nav--auth .nav__dropdown-icon:active,
+        html[data-theme="dark"] .main-nav--auth .nav__dropdown-item:active {
+            background-color: rgba(255, 255, 255, 0.14);
+        }
+    }
+
+    /* Bottom bar */
+    .main-nav--auth .nav__links {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: var(--nav-bottom-h);
+        padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 6px;
+        font-size: inherit;
+        z-index: 1000;
+        /* The whole bar box takes taps (padding, gaps, safe-area strip) so
+           nothing reaches the page behind it. Off while the bar is hidden. */
+        pointer-events: auto;
+    }
+
+    .main-nav--auth .nav__links::before {
+        content: '';
+        position: absolute;
+        /* 8px below the screen edge covers sub-pixel gaps on mobile browsers */
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: -8px;
+        z-index: -1;
+        background: var(--colour-surface);
+        border-top: 1px solid var(--nav-edge);
+        border-radius: var(--nav-radius) var(--nav-radius) 0 0;
+    }
+
+    html.nav-hidden .main-nav--auth .nav__links {
+        pointer-events: none;
+    }
+
+    .main-nav--auth .nav__tab {
+        pointer-events: auto;
+    }
+
+    .main-nav--auth .nav__tab-link {
+        width: 46px;
+        height: 44px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        -webkit-touch-callout: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .main-nav--auth .nav__tab-label {
+        display: none;
+    }
+
+    .main-nav--auth .nav__tab-icon {
+        display: block;
+        width: 26px;
+        height: 26px;
+    }
+
+    .main-nav--auth .nav__tab-link:not(.nav__tab-link--active):active {
+        background-color: rgba(0, 0, 0, 0.14);
+    }
+
+    html[data-theme="dark"] .main-nav--auth .nav__tab-link:not(.nav__tab-link--active):active {
+        background-color: rgba(255, 255, 255, 0.14);
+    }
+
+    /* Balance pill (outline moves here because .nav__profile-pill is display: contents) */
+    .main-nav--auth #nav-balance {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 12px;
+        border: 2px solid var(--colour-border);
+        border-radius: 999px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+    .main-nav--auth a#nav-balance {
+        pointer-events: auto;
+        background: var(--colour-surface);
+        border-color: var(--colour-accent);
+        color: var(--colour-accent);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .main-nav--auth a#nav-balance:active {
+        background: rgba(0, 0, 0, 0.14);
+        background: color-mix(in srgb, var(--colour-accent) 18%, transparent);
+    }
+
+    .main-nav--auth span#nav-balance {
+        border-style: solid;
+        border-width: 1px;
+        border-color: var(--nav-edge);
+        color: var(--colour-text-muted);
+        background: transparent;
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    /* Hide / show: one class on <html>, one transform per leaf */
+    .main-nav--auth .nav__links::after,
+    .main-nav--auth .nav__brand,
+    .main-nav--auth #nav-avatar-btn,
+    .main-nav--auth .nav__links::before,
+    .main-nav--auth .nav__tab,
+    .main-nav--auth #nav-balance {
+        transition: transform 0.25s ease, visibility 0s linear 0s;
+    }
+
+    html.nav-hidden .main-nav--auth .nav__links::after {
+        transform: translateY(-110%);
+    }
+
+    html.nav-hidden .main-nav--auth .nav__brand,
+    html.nav-hidden .main-nav--auth #nav-avatar-btn {
+        /* moves the whole piece above the screen edge (110% of its own
+           height would leave a few px visible at top: 6-8px) */
+        transform: translateY(calc(-100% - var(--nav-top-h)));
+    }
+
+    html.nav-hidden .main-nav--auth .nav__links::before {
+        transform: translateY(110%);
+    }
+
+    html.nav-hidden .main-nav--auth .nav__tab,
+    html.nav-hidden .main-nav--auth #nav-balance {
+        transform: translateY(calc(110% + env(safe-area-inset-bottom)));
+    }
+
+    html.nav-hidden .main-nav--auth .nav__links::after,
+    html.nav-hidden .main-nav--auth .nav__brand,
+    html.nav-hidden .main-nav--auth #nav-avatar-btn,
+    html.nav-hidden .main-nav--auth .nav__links::before,
+    html.nav-hidden .main-nav--auth .nav__tab,
+    html.nav-hidden .main-nav--auth #nav-balance {
+        visibility: hidden;
+        transition: transform 0.25s ease, visibility 0s linear 0.25s;
+    }
+
+    /* Toasts and flashes: centred (nudged slightly right of centre), rising
+       from the bottom, above the bottom bar */
+    .toast-stack {
+        --toast-w: min(360px, calc(100vw - 32px));
+        top: auto;
+        right: auto;
+        left: 50%;
+        margin-left: calc(var(--toast-w) / -2);
+        /* Flush with the bottom bar's top edge (4px overlap hides the seam).
+           z-index sits below the bar (1000) so toasts rise from behind it. */
+        bottom: calc(var(--nav-bottom-h) - 4px);
+        width: var(--toast-w);
+        z-index: 999;
+        transition: transform 0.25s ease;
+    }
+
+    .flash--toast {
+        transform: translateY(1.5rem);
+        animation-name: flashToastInUp;
+        /* Vertical swipes dismiss (down), so the browser must not scroll */
+        touch-action: none;
+    }
+
+    .flash--toast.flash--leaving {
+        animation-name: flashToastOutDown;
+    }
+
+    /* Accent stripe on the top edge instead of the left edge */
+    .flash.flash--toast {
+        --flash-accent: #2ecc71;
+        border-top: 3px solid var(--flash-accent);
+        border-left-width: 1px;
+        border-left-color: color-mix(in srgb, var(--flash-accent) 30%, transparent);
+    }
+
+    .flash.flash--error,
+    .flash.flash--liquidation,
+    .flash.flash--stop-loss { --flash-accent: #e74c3c; }
+
+    .flash.flash--advancement,
+    .flash.flash--achievement { --flash-accent: #f1c40f; }
+
+    .flash.flash--short-open { --flash-accent: #9b59b6; }
+
+    .flash.flash--short-close,
+    .flash.flash--info { --flash-accent: #3498db; }
+
+    html.nav-hidden .toast-stack {
+        transform: translateY(calc(var(--nav-bottom-h) - env(safe-area-inset-bottom)));
+    }
+
+    .flash-messages {
+        width: 100%;
+    }
+
+    /* The (hidden) Market sort menu hangs off the button's left edge and
+       widened the layout viewport, which pushed the fixed bars off screen. */
+    .sort-control .sort-control__menu {
+        left: auto;
+        right: 0;
+    }
+
+    /* Long-press label */
+    .nav__tooltip {
+        display: block;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 1002;
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: rgba(20, 12, 30, 0.92);
+        color: #fff;
+        font-size: 0.75rem;
+        line-height: 1.3;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.12s;
+    }
+
+    .nav__tooltip--visible {
+        opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .main-nav--auth .nav__links::after,
+        .main-nav--auth .nav__brand,
+        .main-nav--auth #nav-avatar-btn,
+        .main-nav--auth .nav__links::before,
+        .main-nav--auth .nav__tab,
+        .main-nav--auth #nav-balance,
+        .main-nav--auth .nav__dropdown,
+        html.nav-hidden .main-nav--auth .nav__links::after,
+        html.nav-hidden .main-nav--auth .nav__brand,
+        html.nav-hidden .main-nav--auth #nav-avatar-btn,
+        html.nav-hidden .main-nav--auth .nav__links::before,
+        html.nav-hidden .main-nav--auth .nav__tab,
+        html.nav-hidden .main-nav--auth #nav-balance,
+        .toast-stack {
+            transition: none;
+        }
+    }
 }
 
 
