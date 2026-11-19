@@ -188,7 +188,34 @@
 
         phone.addEventListener('change', function () {
             if (!phone.matches) show();
+            syncBottomReserve();
         });
+
+        // Bottom space under the footer. By default the footer is at least as
+        // tall as the bottom bar so the bar never covers main content. A page
+        // long enough for the bar to auto-hide (more than 80px of scroll, see
+        // update()) does not need that, so `nav-compact` drops the minimum. The class depends on the page
+        // length alone, never on `nav-hidden`, so the bar toggling cannot
+        // change the document height.
+        let syncing = false;
+        function syncBottomReserve() {
+            if (syncing) return;
+            syncing = true;
+            if (!phone.matches) {
+                root.classList.remove('nav-compact');
+            } else {
+                root.classList.add('nav-compact');
+                if (maxScroll() <= 80) root.classList.remove('nav-compact');
+            }
+            syncing = false;
+        }
+
+        syncBottomReserve();
+        window.addEventListener('load', syncBottomReserve);
+        window.addEventListener('resize', syncBottomReserve);
+        if (window.ResizeObserver) {
+            new ResizeObserver(syncBottomReserve).observe(document.body);
+        }
     }
 
     /**

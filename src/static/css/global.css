@@ -83,6 +83,12 @@ a:hover {
     text-decoration: underline;
 }
 
+/* No browser tap-highlight box on touch devices. Pressed feedback comes from the
+   :active styles (see "Pressed feedback" near the end); :focus-visible is untouched. */
+a, button, [role="button"], summary, label, input, select, textarea {
+    -webkit-tap-highlight-color: transparent;
+}
+
 img {
     max-width: 100%;
     height: auto;
@@ -1495,7 +1501,15 @@ input::-webkit-inner-spin-button {
     color: var(--colour-text-muted);
 }
 
-.back-link:hover {
+/* Hover only on devices that can hover: on touch it stays "stuck" after a tap and
+   looked like a colour flash. :active gives the pressed feedback instead. */
+@media (hover: hover) {
+    .back-link:hover {
+        color: var(--colour-accent);
+    }
+}
+
+.back-link:active {
     color: var(--colour-accent);
 }
 
@@ -2052,7 +2066,7 @@ input::-webkit-inner-spin-button {
     }
 
     .main-footer {
-        padding: var(--spacing-sm) var(--spacing-md);
+        padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
     }
 
     .footer__container {
@@ -2072,8 +2086,15 @@ input::-webkit-inner-spin-button {
         font-size: 0.7rem;
     }
 
+    /* The visible bar may cover the footer, but never the content above it.
+       Pages too short for the bar to auto-hide keep the footer at least as
+       tall as the bar; long pages (html.nav-compact, set by nav.js) do not. */
     body:has(.main-nav--auth) .main-footer {
-        padding-bottom: calc(var(--nav-bottom-h) + var(--spacing-xs));
+        min-height: var(--nav-bottom-h);
+    }
+
+    html.nav-compact body:has(.main-nav--auth) .main-footer {
+        min-height: 0;
     }
 
     .main-nav--auth a,
@@ -3206,6 +3227,32 @@ details summary:focus-visible {
     outline-offset: 2px;
 }
 
+/* ===== Pressed feedback =====
+   Replaces the removed tap-highlight box for links/controls that had no :active
+   style of their own. Buttons (.btn), nav dropdown items, the avatar and the
+   phone nav already have pressed styles and are not listed here. */
+.back-link:active,
+.footer__links a:active,
+.leaderboard__player-link:active,
+.mover-item:active,
+.ore-card__link:active,
+.ore-card__toggle:active,
+.chart-filter:active,
+.sort-control__btn:active,
+.sort-control__menu li:active,
+a:not([class]):active {
+    opacity: 0.65;
+}
+
+@media (min-width: 641px) {
+    /* Desktop navbar tabs (phone layout has its own :active background) */
+    .nav__brand:active,
+    .nav__balance--link:active,
+    .nav__tab-link:not(.nav__tab-link--active):active {
+        opacity: 0.65;
+    }
+}
+
 /* Skip to content link (screen readers) */
 .skip-link {
     position: absolute;
@@ -3545,6 +3592,7 @@ details summary:focus-visible {
    the card itself keeps working there. */
 @media (any-pointer: coarse) {
     .ore-card {
+        position: relative; /* anchors the absolute handle to its card at every width */
         -webkit-tap-highlight-color: transparent;
     }
 

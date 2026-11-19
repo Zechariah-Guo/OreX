@@ -603,6 +603,7 @@ def parse_args():
                         help='pause after each --click/--eval, e.g. for animations or a page change (default 400)')
     parser.add_argument('--click', action='append', metavar='CSS', help='click this element first; repeatable')
     parser.add_argument('--eval', action='append', metavar='JS', help='run this JavaScript first; repeatable')
+    parser.add_argument('--touch', action='store_true', help='emulate a touch device (pointer: coarse, no hover)')
     parser.add_argument('--advanced', action='store_true', help='user has Advanced Mode purchased and active')
     parser.add_argument('--balance', type=float, metavar='N', help='set the user balance')
     parser.add_argument('--cosmetic', choices=['money', 'gold'], help='unlock and apply a cosmetic theme')
@@ -677,6 +678,8 @@ def main():
             for name, width, height in args.viewport:
                 cdp.call('Emulation.setDeviceMetricsOverride', {
                     'width': width, 'height': height, 'deviceScaleFactor': 1, 'mobile': width <= 600})
+                if args.touch:
+                    cdp.call('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
                 for page in args.pages:
                     out_path = os.path.join(args.out, f'{slugify(page)}_{name}_{theme}.png')
                     try:
