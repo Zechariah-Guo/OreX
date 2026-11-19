@@ -940,7 +940,7 @@ html[data-theme="dark"] .nav__brand {
 
 .lp-scroll-cue {
     position: absolute;
-    bottom: var(--spacing-lg);
+    bottom: 1.25rem;
     left: 50%;
     transform: translateX(-50%);
     display: flex;

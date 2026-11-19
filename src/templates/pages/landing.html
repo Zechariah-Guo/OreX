@@ -34,10 +34,12 @@
 .landing__hero {
     position: relative;
     z-index: 1;
-    /* Navbar + main padding take ~82px above the hero; leave ~18px below it so the
-       whole hero (cue included) fits the visible height. svh excludes mobile browser bars. */
-    min-height: calc(100vh - 100px);
-    min-height: calc(100svh - 100px);
+    /* The hero fills the first screen below the navbar, so the cue (pinned to its bottom)
+       sits just above the fold and the ticker below starts off screen. --hero-top (navbar +
+       main padding, set by the script below; 112px is the tallest case) varies with theme and
+       width. svh excludes mobile browser bars. */
+    min-height: calc(100vh - var(--hero-top, 112px));
+    min-height: calc(100svh - var(--hero-top, 112px));
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -48,6 +50,11 @@
 .lp {
     position: relative;
     z-index: 1;
+}
+
+/* Cue target: stop below the sticky navbar, not under it */
+#lp-more {
+    scroll-margin-top: calc(var(--hero-top, 112px) - 16px);
 }
 </style>
 {% endblock %}
@@ -197,6 +204,18 @@
         '{{ url_for("static", filename="images/ores/Netherite_Ingot.webp") }}',
         '{{ url_for("static", filename="images/ores/Redstone_Dust.webp") }}'
     ];
+
+    // Height above the hero (navbar + main padding), so the hero can fill the rest of the screen
+    const hero = document.querySelector('.landing__hero');
+    const nav = document.querySelector('.main-nav');
+    function setHeroTop() {
+        const top = Math.floor(hero.getBoundingClientRect().top + window.scrollY);
+        document.documentElement.style.setProperty('--hero-top', top + 'px');
+    }
+    setHeroTop();
+    window.addEventListener('resize', setHeroTop);
+    window.addEventListener('load', setHeroTop);
+    if (window.ResizeObserver && nav) new ResizeObserver(setHeroTop).observe(nav);
 
     const container = document.getElementById('falling-container');
 
