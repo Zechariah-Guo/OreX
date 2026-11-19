@@ -1,7 +1,7 @@
-"""Advancements testing page (developer tool).
+"""Testing page (developer tool).
 
 A hidden, no-frills testing page with NO navigation links anywhere in the app.
-Only accessible by manually typing /advancements in the URL bar, and only in
+Only accessible by manually typing /testing in the URL bar, and only in
 debug mode (every route 404s otherwise, see _dev_page_debug_only).
 """
 
@@ -11,12 +11,12 @@ from flask_login import login_required, current_user
 from app.database import get_db
 from app.advancements import ADVANCEMENT_KEYS, ADVANCEMENT_METADATA, get_user_advancements
 
-advancements_bp = Blueprint('advancements', __name__)
+testing_bp = Blueprint('testing', __name__)
 
 
-@advancements_bp.before_request
+@testing_bp.before_request
 def _dev_page_debug_only():
-    """The whole dev page (every /advancements* route) exists only in debug mode.
+    """The whole dev page (every /testing* route) exists only in debug mode.
 
     Blueprint-level so new routes added here are gated automatically. Runs
     before login_required, so outside debug even anonymous users get a plain 404.
@@ -25,9 +25,9 @@ def _dev_page_debug_only():
         abort(404)
 
 
-@advancements_bp.route('/advancements')
+@testing_bp.route('/testing')
 @login_required
-def advancements_test():
+def testing_page():
     """Display all 9 advancements with earned/locked state and dev controls."""
     db = get_db()
     earned = get_user_advancements(db, current_user.id)
@@ -65,7 +65,7 @@ def advancements_test():
     ).fetchone()['balance']
 
     return render_template(
-        'pages/advancements_test.html',
+        'pages/testing.html',
         advancements=advancements_data,
         money_theme=money_theme,
         gold_theme=gold_theme,
@@ -89,7 +89,7 @@ def _require_debug():
         abort(404)
 
 
-@advancements_bp.route('/advancements/cash/drain', methods=['POST'])
+@testing_bp.route('/testing/cash/drain', methods=['POST'])
 @login_required
 def drain_free_cash():
     """Set free cash to $0. With an open short, the next tick fee-liquidates it."""
@@ -97,10 +97,10 @@ def drain_free_cash():
     db = get_db()
     db.execute("UPDATE users SET balance = 0 WHERE id = ?", (current_user.id,))
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/cash/grant', methods=['POST'])
+@testing_bp.route('/testing/cash/grant', methods=['POST'])
 @login_required
 def grant_free_cash():
     """Add DEV_CASH_GRANT to free cash."""
@@ -111,15 +111,15 @@ def grant_free_cash():
         (DEV_CASH_GRANT, current_user.id),
     )
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/reset/<key>', methods=['POST'])
+@testing_bp.route('/testing/reset/<key>', methods=['POST'])
 @login_required
 def reset_advancement(key):
     """Strip a single advancement from the current player."""
     if key not in ADVANCEMENT_KEYS:
-        return redirect(url_for('advancements.advancements_test'))
+        return redirect(url_for('testing.testing_page'))
 
     db = get_db()
     db.execute(
@@ -127,10 +127,10 @@ def reset_advancement(key):
         (current_user.id, key)
     )
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/reset-all', methods=['POST'])
+@testing_bp.route('/testing/reset-all', methods=['POST'])
 @login_required
 def reset_all_advancements():
     """Strip all advancements from the current player."""
@@ -140,10 +140,10 @@ def reset_all_advancements():
         (current_user.id,)
     )
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/grant-all', methods=['POST'])
+@testing_bp.route('/testing/grant-all', methods=['POST'])
 @login_required
 def grant_all_advancements():
     """Award all advancements to the current player (for visual testing)."""
@@ -152,10 +152,10 @@ def grant_all_advancements():
     for key in ADVANCEMENT_KEYS:
         award_advancement(db, current_user.id, key)
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/trigger-money-theme', methods=['POST'])
+@testing_bp.route('/testing/trigger-money-theme', methods=['POST'])
 @login_required
 def trigger_money_theme():
     """Set money_theme_unlocked=1 for the current player (visual testing)."""
@@ -165,10 +165,10 @@ def trigger_money_theme():
         (current_user.id,)
     )
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/trigger-gold-theme', methods=['POST'])
+@testing_bp.route('/testing/trigger-gold-theme', methods=['POST'])
 @login_required
 def trigger_gold_theme():
     """Set gold_theme_unlocked=1 for the current player (visual testing)."""
@@ -178,10 +178,10 @@ def trigger_gold_theme():
         (current_user.id,)
     )
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/reset-themes', methods=['POST'])
+@testing_bp.route('/testing/reset-themes', methods=['POST'])
 @login_required
 def reset_themes():
     """Set both theme flags back to 0."""
@@ -191,10 +191,10 @@ def reset_themes():
         (current_user.id,)
     )
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/test-toasts', methods=['POST'])
+@testing_bp.route('/testing/test-toasts', methods=['POST'])
 @login_required
 def test_toasts():
     """Fire one of each toast category for visual testing."""
@@ -209,10 +209,10 @@ def test_toasts():
     flash('Short open toast — purple theme', 'short-open')
     flash('Short close toast — blue theme', 'short-close')
     flash('Default toast — green (polling fallback)', 'default')
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/bonus/set-day', methods=['POST'])
+@testing_bp.route('/testing/bonus/set-day', methods=['POST'])
 @login_required
 def set_bonus_day():
     """Set bonus_cycle_day to a specific value for testing."""
@@ -227,10 +227,10 @@ def set_bonus_day():
         (day, current_user.id)
     )
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/bonus/reset', methods=['POST'])
+@testing_bp.route('/testing/bonus/reset', methods=['POST'])
 @login_required
 def reset_bonus():
     """Reset bonus to day 1, clear last_bonus_collected_date."""
@@ -240,10 +240,10 @@ def reset_bonus():
         (current_user.id,)
     )
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/bonus/clear-today', methods=['POST'])
+@testing_bp.route('/testing/bonus/clear-today', methods=['POST'])
 @login_required
 def clear_bonus_today():
     """Clear last_bonus_collected_date so the bonus becomes available again today."""
@@ -253,10 +253,10 @@ def clear_bonus_today():
         (current_user.id,)
     )
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))
 
 
-@advancements_bp.route('/advancements/bonus/complete', methods=['POST'])
+@testing_bp.route('/testing/bonus/complete', methods=['POST'])
 @login_required
 def complete_bonus():
     """Set bonus_cycle_day to 4 (mark cycle as complete)."""
@@ -266,4 +266,4 @@ def complete_bonus():
         (current_user.id,)
     )
     db.commit()
-    return redirect(url_for('advancements.advancements_test'))
+    return redirect(url_for('testing.testing_page'))

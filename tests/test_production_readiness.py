@@ -1,6 +1,6 @@
 """Tests for production-readiness behaviour of create_app().
 
-Covers: dev /advancements page gating, SECRET_KEY refusal in production,
+Covers: dev /testing page gating, SECRET_KEY refusal in production,
 SESSION_COOKIE_SECURE env control and the OREX_TRUST_PROXY (ProxyFix) toggle.
 Each test builds its own app on a temporary DB; the market engine is stubbed.
 """
@@ -33,7 +33,7 @@ def make_app(tmp_path, **config):
 # --- dev page gating ---------------------------------------------------------
 
 def _dev_rules(app):
-    return [r for r in app.url_map.iter_rules() if r.endpoint.startswith('advancements.')]
+    return [r for r in app.url_map.iter_rules() if r.endpoint.startswith('testing.')]
 
 
 def _concrete_url(rule):
@@ -55,7 +55,7 @@ def test_dev_routes_404_outside_debug(tmp_path):
 def test_dev_routes_available_in_debug(tmp_path):
     app = make_app(tmp_path, TESTING=True, DEBUG=True)
     assert app.debug
-    resp = app.test_client().get('/advancements')
+    resp = app.test_client().get('/testing')
     assert resp.status_code == 302   # reaches login_required instead of 404
     assert '/login' in resp.headers['Location']
 

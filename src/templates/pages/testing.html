@@ -1,18 +1,18 @@
 {% extends 'base.html' %}
-{% block title %}Advancements (Dev) - OreX{% endblock %}
+{% block title %}Testing (Dev) - OreX{% endblock %}
 
 {% block content %}
 <div class="static-page">
-    <h1>Advancements Testing Page</h1>
+    <h1>Testing Page</h1>
     <p style="color: #888; font-style: italic; margin-bottom: 1.5rem;">
-        Developer tool — not linked from any navigation. Access by typing <code>/advancements</code> in the URL bar.
+        Developer tool — not linked from any navigation. Access by typing <code>/testing</code> in the URL bar.
     </p>
 
     <!-- Theme Status & Controls -->
     <section style="margin-bottom: 2rem; padding: 1rem; border: 1px solid #444; border-radius: 8px;">
         <h2 style="margin-top: 0;">Toast Testing</h2>
         <p style="color: #aaa; font-size: 0.9rem;">Fire all toast categories at once to preview styling and swipe-to-dismiss.</p>
-        <form method="POST" action="{{ url_for('advancements.test_toasts') }}">
+        <form method="POST" action="{{ url_for('testing.test_toasts') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" style="padding: 0.5rem 1rem; background: var(--colour-accent, #7c3aed); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
                 Fire All Toasts
@@ -29,13 +29,13 @@
         </p>
         {% if cash_tools_enabled %}
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <form method="POST" action="{{ url_for('advancements.drain_free_cash') }}">
+            <form method="POST" action="{{ url_for('testing.drain_free_cash') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" style="padding: 0.4rem 0.8rem; background: #b71c1c; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     Drain Free Cash ($0)
                 </button>
             </form>
-            <form method="POST" action="{{ url_for('advancements.grant_free_cash') }}">
+            <form method="POST" action="{{ url_for('testing.grant_free_cash') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" style="padding: 0.4rem 0.8rem; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     Add ${{ "{:,}".format(cash_grant_amount) }}
@@ -64,7 +64,7 @@
         </p>
 
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem;">
-            <form method="POST" action="{{ url_for('advancements.set_bonus_day') }}" style="display: flex; align-items: center; gap: 0.3rem;">
+            <form method="POST" action="{{ url_for('testing.set_bonus_day') }}" style="display: flex; align-items: center; gap: 0.3rem;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label for="bonus-day-input" style="font-size: 0.85rem; color: #aaa;">Set Day:</label>
                 <input type="number" id="bonus-day-input" name="day" min="1" max="4" value="{{ bonus_cycle_day }}"
@@ -74,7 +74,7 @@
                 </button>
             </form>
 
-            <form method="POST" action="{{ url_for('advancements.clear_bonus_today') }}">
+            <form method="POST" action="{{ url_for('testing.clear_bonus_today') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" style="padding: 0.4rem 0.8rem; background: #e65100; color: white; border: none; border-radius: 4px; cursor: pointer;"
                         title="Clears last_bonus_collected_date so you can collect again today">
@@ -82,14 +82,14 @@
                 </button>
             </form>
 
-            <form method="POST" action="{{ url_for('advancements.complete_bonus') }}">
+            <form method="POST" action="{{ url_for('testing.complete_bonus') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" style="padding: 0.4rem 0.8rem; background: #4a148c; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     Mark Complete
                 </button>
             </form>
 
-            <form method="POST" action="{{ url_for('advancements.reset_bonus') }}">
+            <form method="POST" action="{{ url_for('testing.reset_bonus') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" style="padding: 0.4rem 0.8rem; background: #b71c1c; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     Reset Bonus
@@ -114,19 +114,19 @@
             Gold Theme: <strong style="color: {{ 'gold' if gold_theme else '#ff4444' }};">{{ gold_theme }}</strong>
         </p>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <form method="POST" action="{{ url_for('advancements.trigger_money_theme') }}">
+            <form method="POST" action="{{ url_for('testing.trigger_money_theme') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" style="padding: 0.4rem 0.8rem; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     Trigger Money Theme
                 </button>
             </form>
-            <form method="POST" action="{{ url_for('advancements.trigger_gold_theme') }}">
+            <form method="POST" action="{{ url_for('testing.trigger_gold_theme') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" style="padding: 0.4rem 0.8rem; background: #b8860b; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     Trigger Gold Theme
                 </button>
             </form>
-            <form method="POST" action="{{ url_for('advancements.reset_themes') }}">
+            <form method="POST" action="{{ url_for('testing.reset_themes') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" style="padding: 0.4rem 0.8rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     Reset Themes
@@ -140,13 +140,13 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h2 style="margin: 0;">All Advancements ({{ advancements | selectattr('earned') | list | length }}/9 earned)</h2>
             <div style="display: flex; gap: 0.5rem;">
-                <form method="POST" action="{{ url_for('advancements.grant_all_advancements') }}">
+                <form method="POST" action="{{ url_for('testing.grant_all_advancements') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" style="padding: 0.4rem 0.8rem; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer;">
                         Grant All
                     </button>
                 </form>
-                <form method="POST" action="{{ url_for('advancements.reset_all_advancements') }}">
+                <form method="POST" action="{{ url_for('testing.reset_all_advancements') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" style="padding: 0.4rem 0.8rem; background: #b71c1c; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     Reset All
@@ -180,7 +180,7 @@
                     </td>
                     <td style="padding: 0.5rem; text-align: center;">
                         {% if adv.earned %}
-                        <form method="POST" action="{{ url_for('advancements.reset_advancement', key=adv.key) }}" style="display: inline;">
+                        <form method="POST" action="{{ url_for('testing.reset_advancement', key=adv.key) }}" style="display: inline;">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" style="padding: 0.25rem 0.5rem; background: #c62828; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8rem;">
                                 Reset

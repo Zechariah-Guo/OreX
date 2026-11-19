@@ -86,7 +86,7 @@
 - [ ] Set up Object Storage bucket (`orex-avatars`)
 - [ ] Configure OCI SDK credentials (`~/.oci/config`)
 - [ ] Set environment variables: `STORAGE_BACKEND=oci`, `OCI_NAMESPACE`, `OCI_BUCKET`
-- [ ] **Remove or lock down the `/advancements` dev page before going live.** It only requires a login, so any player who types the URL can grant themselves every advancement/theme and reset their daily bonus. The new free cash buttons (drain / +$100k) already 404 outside debug mode; the rest of the page doesn't. Either delete it (`routes/advancements.py` dev routes + `templates/pages/advancements_test.html`) or gate the whole blueprint behind `app.debug`.
+- [ ] **Remove or lock down the `/testing` dev page before going live.** It only requires a login, so any player who types the URL can grant themselves every advancement/theme and reset their daily bonus. The new free cash buttons (drain / +$100k) already 404 outside debug mode; the rest of the page doesn't. Either delete it (`routes/testing.py` dev routes + `templates/pages/testing.html`) or gate the whole blueprint behind `app.debug`.
 
 ### Design Decisions Still Needed
 - [x] Exact colors/gradients for Money theme and Gold theme
@@ -116,7 +116,7 @@
 ### Mobile Support
 - Change UI for mobile sized screens <— In progress (still needs leaderboard, history, portfolio, profile) 
 - Turn into PWA (add option in settings to download)
-- Maybe get push notifications working on the PWA (bit more complex)
+- Maybe get push notifications working on the PWA (bit more complex) (for toasts when the user isnt in the app, like sltp, daily bonus, maybe a login nudge if they want to maintain streak, liquidation, )
 
 ### QoL
 - Allow "forgot password" functionality by leveraging the existing 2fa system
