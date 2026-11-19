@@ -245,7 +245,14 @@
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
         gap: var(--spacing-sm);
-        min-height: 580px;
+        /* One fluid wheel diameter drives the circle, the badges and the grid
+           height, so the wheel and the stat text keep the same relationship
+           at every width from 880px (380px) up to 1280px (540px). */
+        --wheel-d: clamp(380px, calc(28px + 40vw), 540px);
+        /* Label and sub text: 1.2rem at 880px growing to 1.5rem at 1100px */
+        --stat-text: clamp(1.2rem, calc(1.2rem + (100vw - 880px) * 0.0218), 1.5rem);
+        --stat-value: clamp(1.6rem, calc(1.6rem + (100vw - 880px) * 0.0182), 2rem);
+        min-height: calc(var(--wheel-d) + (var(--wheel-d) - 380px) * 0.25);
     }
 
     /* Stat boxes - simple rectangles */
@@ -333,7 +340,7 @@
 
     .profile-stat-box__label {
         display: block;
-        font-size: 1.5rem;
+        font-size: var(--stat-text);
         color: var(--colour-text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -342,7 +349,7 @@
 
     .profile-stat-box__value {
         display: block;
-        font-size: 2.0rem;
+        font-size: var(--stat-value);
         font-weight: 700;
         color: var(--colour-text);
         font-family: var(--font-mono);
@@ -350,7 +357,7 @@
 
     .profile-stat-box__sub {
         display: block;
-        font-size: 1.5rem;
+        font-size: var(--stat-text);
         color: var(--colour-text-muted);
         margin-top: 4px;
     }
@@ -361,8 +368,8 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 540px;
-        height: 540px;
+        width: var(--wheel-d);
+        height: var(--wheel-d);
         border-radius: 50%;
         border: 2px solid transparent;
         z-index: 5;
@@ -413,8 +420,8 @@
 
     .achievements-orbit {
         position: relative;
-        width: 500px;
-        height: 500px;
+        width: calc(var(--wheel-d) - 40px);
+        height: calc(var(--wheel-d) - 40px);
     }
 
     /* Centre badge (Completionist) */
@@ -427,8 +434,8 @@
     }
 
     .achievements-orbit__centre .achievement-badge__img-wrapper {
-        width: 120px;
-        height: 120px;
+        width: calc(80px + (var(--wheel-d) - 380px) * 0.25);
+        height: calc(80px + (var(--wheel-d) - 380px) * 0.25);
     }
 
     /* Orbiting badge — NO z-index here to avoid creating stacking context */
@@ -450,8 +457,8 @@
 
     .achievement-badge__img-wrapper {
         position: relative;
-        width: 90px;
-        height: 90px;
+        width: calc(64px + (var(--wheel-d) - 380px) * 0.1625);
+        height: calc(64px + (var(--wheel-d) - 380px) * 0.1625);
     }
 
     .achievement-badge__img {
@@ -597,117 +604,413 @@
     }
 
     /* --- Responsive --- */
-    @media (max-width: 900px) {
-        .profile__showcase {
-            min-height: 380px;
-        }
-
-        .profile__showcase-orbit {
-            width: 380px;
-            height: 380px;
-        }
-
-        .achievements-orbit {
-            width: 340px;
-            height: 340px;
-        }
-
-        .achievements-orbit__centre .achievement-badge__img-wrapper {
-            width: 80px;
-            height: 80px;
-        }
-
-        .achievement-badge__img-wrapper {
-            width: 64px;
-            height: 64px;
-        }
+    /* Caption for the tapped achievement (phones only) */
+    .achievements-caption {
+        display: none;
     }
 
-    @media (max-width: 600px) {
-        /* The (invisible) hover tooltips of the orbiting badges stick out past
-           the right edge and widened the layout viewport, which moved the
-           fixed nav bars (the avatar) sideways. Clip them here. */
+    /* Section headings: compact layout only (see the 879px block below) */
+    .profile__section-title {
+        display: none;
+    }
+
+    /* Compact layout (avatar, bonus row, stat rows, carousel): below 880px.
+       The wheel with the overlapping stat segments needs 880px or more. The
+       navbar keeps its own 640px breakpoint. */
+    @media (max-width: 879px) {
+        /* Safety net: nothing on this page may widen the layout viewport. */
         .profile {
             overflow-x: clip;
+            padding-top: var(--spacing-sm);
         }
 
+        /* Keep the stacked blocks from stretching on tablet widths */
+        .profile .bonus,
         .profile__showcase {
-            grid-template-columns: 1fr;
-            grid-template-rows: auto auto auto auto;
-            min-height: auto;
+            max-width: 560px;
         }
 
+        /* --- Section headings: small bold title with a thin rule --- */
+        .profile__section-title,
+        .bonus__title {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-align: left;
+            color: var(--colour-text);
+            margin: 0;
+            padding-bottom: 2px;
+            border-bottom: 1px solid var(--colour-border);
+        }
+
+        .bonus__title {
+            margin-bottom: var(--spacing-xs);
+        }
+
+        /* --- Header: compact --- */
+        .profile__header {
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .profile__avatar-wrapper {
+            width: 96px;
+            height: 96px;
+        }
+
+        .profile__avatar-img,
+        .profile__avatar-fallback {
+            width: 96px;
+            height: 96px;
+            font-size: 2rem;
+        }
+
+        .profile__avatar-upload-btn {
+            width: 44px;
+            height: 44px;
+            bottom: -6px;
+            right: -6px;
+        }
+
+        .profile__username {
+            font-size: 1.4rem;
+            max-width: 100%;
+            text-align: center;
+            overflow-wrap: anywhere;
+        }
+
+        /* --- daily bonus row: three equal columns --- */
+        .bonus {
+            padding: var(--spacing-xs) 0;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .bonus__subtitle {
+            font-size: 0.75rem;
+            text-align: left;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .bonus__cards {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .bonus__card {
+            gap: 4px;
+            padding: var(--spacing-sm) 4px;
+            min-height: 88px;
+            min-width: 0;
+            border-width: 2px;
+        }
+
+        .bonus__card-day {
+            font-size: 0.6rem;
+            letter-spacing: 0.5px;
+        }
+
+        .bonus__card-amount {
+            font-size: 0.9rem;
+        }
+
+        .bonus__card-action {
+            font-size: 0.65rem;
+            letter-spacing: 0.3px;
+            padding: 3px 6px;
+            max-width: 100%;
+        }
+
+        .bonus__card-check svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .bonus__card-lock svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .bonus__status {
+            font-size: 0.8rem;
+        }
+
+        /* --- Showcase: four stat rows, then the wheel --- */
+        .profile__showcase {
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: none;
+            grid-auto-rows: auto;
+            min-height: auto;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .profile .profile-stat-box {
+            grid-column: 1;
+            align-items: flex-start;
+            justify-content: center;
+            text-align: left;
+            padding: 12px 16px 12px 76px;
+            min-height: 76px;
+        }
+
+        /* Row 1 is the "Stats" heading, row 6 the "Achievements" heading */
+        .profile__showcase > .profile__section-title--stats { grid-column: 1; grid-row: 1; }
+        .profile__showcase > .profile__section-title--achievements {
+            grid-column: 1;
+            grid-row: 6;
+            margin-top: var(--spacing-xs);
+        }
+
+        .profile .profile-stat-box--tl { grid-row: 2; }
+        .profile .profile-stat-box--tr { grid-row: 3; }
+        .profile .profile-stat-box--bl { grid-row: 4; }
+        .profile .profile-stat-box--br { grid-row: 5; }
+
+        .profile .profile-stat-box .profile-stat-box__bg-img {
+            width: 72px;
+            height: 72px;
+            top: 50%;
+            bottom: auto;
+            left: 2px;
+            right: auto;
+            transform: translateY(-50%);
+            opacity: 0.28;
+        }
+
+        /* Trade arrows art is thin and yellow, so it needs more opacity to match */
+        .profile .profile-stat-box--bl .profile-stat-box__bg-img {
+            opacity: 0.45;
+        }
+
+        .profile-stat-box__label {
+            font-size: 0.75rem;
+            margin-bottom: 0;
+        }
+
+        .profile-stat-box__value {
+            font-size: 1.25rem;
+            overflow-wrap: anywhere;
+        }
+
+        .profile-stat-box__sub {
+            font-size: 0.75rem;
+            margin-top: 0;
+        }
+
+        /* --- Achievements wheel: scales with its container --- */
         .profile__showcase-orbit {
             position: relative;
             top: auto;
             left: auto;
             transform: none;
-            width: 300px;
-            height: 300px;
-            margin: var(--spacing-md) auto;
+            width: min(100%, 300px);
+            height: auto;
+            aspect-ratio: 1 / 1;
+            margin: var(--spacing-sm) auto 0;
             grid-column: 1;
-            grid-row: 3;
-        }
-
-        .profile-stat-box--tl {
-            grid-row: 1;
-        }
-
-        .profile-stat-box--tr {
-            grid-row: 2;
-        }
-
-        .profile-stat-box--bl {
-            grid-row: 4;
-        }
-
-        .profile-stat-box--br {
             grid-row: 5;
         }
 
-        .profile-stat-box--tl,
-        .profile-stat-box--tr,
-        .profile-stat-box--bl,
-        .profile-stat-box--br {
-            text-align: center;
-        }
-
         .achievements-orbit {
-            width: 280px;
-            height: 280px;
+            width: 100%;
+            height: 100%;
         }
 
         .achievements-orbit__centre .achievement-badge__img-wrapper {
-            width: 70px;
-            height: 70px;
+            width: calc(var(--wheel, 280px) * 0.24);
+            height: calc(var(--wheel, 280px) * 0.24);
         }
 
         .achievement-badge__img-wrapper {
-            width: 54px;
-            height: 54px;
+            width: calc(var(--wheel, 280px) * 0.18);
+            height: calc(var(--wheel, 280px) * 0.18);
         }
 
-        .achievement-badge__name {
+        /* Hover tooltips are replaced by a tap caption under the wheel */
+        .achievement-badge__tooltip {
             display: none;
         }
 
-        .profile__avatar-wrapper {
-            width: 110px;
-            height: 110px;
+        .achievements-caption {
+            display: block;
+            grid-column: 1;
+            grid-row: 6;
+            min-height: 3.2em;
+            text-align: center;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border: 1px solid var(--colour-border);
+            border-radius: var(--radius-sm);
+            background-color: var(--colour-surface);
+            overflow-wrap: anywhere;
         }
 
-        .profile__avatar-img,
-        .profile__avatar-fallback {
-            width: 110px;
-            height: 110px;
-            font-size: 2rem;
+        .achievements-caption__hint {
+            font-size: 0.75rem;
+            color: var(--colour-text-muted);
         }
 
-        .bonus__cards {
-            grid-template-columns: 1fr;
-            max-width: 280px;
-            margin-left: auto;
-            margin-right: auto;
+        .achievements-caption .achievement-badge__tooltip-title {
+            font-size: 0.85rem;
+        }
+
+        .achievements-caption .achievement-badge__tooltip-desc {
+            font-size: 0.75rem;
+        }
+
+        .achievements-caption .achievement-badge__tooltip-date {
+            font-size: 0.7rem;
+        }
+
+        .achievement-badge {
+            cursor: pointer;
+        }
+    }
+
+    /* --- Achievements carousel: phones only, replaces the wheel --- */
+    .ach-carousel {
+        display: none;
+    }
+
+    @media (max-width: 879px) {
+        .profile__showcase-orbit,
+        .achievements-caption {
+            display: none;
+        }
+
+        .ach-carousel {
+            --ach-size: clamp(120px, 44vw, 170px);
+            display: block;
+            grid-column: 1;
+            grid-row: 7;
+            min-width: 0;
+            margin-top: 0;
+            text-align: center;
+        }
+
+        .ach-carousel__title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--colour-text);
+            margin: 0 0 2px;
+            overflow-wrap: anywhere;
+        }
+
+        .ach-carousel__stage {
+            position: relative;
+            height: calc(var(--ach-size) + 8px);
+            overflow: hidden;
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            border-radius: var(--radius-sm);
+        }
+
+        .ach-carousel__stage:focus-visible {
+            outline: 2px solid var(--colour-accent);
+            outline-offset: -2px;
+        }
+
+        .ach-carousel__slide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: var(--ach-size);
+            height: var(--ach-size);
+            transform: translate(-50%, -50%) translateX(calc(var(--ach-size) * var(--x, 0))) scale(var(--s, 1));
+            opacity: var(--o, 1);
+            z-index: var(--z, 0);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            cursor: pointer;
+        }
+
+        .ach-carousel__stage--dragging .ach-carousel__slide,
+        .ach-carousel__stage--static .ach-carousel__slide {
+            transition: none;
+        }
+
+        .ach-carousel__img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        /* Locked: dimmed with a filter only. Opacity would let the badges
+           stacked behind it show through. */
+        .ach-carousel__img--locked {
+            filter: grayscale(1) brightness(0.55);
+        }
+
+        .ach-carousel__btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 1px solid var(--colour-border);
+            border-radius: 50%;
+            color: var(--colour-text);
+            background-color: var(--colour-surface);
+            background-color: color-mix(in srgb, var(--colour-surface) 65%, transparent);
+            cursor: pointer;
+        }
+
+        .ach-carousel__btn:hover {
+            background-color: var(--colour-surface-hover);
+        }
+
+        .ach-carousel__btn:focus-visible {
+            outline: 2px solid var(--colour-accent);
+            outline-offset: 1px;
+        }
+
+        .ach-carousel__btn--prev { left: 4px; }
+        .ach-carousel__btn--next { right: 4px; }
+
+        .ach-carousel__desc {
+            /* Two lines at 0.95rem: the longest description wraps to two lines at 320px */
+            min-height: 2.7em;
+            margin: 2px 0 0;
+            font-size: 0.95rem;
+            line-height: 1.35;
+            color: var(--colour-text-muted);
+            overflow-wrap: anywhere;
+        }
+
+        .ach-carousel__state {
+            margin: 2px 0 0;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--colour-accent);
+        }
+
+        .ach-carousel__state--locked {
+            color: var(--colour-text-muted);
+        }
+
+        .ach-carousel__pos {
+            margin: 2px 0 0;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--colour-text);
+            font-family: var(--font-mono);
+        }
+
+        .ach-carousel__live {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
         }
     }
 </style>
@@ -752,7 +1055,9 @@
     {% endif %}
 
     <!-- Stats + Achievements Showcase -->
-    <div class="profile__showcase" x-data="achievementOrbit()" x-init="start()">
+    <div class="profile__showcase" x-data="achievementOrbit()" x-init="start()" @resize.window="measure()">
+        <h2 class="profile__section-title profile__section-title--stats">Stats</h2>
+
         <!-- 4 stat boxes in 2x2 grid -->
         <div class="profile-stat-box profile-stat-box--tl">
             <img src="{{ url_for('static', filename='images/time.webp') }}" alt="" class="profile-stat-box__bg-img" aria-hidden="true">
@@ -797,7 +1102,8 @@
 
         <!-- Orbit circle overlay (covers inner corners of stat boxes) -->
         <div class="profile__showcase-orbit">
-            <div class="achievements-orbit" @mouseenter="paused = true" @mouseleave="paused = false">
+            <div class="achievements-orbit" x-ref="orbit" @mouseenter="paused = true" @mouseleave="paused = false"
+                @click="select($event)">
                 {# Centre badge: Completionist #}
                 {% set centre = achievements | selectattr('key', 'equalto', 'completionist') | first %}
                 <div class="achievements-orbit__centre">
@@ -847,6 +1153,46 @@
                 {% endfor %}
             </div>
         </div>
+        <div class="achievements-caption" x-ref="caption" aria-live="polite">
+            <span class="achievements-caption__hint">Tap a badge to see its details</span>
+        </div>
+
+        <h2 class="profile__section-title profile__section-title--achievements">Achievements</h2>
+
+        {# Compact carousel: same `achievements` list as the wheel; shown instead of it below 880px #}
+        <div class="ach-carousel" data-start="{{ carousel_start_index }}">
+            <h3 class="ach-carousel__title" data-ach-title>{{ achievements[carousel_start_index].name }}</h3>
+            <div class="ach-carousel__stage" tabindex="0" role="group" aria-roledescription="carousel"
+                aria-label="Achievements" data-ach-stage>
+                {% for ach in achievements %}
+                <div class="ach-carousel__slide" aria-hidden="true" data-name="{{ ach.name }}"
+                    data-desc="{{ ach.description }}" data-earned="{{ 1 if ach.earned else 0 }}"
+                    data-earned-at="{{ ach.earned_at[:10] if ach.earned and ach.earned_at else '' }}">
+                    <img src="{{ url_for('static', filename='images/advancements/' ~ ach.image) }}" alt=""
+                        class="ach-carousel__img{% if not ach.earned %} ach-carousel__img--locked{% endif %}"
+                        width="170" height="170" draggable="false" loading="lazy">
+                </div>
+                {% endfor %}
+                <button type="button" class="ach-carousel__btn ach-carousel__btn--prev"
+                    aria-label="Previous achievement" data-ach-prev>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 -960 960 960"
+                        fill="currentColor" aria-hidden="true" focusable="false">
+                        <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z" />
+                    </svg>
+                </button>
+                <button type="button" class="ach-carousel__btn ach-carousel__btn--next"
+                    aria-label="Next achievement" data-ach-next>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 -960 960 960"
+                        fill="currentColor" aria-hidden="true" focusable="false">
+                        <path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z" />
+                    </svg>
+                </button>
+            </div>
+            <p class="ach-carousel__desc" data-ach-desc></p>
+            <p class="ach-carousel__state" data-ach-state></p>
+            <p class="ach-carousel__pos" data-ach-pos></p>
+            <div class="ach-carousel__live" aria-live="polite" aria-atomic="true" data-ach-live></div>
+        </div>
     </div>
 </div>
 
@@ -874,6 +1220,7 @@
     integrity="sha512-JyCZjCOZoyeQZSd5+YEAcFgz2fowJ1F1hyJOXgtKu4llIa0KneLcidn5bwfutiehUTiOuK87A986BZJMko0eWQ=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 {% endif %}
+<script src="{{ url_for('static', filename='js/achievements-carousel.js') }}" defer></script>
 <script>
     function achievementOrbit() {
         return {
@@ -886,20 +1233,51 @@
             paused: false,
 
             start() {
-                if (window.innerWidth <= 600) {
-                    this.radius = 110;
-                } else if (window.innerWidth <= 900) {
-                    this.radius = 145;
-                }
+                this.measure();
                 this.lastTime = performance.now();
                 this.tick();
+            },
+
+            // Below 880px the page shows the carousel and the wheel is hidden
+            isPhone() {
+                return window.matchMedia('(max-width: 879px)').matches;
+            },
+
+            // Compact layout: radius and badge size are derived from the wheel's
+            // rendered width. Larger screens keep the fixed radii.
+            measure() {
+                if (this.isPhone()) {
+                    var w = this.$refs.orbit.clientWidth;
+                    this.$refs.orbit.style.setProperty('--wheel', w + 'px');
+                    this.radius = w * 0.37;
+                } else {
+                    this.$refs.orbit.style.removeProperty('--wheel');
+                    // Orbit radius follows the wheel: 145px at 340px wide up to 190px at 500px
+                    var ow = Math.min(500, Math.max(340, this.$refs.orbit.clientWidth));
+                    this.radius = 145 + (ow - 340) * 0.28125;
+                }
+            },
+
+            // Tap a badge: show its details in the caption under the wheel
+            select(event) {
+                if (!this.isPhone()) return;
+                var badge = event.target.closest('.achievement-badge');
+                var tip = badge && badge.querySelector('.achievement-badge__tooltip');
+                if (!tip) return;
+                var caption = this.$refs.caption;
+                caption.innerHTML = '';
+                Array.prototype.forEach.call(tip.children, function (child) {
+                    caption.appendChild(child.cloneNode(true));
+                });
             },
 
             tick() {
                 var now = performance.now();
                 var delta = (now - this.lastTime) / 16.67;
                 this.lastTime = now;
-                if (!this.paused) {
+                // The wheel is hidden in the compact layout, so it stays still there
+                var still = this.isPhone();
+                if (!this.paused && !still) {
                     this.angle += this.speed * delta;
                     if (this.angle >= 360) this.angle -= 360;
                 }

@@ -68,6 +68,23 @@ def player(username):
     return _render_profile(row['id'], is_own_profile=False)
 
 
+def most_recent_unlock_index(achievements):
+    """Index of the most recently unlocked achievement, or 0 if none is unlocked.
+
+    The phone carousel opens on this badge. Timestamps have one-second
+    resolution, so ties go to the later badge in list order.
+    """
+    best = 0
+    best_stamp = None
+    for index, ach in enumerate(achievements):
+        stamp = ach['earned_at'] if ach['earned'] else None
+        if stamp is None:
+            continue
+        if best_stamp is None or stamp >= best_stamp:
+            best, best_stamp = index, stamp
+    return best
+
+
 def _render_profile(user_id, is_own_profile):
     """Shared renderer for /profile (own) and /player/<username> (others).
 
@@ -115,6 +132,7 @@ def _render_profile(user_id, is_own_profile):
         'user': user,
         'trade_count': trade_count,
         'achievements': achievements,
+        'carousel_start_index': most_recent_unlock_index(achievements),
         'is_own_profile': is_own_profile,
         'profile_avatar_hex': get_avatar_color_hex(color_key),
         'profile_avatar_text': get_avatar_text_color(color_key),
