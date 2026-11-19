@@ -56,6 +56,20 @@ def create_app(test_config=None):
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'error'
 
+    # Unauthenticated requests: same flash + redirect-to-login as Flask-Login's
+    # default, except htmx requests (periodic live refreshes) get an empty 200 with
+    # HX-Redirect. A plain 302 would make htmx swap the whole login page into the
+    # live container; HX-Redirect makes the browser navigate to it instead.
+    @login_manager.unauthorized_handler
+    def _unauthorized():
+        from flask import flash, redirect, request
+        from flask_login.utils import login_url
+        flash(login_manager.login_message, login_manager.login_message_category)
+        target = login_url(login_manager.login_view, request.url)
+        if request.headers.get('HX-Request') == 'true':
+            return '', 200, {'HX-Redirect': target}
+        return redirect(target)
+
     # User loader for Flask-Login
     @login_manager.user_loader
     def load_user(user_id):
