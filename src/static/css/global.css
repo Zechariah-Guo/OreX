@@ -2521,6 +2521,14 @@ input::-webkit-inner-spin-button {
         transform: translateY(calc(var(--nav-bottom-h) - env(safe-area-inset-bottom)));
     }
 
+    /* Logged-out pages have no bottom bar (--nav-bottom-h is 0), so the stack
+       would sit 4px below the screen edge, under the system gesture bar. Lift
+       it clear of the gesture bar; the 16px floor covers browsers that report
+       a 0 inset. */
+    body:not(:has(.main-nav--auth)) .toast-stack {
+        bottom: calc(max(env(safe-area-inset-bottom, 0px), 16px) + 16px);
+    }
+
     .flash-messages {
         width: 100%;
     }
