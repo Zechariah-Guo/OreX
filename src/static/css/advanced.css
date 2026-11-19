@@ -392,10 +392,20 @@ html[data-theme="dark"] .rs-info-box__value {
         max-width: 100%;
     }
 
+    /* Resistance and Support stay on one line: items share the row and the
+       text tightens instead of stacking */
     .rs-info-box {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-wrap: nowrap;
+        justify-content: space-between;
         gap: var(--spacing-sm);
+        padding: var(--spacing-sm);
+    }
+
+    .rs-info-box__item {
+        min-width: 0;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
     }
 
     .advanced-mode-box__cooldown {
