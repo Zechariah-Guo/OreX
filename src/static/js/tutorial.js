@@ -135,7 +135,97 @@
         return { top: clampAxis(top, maxTop), left: clampAxis(left, maxLeft), side: side };
     }
 
+    // ------------------------------------------------------------------
+    // Phone layout (below 640px). The fixed top/bottom bars take screen
+    // space, so the card is docked in one of two bands: just below the top
+    // bar (plus the open avatar menu), or just above the bottom bar. The
+    // target is scrolled into the part of the screen the card leaves free.
+    // ------------------------------------------------------------------
+
+    var PHONE_GAP = 12;
+
+    /**
+     * Decide how far to scroll the page (delta, +ve = scroll down) so the
+     * target box `rect` (viewport coords, already padded) sits in the free area
+     * left by the bars and the card, and which band the card should take.
+     *
+     * @param {{top,bottom,height}} rect
+     * @param {{vh,topInset,bottomInset,cardHeight,pref,fixedTarget}} o
+     *        pref: 'top' = card above the target, anything else = card below it
+     * @returns {{delta:number, zone:'top'|'bottom'}}
+     */
+    function planPhoneLayout(rect, o) {
+        var gap = PHONE_GAP;
+        var safeTop = o.topInset + gap;
+        var safeBottom = o.vh - o.bottomInset - gap;
+        var order = o.pref === 'top' ? ['top', 'bottom'] : ['bottom', 'top'];
+        function freeArea(zone) {
+            return zone === 'bottom'
+                ? [safeTop, safeBottom - o.cardHeight - gap]
+                : [safeTop + o.cardHeight + gap, safeBottom];
+        }
+        var i, a, b, area;
+        if (o.fixedTarget) {
+            // Part of a bar: never scrolled, just pick the band it does not cover
+            return { delta: 0, zone: pickPhoneZone(rect, o, order) };
+        }
+        for (i = 0; i < order.length; i++) {           // already well placed?
+            area = freeArea(order[i]); a = area[0]; b = area[1];
+            if (rect.top >= a && rect.bottom <= b) return { delta: 0, zone: order[i] };
+        }
+        for (i = 0; i < order.length; i++) {           // fits after a minimal scroll
+            area = freeArea(order[i]); a = area[0]; b = area[1];
+            if (rect.height <= b - a) {
+                return { delta: rect.top < a ? rect.top - a : rect.bottom - b, zone: order[i] };
+            }
+        }
+        // Taller than the free area: show its start and let the card overlap its end
+        return { delta: rect.top - safeTop, zone: 'bottom' };
+    }
+
+    function phoneCardTop(zone, card, vp, topInset, bottomInset) {
+        var gap = PHONE_GAP;
+        if (zone === 'center') {
+            return topInset + (vp.height - topInset - bottomInset - card.height) / 2;
+        }
+        if (zone === 'top') return topInset + gap;
+        return vp.height - bottomInset - gap - card.height;
+    }
+
+    function pickPhoneZone(hl, o, order) {
+        var card = { height: o.cardHeight };
+        var vp = { height: o.vh };
+        var best = order[0], bestOverlap = Infinity;
+        for (var i = 0; i < order.length; i++) {
+            var top = phoneCardTop(order[i], card, vp, o.topInset, o.bottomInset);
+            var hlTop = hl.top, hlBottom = hl.top + (hl.height != null ? hl.height : hl.bottom - hl.top);
+            var overlap = Math.max(0, Math.min(top + card.height, hlBottom) - Math.max(top, hlTop));
+            if (overlap < bestOverlap) { best = order[i]; bestOverlap = overlap; }
+        }
+        return best;
+    }
+
+    /**
+     * Phone card placement: horizontally centred, vertically in the band that
+     * overlaps the highlight least (the requested side first).
+     * @returns {{top:number,left:number,side:string}}
+     */
+    function computePhoneCardPosition(position, hl, card, vp, topInset, bottomInset, centered) {
+        var left = Math.max(0, (vp.width - card.width) / 2);
+        if (centered) {
+            return { top: phoneCardTop('center', card, vp, topInset, bottomInset), left: left, side: 'center' };
+        }
+        var order = position === 'top' ? ['top', 'bottom'] : ['bottom', 'top'];
+        var zone = pickPhoneZone(hl, {
+            cardHeight: card.height, vh: vp.height, topInset: topInset, bottomInset: bottomInset
+        }, order);
+        var top = phoneCardTop(zone, card, vp, topInset, bottomInset);
+        return { top: Math.max(top, topInset + PHONE_GAP), left: left, side: zone };
+    }
+
     var Logic = {
+        planPhoneLayout: planPhoneLayout,
+        computePhoneCardPosition: computePhoneCardPosition,
         normalizeRoute: normalizeRoute,
         needsPageNavigation: needsPageNavigation,
         navState: navState,
@@ -185,10 +275,71 @@
 
     /** First element matching selector that is actually rendered, or null. */
     function queryVisible(selector) {
+        // A list of selectors spotlights the box around all of them (every one
+        // must be rendered). Used for phone menu rows whose wrapper has no box.
+        if (Array.isArray(selector)) {
+            var els = [];
+            for (var i = 0; i < selector.length; i++) {
+                var found = queryVisible(selector[i]);
+                if (!found) return null;
+                els.push(found);
+            }
+            return els.length === 1 ? els[0] : unionTarget(els);
+        }
         var el;
         try { el = document.querySelector(selector); } catch (e) { return null; }
         if (!el || el.getClientRects().length === 0) return null;
         return el;
+    }
+
+    /** Element-like wrapper whose rect is the union of several elements. */
+    function unionTarget(els) {
+        return {
+            getClientRects: function () { return els[0].getClientRects(); },
+            closest: function (sel) { return els[0].closest(sel); },
+            scrollIntoView: function (opts) { els[0].scrollIntoView(opts); },
+            getBoundingClientRect: function () {
+                var top = Infinity, left = Infinity, right = -Infinity, bottom = -Infinity;
+                els.forEach(function (e) {
+                    var r = e.getBoundingClientRect();
+                    top = Math.min(top, r.top); left = Math.min(left, r.left);
+                    right = Math.max(right, r.right); bottom = Math.max(bottom, r.bottom);
+                });
+                return { top: top, left: left, right: right, bottom: bottom,
+                         width: right - left, height: bottom - top };
+            }
+        };
+    }
+
+    /** Same breakpoint as the phone navbar (global.css, nav.js). */
+    function isPhone() {
+        return !!(root.matchMedia && root.matchMedia('(max-width: 640px)').matches);
+    }
+
+    /** A step with its phone overrides applied when on a phone (data stays desktop-first). */
+    function effectiveStep(step) {
+        if (!step || !step.phone || !isPhone()) return step || null;
+        return Object.assign({}, step, step.phone);
+    }
+
+    /** Heights taken by the fixed bars (and the open avatar menu) on a phone. */
+    function phoneInsets() {
+        var top = 0, bottom = 0;
+        if (document.querySelector('.main-nav--auth')) {
+            top = parseFloat(getComputedStyle(document.body).getPropertyValue('--nav-top-h')) || 0;
+            var bar = document.querySelector('.main-nav--auth .nav__links');
+            if (bar) bottom = Math.max(0, root.innerHeight - bar.getBoundingClientRect().top);
+            var menu = document.getElementById('nav-dropdown');
+            if (menu && menu.classList.contains('nav__dropdown--open')) {
+                top = Math.max(top, menu.getBoundingClientRect().bottom);
+            }
+        }
+        return { top: top, bottom: bottom };
+    }
+
+    /** True when the target is part of the fixed phone navbar (never scrolled or clipped). */
+    function isNavTarget(el) {
+        return !!(el && el.closest && el.closest('.main-nav--auth'));
     }
 
     function sleep(ms) {
@@ -259,7 +410,7 @@
 
             // --- derived values for the template ---
             get currentStep() {
-                return this.steps[this.currentIndex] || null;
+                return effectiveStep(this.steps[this.currentIndex]);
             },
             get stepCounter() {
                 return stepCounterText(this.currentIndex, this.steps.length);
@@ -524,7 +675,7 @@
             // --- showing a step ---
             async showStep(index, direction) {
                 var token = ++this._stepToken;
-                var step = this.steps[index];
+                var step = effectiveStep(this.steps[index]);
 
                 this.applyReveal(step);
                 var el = await this.waitForElement(step.selector, SELECTOR_WAIT_MS);
@@ -546,6 +697,8 @@
                     this.showOverlay = true;
                     // nav.js keeps the phone bars visible while a tutorial runs
                     document.documentElement.classList.add('tutorial-active');
+                    // ...and bring back bars that were auto-hidden before it opened
+                    document.documentElement.classList.remove('nav-hidden');
                     await nextFrame();
                     await nextFrame();
                     if (token !== this._stepToken) return;
@@ -555,6 +708,9 @@
                 // scroll to; scrolling #main-content (the whole page) just jolts it.
                 if (step.highlight !== 'none') {
                     this._positioning = true;
+                    // Phone: let the card text update first so scrolling can
+                    // leave room for the card's real height
+                    if (isPhone()) await this.$nextTick();
 
                     // A SAME-PAGE step whose target must be SCROLLED into view is the
                     // only case that breaks: easing from the previous element's box to
@@ -755,14 +911,55 @@
                 if (!step) return false;
                 var el = queryVisible(step.selector);
                 if (!el) return false;
-                this.setHighlight(computeHighlight(el.getBoundingClientRect(), this.padding));
+                var box = computeHighlight(el.getBoundingClientRect(), this.padding);
+                if (isPhone() && !isNavTarget(el)) {
+                    // Keep the frame out from under the fixed bars (a tall target
+                    // would otherwise run behind them)
+                    var ins = phoneInsets();
+                    var lo = ins.top, hi = root.innerHeight - ins.bottom;
+                    var top = Math.max(box.top, lo), bottom = Math.min(box.top + box.height, hi);
+                    if (bottom > top) { box.top = top; box.height = bottom - top; }
+                }
+                this.setHighlight(box);
                 return true;
+            },
+
+            /** Phone: card height to plan around (real height once shown, else an estimate). */
+            phoneCardHeight(ins) {
+                var card = this.$refs.card;
+                var maxH = Math.max(120, root.innerHeight - ins.top - ins.bottom - 2 * PHONE_GAP);
+                var h = card && card.offsetHeight ? card.offsetHeight : 300;
+                return Math.min(h, maxH);
+            },
+
+            positionCardPhone(card, step) {
+                var ins = phoneInsets();
+                // A page that overflows sideways widens innerWidth/100vw past what the
+                // screen shows; size and centre the card on the visible width instead
+                var visibleW = Math.min(this.vw, document.documentElement.clientWidth || this.vw);
+                card.style.width = Math.min(380, visibleW - 24) + 'px';
+                // Cap the card to the space between the bars; long text scrolls inside it
+                card.style.maxHeight = Math.max(120, root.innerHeight - ins.top - ins.bottom - 2 * PHONE_GAP) + 'px';
+                var pos = computePhoneCardPosition(
+                    step.position,
+                    { top: this.highlightTop, left: this.highlightLeft,
+                      width: this.highlightWidth, height: this.highlightHeight },
+                    { width: card.offsetWidth, height: card.offsetHeight },
+                    { width: visibleW, height: this.vh },
+                    ins.top, ins.bottom, this.hideHighlight
+                );
+                this.cardTop = pos.top;
+                this.cardLeft = pos.left;
+                this.cardSide = pos.side;
             },
 
             positionCard() {
                 var card = this.$refs.card;
                 var step = this.currentStep;
                 if (!card || !step) return;
+                if (isPhone()) { this.positionCardPhone(card, step); return; }
+                card.style.maxHeight = '';
+                card.style.width = '';
                 // With no spotlight, always centre the card
                 var position = this.hideHighlight ? 'center' : step.position;
                 var pos = computeCardPosition(
@@ -787,7 +984,22 @@
              * the target is genuinely off-screen means on-screen steps ease straight
              * from the previous element. Kept identical to scrollToTarget's test.
              */
+            /** Phone: how far to scroll so `el` clears the bars and the card (0 = none). */
+            phoneScrollDelta(el) {
+                var ins = phoneInsets();
+                var r = computeHighlight(el.getBoundingClientRect(), this.padding);
+                r.bottom = r.top + r.height;
+                var step = this.currentStep;
+                return planPhoneLayout(r, {
+                    vh: root.innerHeight, topInset: ins.top, bottomInset: ins.bottom,
+                    cardHeight: this.phoneCardHeight(ins),
+                    pref: step && step.position,
+                    fixedTarget: isNavTarget(el)
+                }).delta;
+            },
+
             needsScroll(el) {
+                if (isPhone()) return Math.abs(this.phoneScrollDelta(el)) >= 1;
                 var rect = el.getBoundingClientRect();
                 var vh = root.innerHeight;
                 var margin = 12;
@@ -796,18 +1008,25 @@
 
             async scrollToTarget(el) {
                 var tall = el.getBoundingClientRect().height > root.innerHeight;
-                if (!this.needsScroll(el)) return;   // already fully in view: no scroll
-                el.scrollIntoView({
-                    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-                    // When we do scroll, bring the target as far ONTO screen as the
-                    // page allows — centre it (a near-bottom target just scrolls to
-                    // the page's max, landing comfortably in view rather than barely
-                    // peeking at the edge). A tall target aligns to the top instead.
-                    // Note: whether we scroll at all is decided by needsScroll (full
-                    // visibility), not by centring — so this doesn't re-introduce a
-                    // scroll on every step.
-                    block: tall ? 'start' : 'center'
-                });
+                if (isPhone()) {
+                    // Phone: scroll just enough to clear the fixed bars and leave room for the card
+                    var delta = this.phoneScrollDelta(el);
+                    if (Math.abs(delta) < 1) return;
+                    root.scrollBy({ top: delta, left: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+                } else {
+                    if (!this.needsScroll(el)) return;   // already fully in view: no scroll
+                    el.scrollIntoView({
+                        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+                        // When we do scroll, bring the target as far ONTO screen as the
+                        // page allows — centre it (a near-bottom target just scrolls to
+                        // the page's max, landing comfortably in view rather than barely
+                        // peeking at the edge). A tall target aligns to the top instead.
+                        // Note: whether we scroll at all is decided by needsScroll (full
+                        // visibility), not by centring — so this doesn't re-introduce a
+                        // scroll on every step.
+                        block: tall ? 'start' : 'center'
+                    });
+                }
                 // Wait until the smooth scroll has truly stopped before returning, so
                 // the spotlight is positioned once, against the target's FINAL rect.
                 var deadline = performance.now() + 1200;

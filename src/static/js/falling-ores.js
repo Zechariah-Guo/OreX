@@ -20,11 +20,13 @@
     var MAX_SIZE = 55;
     var MIN_DURATION = 8;
     var MAX_DURATION = 14;
-    var SEED_COUNT = 3;
+    // Steady-state count: average duration / spawn interval (11s / 0.8s)
+    var SEED_COUNT = Math.round(((MIN_DURATION + MAX_DURATION) / 2) * 1000 / INTERVAL_MS);
 
     var intervalId = null;
     var container = null;
     var observing = false;
+    var runningTheme = null;
 
     function getActiveTheme() {
         var root = document.documentElement;
@@ -57,7 +59,7 @@
         }
     }
 
-    function createFallingOre(oreSrc) {
+    function createFallingOre(oreSrc, preseed) {
         if (!container) return;
 
         var img = document.createElement('img');
@@ -81,12 +83,17 @@
         var duration = Math.random() * (MAX_DURATION - MIN_DURATION) + MIN_DURATION;
         img.style.animationDuration = duration + 's';
 
+        // Pre-seeded ores start part-way through their fall (negative delay),
+        // so progress is spread over the actual viewport height.
+        var elapsed = preseed ? Math.random() * duration : 0;
+        if (preseed) img.style.animationDelay = '-' + elapsed + 's';
+
         container.appendChild(img);
 
         // Remove after animation completes
         setTimeout(function() {
             if (img.parentNode) img.remove();
-        }, duration * 1000 + 500);
+        }, (duration - elapsed) * 1000 + 500);
     }
 
     function start(theme) {
@@ -95,11 +102,13 @@
 
         ensureContainer();
 
-        // Seed a few on load
-        for (var i = 0; i < SEED_COUNT; i++) {
-            (function(delay) {
-                setTimeout(function() { createFallingOre(oreSrc); }, delay);
-            })(i * 250);
+        // Pre-seed a steady-state batch already mid-fall (skipped for reduced motion)
+        var reduce = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!reduce) {
+            for (var i = 0; i < SEED_COUNT; i++) {
+                createFallingOre(oreSrc, true);
+            }
         }
 
         // Continuous creation
@@ -118,15 +127,12 @@
 
     function sync() {
         var theme = getActiveTheme();
-        if (theme) {
-            // If already running for same theme, no-op
-            if (intervalId !== null) {
-                stop();
-            }
-            start(theme);
-        } else {
-            stop();
-        }
+        // Unrelated class toggles on <html> (e.g. nav-hidden on scroll) must
+        // not restart the effect: only act when the theme actually changed.
+        if (theme === runningTheme && (theme === null || intervalId !== null)) return;
+        stop();
+        runningTheme = theme;
+        if (theme) start(theme);
     }
 
     // Initial check

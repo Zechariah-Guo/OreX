@@ -26,6 +26,17 @@ class TestMarketBrowsing:
         for ore_name in ORE_NAMES:
             assert ore_name in html, f"Expected '{ore_name}' in market overview"
 
+    def test_market_grid_touch_reorder_markup(self, authenticated_client):
+        """Phone layout: each card has a grip handle, a preserved Qty input, and both tips exist."""
+        response = authenticated_client.get('/market')
+        assert response.status_code == 200
+        html = response.data.decode('utf-8')
+        assert html.count('class="ore-card__handle"') == len(ORE_NAMES)
+        assert 'aria-label="Drag to reorder Coal"' in html
+        assert 'hx-preserve="true" id="qty-1"' in html
+        assert 'class="ore-grid__tip-desktop"' in html
+        assert 'class="ore-grid__tip-phone"' in html
+
     def test_ore_detail_shows_name_price_base(self, authenticated_client):
         """TC: /market/<ore_id> shows ore name, current price, base price."""
         # Use ore_id=1 (Coal: current_price=10.00, base_price=10.00)

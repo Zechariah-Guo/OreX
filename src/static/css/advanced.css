@@ -33,9 +33,12 @@ html[data-theme="dark"] .advanced-theme {
     max-width: 1140px;
 }
 
-/* Preserve 3-column grid on market page in advanced mode */
-.advanced-theme .ore-grid {
-    grid-template-columns: repeat(3, 1fr);
+/* Preserve 3-column grid on market page in advanced mode. Below 960px the
+   base auto-fill grid (global.css) applies, as in Standard: 1 column on phones. */
+@media (min-width: 960px) {
+    .advanced-theme .ore-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
 /* Nav brand glow in advanced mode */

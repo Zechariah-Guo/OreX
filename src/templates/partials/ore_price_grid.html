@@ -1,5 +1,12 @@
 {% for ore in ores %}
 <div class="ore-card ore-card--expandable" id="ore-card-{{ ore['id'] }}">
+    <button type="button" class="ore-card__handle" tabindex="-1" aria-hidden="true" aria-label="Drag to reorder {{ ore['name'] }}">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true">
+            <circle cx="6" cy="3.5" r="1.6"/><circle cx="12" cy="3.5" r="1.6"/>
+            <circle cx="6" cy="9" r="1.6"/><circle cx="12" cy="9" r="1.6"/>
+            <circle cx="6" cy="14.5" r="1.6"/><circle cx="12" cy="14.5" r="1.6"/>
+        </svg>
+    </button>
     <a href="{{ url_for('market.ore_detail', ore_id=ore['id']) }}" class="ore-card__link">
         <div class="ore-card__header">
             <div class="ore-card__icon">
@@ -22,7 +29,7 @@
     <div class="ore-card__footer">
         <span class="ore-card__base">Base: ${{ "%.2f" | format(ore['base_price']) }}</span>
         <div class="ore-card__quick-trade" id="qt-{{ ore['id'] }}">
-            <input type="number" min="1" step="1" placeholder="Qty" class="quick-trade-input" hx-preserve="true" id="qty-{{ ore['id'] }}">
+            <input type="number" min="1" step="1" placeholder="Qty" inputmode="numeric" class="quick-trade-input" hx-preserve="true" id="qty-{{ ore['id'] }}">
             <form method="POST" action="{{ url_for('trade.buy', ore_id=ore['id']) }}" class="qt-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="quantity" class="qt-hidden-qty">

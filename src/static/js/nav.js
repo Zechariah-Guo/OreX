@@ -73,6 +73,10 @@
 
         // Close dropdown when clicking outside
         document.addEventListener('click', function (e) {
+            // Phone tutorial: the tour decides when the menu is open, so the
+            // tap that advances it must not close the menu first (flicker)
+            if (document.documentElement.classList.contains('tutorial-active') &&
+                window.matchMedia('(max-width: 640px)').matches) return;
             if (!dropdown.contains(e.target) && e.target !== avatarBtn) {
                 closeMenu();
             }
@@ -104,8 +108,19 @@
         const root = document.documentElement;
         if (!document.querySelector('.main-nav--auth')) return;
 
-        const THRESHOLD = 10;
-        let lastY = Math.max(0, window.scrollY);
+        // Top zone: the bars are always shown and no direction is computed.
+        // It is as tall as the top bar, so a bounce that settles a few px
+        // below 0 cannot read as "scrolled down".
+        const TOP_ZONE = 64;
+        // Hysteresis: the bars only change after this many px of travel in one
+        // direction since the last direction change. Overscroll bounces at the
+        // top or bottom reverse by a few px and never reach it.
+        const HIDE_DISTANCE = 12;
+        const SHOW_DISTANCE = 16;
+
+        let lastY = clampY(window.scrollY);
+        let direction = 0;   // 1 = down, -1 = up
+        let travelled = 0;   // px moved in `direction` since it last changed
         let ticking = false;
 
         function show() { root.classList.remove('nav-hidden'); }
@@ -114,32 +129,46 @@
             return Math.max(0, root.scrollHeight - window.innerHeight);
         }
 
+        // Rubber-banding (Android Chrome glow/bounce, iOS) can report a
+        // position below 0 or past the end: clamp it to the real range.
+        function clampY(y) {
+            return Math.min(Math.max(0, y || 0), maxScroll());
+        }
+
         function update() {
             ticking = false;
             if (!phone.matches) return;
 
-            // Clamp to ignore iOS rubber-banding
-            const y = Math.min(Math.max(0, window.scrollY), maxScroll());
+            const y = clampY(window.scrollY);
             const dy = y - lastY;
-
-            if (y <= THRESHOLD) {
-                show();
-                lastY = y;
-                return;
-            }
-            if (Math.abs(dy) < THRESHOLD) return;
             lastY = y;
 
-            if (dropdown.classList.contains('nav__dropdown--open')) {
+            if (y <= TOP_ZONE) {
+                direction = 0;
+                travelled = 0;
+                show();
+                return;
+            }
+            if (dy === 0) return;
+
+            const dir = dy > 0 ? 1 : -1;
+            if (dir !== direction) {
+                direction = dir;
+                travelled = 0;
+            }
+            travelled += Math.abs(dy);
+
+            // A running tutorial keeps both bars up and the menu as it set it
+            if (root.classList.contains('tutorial-active')) { show(); return; }
+            if (travelled >= HIDE_DISTANCE && dropdown.classList.contains('nav__dropdown--open')) {
                 closeMenu();
                 return;
             }
-            if (root.classList.contains('tutorial-active')) { show(); return; }
             if (maxScroll() <= 80) { show(); return; }
 
-            if (dy > 0) {
+            if (dir > 0 && travelled >= HIDE_DISTANCE) {
                 root.classList.add('nav-hidden');
-            } else {
+            } else if (dir < 0 && travelled >= SHOW_DISTANCE) {
                 show();
             }
         }

@@ -28,7 +28,13 @@
                     "title": "Account Menu",
                     "description": "Your cash balance is always shown here. Your avatar beside it houses the account menu.",
                     "position": "bottom",
-                    "action": null
+                    "action": null,
+                    "phone": {
+                        "selector": "#nav-balance",
+                        "title": "Balance & Account Menu",
+                        "description": "Your cash balance is always shown here in the bottom bar. The avatar at the top right houses the account menu.",
+                        "position": "bottom"
+                    }
                 },
                 {
                     "selector": ".nav__dropdown-icons",
@@ -37,7 +43,14 @@
                     "description": "These icons open the leaderboard, your notifications, and your trade history. You will need these frequently in your trading journey.",
                     "position": "left",
                     "action": null,
-                    "reveal": "menu"
+                    "reveal": "menu",
+                    "phone": {
+                        "selector": [
+                            ".nav__dropdown-icons > a:nth-child(1)",
+                            ".nav__dropdown-icons > a:nth-child(3)"
+                        ],
+                        "position": "bottom"
+                    }
                 },
                 {
                     "selector": ".nav__dropdown-items",
@@ -46,7 +59,14 @@
                     "description": "Profile holds your stats, achievements, and daily bonus. Settings covers themes, security, and Advanced Mode, while Help has the FAQ and a few other useful things.",
                     "position": "left",
                     "action": null,
-                    "reveal": "menu"
+                    "reveal": "menu",
+                    "phone": {
+                        "selector": [
+                            ".nav__dropdown-items > a:nth-child(1)",
+                            ".nav__dropdown-items > a:nth-child(3)"
+                        ],
+                        "position": "bottom"
+                    }
                 },
                 {
                     "selector": "#ore-price-grid",
@@ -179,7 +199,11 @@
                     "title": "The Finances Page",
                     "description": "Your balance pill is now a button. Select it any time to open the Finances page, a full breakdown of where your capital sits and how your shorts are trending.",
                     "position": "bottom",
-                    "action": null
+                    "action": null,
+                    "phone": {
+                        "description": "Your balance pill in the bottom bar is now a button. Tap it any time to open the Finances page, a full breakdown of where your capital sits and how your shorts are trending.",
+                        "position": "bottom"
+                    }
                 },
                 {
                     "selector": "#finances-capital",

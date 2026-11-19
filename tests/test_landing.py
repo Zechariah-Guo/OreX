@@ -19,7 +19,8 @@ class TestLandingPage:
         # Screenshots and the final call to action
         for name in ('market', 'chart', 'advanced'):
             assert f'images/landing/{name}.webp' in html
-        assert html.count('Create Account') >= 2
+        # The hero buttons were removed; the final call to action keeps one
+        assert html.count('Create Account') >= 1
 
     def test_screenshot_files_exist(self, app):
         import os

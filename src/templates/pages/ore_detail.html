@@ -225,6 +225,15 @@
         .trade-row { grid-template-columns: 1fr; }
         .short-preview--horizontal { flex-direction: column; gap: var(--spacing-sm); }
     }
+
+    /* Phone: let the Short form wrap instead of widening the page (the fixed
+       bars and the tutorial overlay misplace themselves on a page that
+       scrolls sideways) */
+    @media (max-width: 640px) {
+        .short-form-horizontal form { flex-wrap: wrap; }
+        .short-form-horizontal .short-preview--horizontal { flex: 1 1 100%; align-items: stretch; }
+        .short-preview--horizontal .short-preview__group { flex-wrap: wrap; }
+    }
 </style>
 {% endblock %}
 

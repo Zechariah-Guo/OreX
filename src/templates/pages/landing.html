@@ -34,7 +34,10 @@
 .landing__hero {
     position: relative;
     z-index: 1;
-    min-height: calc(100vh - 70px);
+    /* Navbar + main padding take ~82px above the hero; leave ~18px below it so the
+       whole hero (cue included) fits the visible height. svh excludes mobile browser bars. */
+    min-height: calc(100vh - 100px);
+    min-height: calc(100svh - 100px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -55,16 +58,14 @@
 <div class="landing">
     <div class="landing__hero">
         <img src="{{ url_for('static', filename='images/logo-expanded.png') }}" alt="OreX" class="landing__logo">
+        {# TEXT TEST: delete the two <p> lines below (and the .landing__subtitle / .landing__best* /
+           .landing__description rules in global.css) to return to a logo-only hero. #}
         <p class="landing__subtitle">The <span class="landing__best"><span class="landing__best-b">B</span><span class="landing__best-e">E</span><span class="landing__best-s">S</span><span class="landing__best-t">T</span></span> way to Trade</p>
         <p class="landing__description">
             Trade ores like stocks. Buy low, sell high, and build your fortune
             in this Minecraft-themed market simulation. Prices fluctuate every
             20 seconds based on supply, demand, and market events.
         </p>
-        <div class="landing__actions">
-            <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Create Account</a>
-            <a href="{{ url_for('auth.login') }}" class="btn btn--secondary">Login</a>
-        </div>
 
         <a href="#lp-more" class="lp-scroll-cue" aria-label="See how OreX works">
             <span>See how it works</span>
@@ -199,7 +200,7 @@
 
     const container = document.getElementById('falling-container');
 
-    function createFallingOre() {
+    function createFallingOre(preseed) {
         const img = document.createElement('img');
         const randomOre = ORE_IMAGES[Math.floor(Math.random() * ORE_IMAGES.length)];
         img.src = randomOre;
@@ -217,20 +218,29 @@
         const duration = Math.random() * 6 + 8;
         img.style.animationDuration = duration + 's';
 
+        // Pre-seeded ores start part-way through their fall (negative delay)
+        const elapsed = preseed ? Math.random() * duration : 0;
+        if (preseed) img.style.animationDelay = '-' + elapsed + 's';
+
         container.appendChild(img);
 
         // Remove after animation completes to save memory
         setTimeout(function() {
             img.remove();
-        }, duration * 1000 + 500);
+        }, (duration - elapsed) * 1000 + 500);
     }
 
     // Create a new falling ore every 500ms
-    setInterval(createFallingOre, 500);
+    const INTERVAL_MS = 500;
+    setInterval(function() { createFallingOre(false); }, INTERVAL_MS);
 
-    // Seed a few on load
-    for (let i = 0; i < 5; i++) {
-        setTimeout(createFallingOre, i * 200);
+    // Pre-seed a steady-state batch (avg 11s / 500ms = 22) already mid-fall
+    const reduce = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce) {
+        for (let i = 0; i < Math.round(11000 / INTERVAL_MS); i++) {
+            createFallingOre(true);
+        }
     }
 })();
 </script>

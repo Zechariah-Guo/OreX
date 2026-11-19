@@ -279,6 +279,85 @@
 /* The resume prompt reuses the shared .flash--toast styles (see global.css /
    notifications.js); no tutorial-specific toast styling is needed here. */
 
+/* ----- Phone (same 640px breakpoint as the phone navbar) -----
+   The card is placed by tutorial.js between the top and bottom bars (it also
+   sets its max-height there), so here only size and touch behaviour change. */
+@media (max-width: 640px) {
+    .tutorial-catcher,
+    .tutorial-panel,
+    .tutorial-card,
+    .tutorial-confirm {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;   /* no double-tap zoom delay on the tap-to-continue area */
+    }
+
+    .tutorial-card {
+        padding: 12px 14px;
+        overscroll-behavior: contain;
+    }
+
+    .tutorial-card__progress {
+        margin-bottom: 8px;
+    }
+
+    .tutorial-card__title {
+        margin-bottom: 6px;
+        font-size: 1.1rem;
+    }
+
+    .tutorial-card__description {
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    .tutorial-card__actions {
+        gap: 8px;
+    }
+
+    .tutorial-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0 16px;
+        font-size: 1rem;
+    }
+
+    .tutorial-btn--link {
+        padding: 0 10px;
+    }
+
+    .tutorial-confirm__actions {
+        flex-wrap: wrap;
+    }
+
+    .tutorial-confirm__actions .tutorial-btn {
+        flex: 1 1 120px;
+    }
+
+    /* "Resume your tutorial?" toast (a .flash--toast in the bottom toast stack):
+       a comfortable tap target */
+    .flash[data-tutorial-resume] {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        min-height: 56px;
+    }
+
+    .flash[data-tutorial-resume] .flash__icon {
+        padding: 0 0 0 var(--spacing-md);
+    }
+
+    .flash[data-tutorial-resume] .flash__message {
+        flex: 1 1 0;
+        padding: 14px var(--spacing-md);
+    }
+
+    .flash[data-tutorial-resume] .flash__progress {
+        flex: 0 0 100%;
+    }
+}
+
 /* ----- Reduced motion: no pulsing or easing ----- */
 @media (prefers-reduced-motion: reduce) {
     .tutorial-highlight {

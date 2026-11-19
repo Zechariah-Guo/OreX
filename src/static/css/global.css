@@ -871,6 +871,39 @@ html[data-theme="dark"] .nav__brand {
     line-height: 1.8;
 }
 
+/* At 360px the 2rem tagline wraps "Trade" onto its own line */
+@media (max-width: 380px) {
+    .landing__subtitle {
+        font-size: 1.75rem;
+    }
+}
+
+/* Keeps the hero text clear of the absolutely positioned scroll cue */
+.landing__hero {
+    padding-bottom: 4.5rem;
+}
+
+/* Short portrait phones: tighten the hero so the scroll cue stays on screen */
+@media (max-height: 720px) and (max-width: 640px) {
+    .landing__logo {
+        max-width: min(240px, 70%);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .landing__subtitle {
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .landing__description {
+        line-height: 1.5;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .landing__hero {
+        padding-bottom: 3.75rem;
+    }
+}
+
 .landing__actions {
     display: flex;
     gap: var(--spacing-md);
@@ -1340,6 +1373,10 @@ html[data-theme="dark"] .nav__brand {
     transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
     display: block;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    /* The background is already opaque; this lifts the card above the falling
+       ores layer (fixed, z-index 0, later in the DOM) that painted over it. */
+    position: relative;
+    z-index: 1;
 }
 
 .ore-card:hover {
@@ -2406,24 +2443,21 @@ input::-webkit-inner-spin-button {
         transition: transform 0.25s ease, visibility 0s linear 0s;
     }
 
-    html.nav-hidden .main-nav--auth .nav__links::after {
-        transform: translateY(-110%);
-    }
-
+    /* Every piece of a bar travels the SAME distance in pixels (not a % of its
+       own height, which differs per piece and made the tabs and pill lag the
+       bar background). Same distance + same duration + same easing = the bar
+       moves as one rigid unit. The extra px clear shadows and the 8px the
+       bottom background extends below the screen edge. */
+    html.nav-hidden .main-nav--auth .nav__links::after,
     html.nav-hidden .main-nav--auth .nav__brand,
     html.nav-hidden .main-nav--auth #nav-avatar-btn {
-        /* moves the whole piece above the screen edge (110% of its own
-           height would leave a few px visible at top: 6-8px) */
-        transform: translateY(calc(-100% - var(--nav-top-h)));
+        transform: translateY(calc(-1 * (var(--nav-top-h) + 16px)));
     }
 
-    html.nav-hidden .main-nav--auth .nav__links::before {
-        transform: translateY(110%);
-    }
-
+    html.nav-hidden .main-nav--auth .nav__links::before,
     html.nav-hidden .main-nav--auth .nav__tab,
     html.nav-hidden .main-nav--auth #nav-balance {
-        transform: translateY(calc(110% + env(safe-area-inset-bottom)));
+        transform: translateY(calc(var(--nav-bottom-h) + 16px));
     }
 
     html.nav-hidden .main-nav--auth .nav__links::after,
@@ -3334,6 +3368,18 @@ details summary:focus-visible {
     gap: 2px;
 }
 
+/* Phone: the ten range buttons wrap under the title instead of widening the page */
+@media (max-width: 640px) {
+    .chart-header {
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+
+    .chart-filters {
+        flex-wrap: wrap;
+    }
+}
+
 .chart-filter {
     background: var(--colour-bg);
     border: 1px solid var(--colour-border);
@@ -3468,6 +3514,134 @@ details summary:focus-visible {
     font-style: italic;
     margin-top: var(--spacing-md);
     opacity: 0.5;
+}
+
+/* Touch reorder handle and touch tip text: touch devices only (see block below) */
+.ore-card__handle,
+.ore-grid__tip-phone {
+    display: none;
+}
+
+/* ===== Market page: touch reorder (any device with a touch screen, any width) =====
+   Chosen by input type, not width. any-pointer (not pointer) so a laptop or
+   tablet with a touch screen AND a mouse also gets the handle; mouse drag on
+   the card itself keeps working there. */
+@media (any-pointer: coarse) {
+    .ore-card {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .ore-card a,
+    .ore-card button,
+    .ore-card input {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Touching anywhere on the card scrolls the page. Only the handle captures touch. */
+    .ore-card--expandable {
+        touch-action: auto;
+    }
+
+    .ore-card__link {
+        padding-right: 40px; /* room for the handle */
+    }
+
+    .ore-card__handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--colour-text-muted);
+        cursor: grab;
+        touch-action: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    .ore-card__handle:active,
+    .ore-card--touch-dragging .ore-card__handle {
+        color: var(--colour-accent);
+    }
+
+    .ore-card--touch-dragging {
+        position: relative;
+        z-index: 20;
+        transition: none;
+        opacity: 0.95;
+        border-color: var(--colour-accent);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+    }
+
+    .ore-grid__tip {
+        opacity: 0.8;
+    }
+
+    .ore-grid__tip-desktop {
+        display: none;
+    }
+
+    .ore-grid__tip-phone {
+        display: inline;
+    }
+}
+
+/* Touch-sized quick-trade row: phones and small tablets (768px is 2 columns) */
+@media (max-width: 900px) {
+    /* Footer: Base price on its own line, then a full-width trade row */
+    .ore-card__footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-sm);
+    }
+
+    .ore-card__quick-trade {
+        gap: 12px;
+    }
+
+    .ore-card__quick-trade .qt-form {
+        display: flex;
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .ore-card__quick-trade .btn {
+        width: 100%;
+        min-height: 48px;
+        padding: 0 var(--spacing-md);
+        font-size: 1rem;
+    }
+
+    .ore-card__quick-trade .quick-trade-input {
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        min-height: 48px;
+        padding: 0 var(--spacing-sm);
+        font-size: 16px; /* 16px+ stops iOS Safari zooming on focus */
+        -webkit-user-select: text;
+        user-select: text;
+    }
+
+    /* The sort menu is hidden but still counts toward scrollable width when it
+       hangs past the right edge (page 26px too wide at 768px). */
+    .sort-control__menu {
+        left: auto;
+        right: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ore-card--touch-dragging {
+        transition: none;
+    }
 }
 
 
@@ -3638,6 +3812,28 @@ details summary:focus-visible {
 @media (max-width: 640px) {
     .tutorial-modes {
         grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .tutorial-mode {
+        padding: var(--spacing-md);
+    }
+
+    /* Name/status and the Resume/Replay buttons stack so nothing overflows 360px */
+    .tutorial-mode .tutorial-list__item {
+        flex-wrap: wrap;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .tutorial-mode .tutorial-list__actions {
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+    }
+
+    .tutorial-list__actions .btn {
+        flex: 1 1 120px;
+        min-height: 44px;
+        justify-content: center;
     }
 }
 

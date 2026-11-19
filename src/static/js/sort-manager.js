@@ -321,12 +321,162 @@
     var draggedCard = null;
     var draggedCardId = null;
 
+    // ─── Touch reorder (any touch device) ────────────────────────────────────────
+    // HTML5 drag-and-drop does not fire from touch, so each card has a grip handle
+    // (.ore-card__handle). CSS shows it only when (any-pointer: coarse), whatever the
+    // width; this code is input driven (touch events that start on the handle), so it
+    // needs no width or media check of its own. Touching the handle picks
+    // the card up; the rest of the card scrolls the page normally. Listeners live on
+    // the grid element itself (it is never swapped, only its contents), so htmx
+    // refreshes do not need to re-attach them. A refresh that arrives mid-drag is
+    // deferred (htmx:beforeSwap) so the dragged card is not replaced under the finger.
+
+    var touchActive = false;   // any finger currently down on the grid
+    var tdrag = null;          // active handle drag state, or null
+    var EDGE_ZONE = 90;        // px from viewport top/bottom that auto-scrolls
+    var MAX_SCROLL_SPEED = 14; // px per frame
+
+    function findTouch(list, id) {
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].identifier === id) return list[i];
+        }
+        return null;
+    }
+
+    function cardAtPoint(x, y, exclude) {
+        var cards = document.querySelectorAll('#ore-price-grid .ore-card');
+        for (var i = 0; i < cards.length; i++) {
+            if (cards[i] === exclude) continue;
+            var r = cards[i].getBoundingClientRect();
+            if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return cards[i];
+        }
+        return null;
+    }
+
+    function clearDragOver() {
+        var marked = document.querySelectorAll('#ore-price-grid .ore-card--drag-over');
+        for (var i = 0; i < marked.length; i++) marked[i].classList.remove('ore-card--drag-over');
+    }
+
+    function updateTouchDrag() {
+        if (!tdrag) return;
+        var dx = tdrag.x - tdrag.startX;
+        var dy = tdrag.y - tdrag.startY + (window.pageYOffset - tdrag.startScroll);
+        tdrag.card.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.02)';
+        var target = cardAtPoint(tdrag.x, tdrag.y, tdrag.card);
+        if (target !== tdrag.target) {
+            clearDragOver();
+            if (target) target.classList.add('ore-card--drag-over');
+            tdrag.target = target;
+        }
+    }
+
+    function autoScrollStep() {
+        if (!tdrag) return;
+        var speed = 0;
+        if (tdrag.y < EDGE_ZONE) {
+            speed = -MAX_SCROLL_SPEED * (1 - Math.max(tdrag.y, 0) / EDGE_ZONE);
+        } else if (tdrag.y > window.innerHeight - EDGE_ZONE) {
+            speed = MAX_SCROLL_SPEED * (1 - Math.max(window.innerHeight - tdrag.y, 0) / EDGE_ZONE);
+        }
+        if (speed) {
+            window.scrollBy(0, speed);
+            updateTouchDrag();
+        }
+        tdrag.raf = window.requestAnimationFrame(autoScrollStep);
+    }
+
+    function endTouchDrag(commit) {
+        if (!tdrag) return;
+        var state = tdrag;
+        tdrag = null;
+        window.cancelAnimationFrame(state.raf);
+        clearDragOver();
+        state.card.classList.remove('ore-card--touch-dragging');
+        state.card.style.transform = '';
+        if (state.card.getAttribute('data-was-draggable') !== null) {
+            state.card.setAttribute('draggable', 'true');
+            state.card.removeAttribute('data-was-draggable');
+        }
+        if (commit && state.target && state.card.parentNode) {
+            commitReorder(state.card, state.target);
+        }
+    }
+
+    function handleTouchStart(e) {
+        touchActive = true;
+        var handle = e.target.closest ? e.target.closest('.ore-card__handle') : null;
+        if (!handle || tdrag || e.touches.length !== 1) return;
+        var card = handle.closest('.ore-card');
+        if (!card) return;
+        var t = e.changedTouches[0];
+        tdrag = {
+            card: card, id: t.identifier, target: null, raf: 0,
+            startX: t.clientX, startY: t.clientY, x: t.clientX, y: t.clientY,
+            startScroll: window.pageYOffset
+        };
+        if (card.getAttribute('draggable') === 'true') {
+            card.setAttribute('data-was-draggable', '1');
+            card.removeAttribute('draggable');
+        }
+        card.classList.add('ore-card--touch-dragging');
+        tdrag.raf = window.requestAnimationFrame(autoScrollStep);
+    }
+
+    function handleTouchMove(e) {
+        if (!tdrag) return;
+        var t = findTouch(e.changedTouches, tdrag.id);
+        if (!t) return;
+        if (e.cancelable) e.preventDefault();
+        tdrag.x = t.clientX;
+        tdrag.y = t.clientY;
+        updateTouchDrag();
+    }
+
+    function handleTouchEnd(e) {
+        if (tdrag && findTouch(e.changedTouches, tdrag.id)) {
+            endTouchDrag(e.type === 'touchend');
+        }
+        if (!e.touches.length) touchActive = false;
+    }
+
+    function initTouchReorder() {
+        var grid = document.getElementById('ore-price-grid');
+        if (!grid || grid.getAttribute('data-touch-reorder')) return;
+        grid.setAttribute('data-touch-reorder', '1');
+        grid.addEventListener('touchstart', handleTouchStart, { passive: true });
+        // Non-passive: touchmove must be cancelable so the page does not scroll while dragging
+        grid.addEventListener('touchmove', handleTouchMove, { passive: false });
+        grid.addEventListener('touchend', handleTouchEnd);
+        grid.addEventListener('touchcancel', handleTouchEnd);
+    }
+
+    // A swap can remove the card under a finger, so its touchend never reaches the
+    // grid. Reset the flag so native mouse drag keeps working on hybrid devices.
+    document.body.addEventListener('htmx:afterSwap', function (event) {
+        if (event.detail && event.detail.target && event.detail.target.id === 'ore-price-grid') {
+            touchActive = false;
+        }
+    });
+
+    document.body.addEventListener('htmx:beforeSwap', function (event) {
+        if (tdrag && event.detail && event.detail.target && event.detail.target.id === 'ore-price-grid') {
+            event.detail.shouldSwap = false;
+        }
+    });
+
     /**
      * Handle the start of a drag operation.
      * Stores a reference to the dragged card and sets the drag data.
      * @param {DragEvent} e
      */
     function handleDragStart(e) {
+        // A finger is down: never start a native drag from a long-press (touch
+        // reordering only starts from the drag handle, see "Touch reorder").
+        if (touchActive) {
+            e.preventDefault();
+            return;
+        }
         draggedCard = e.currentTarget;
         draggedCardId = getCardId(draggedCard);
         e.dataTransfer.effectAllowed = 'move';
@@ -371,6 +521,21 @@
         var targetCard = e.currentTarget;
         if (!draggedCard || targetCard === draggedCard) return;
 
+        commitReorder(draggedCard, targetCard);
+
+        // Clean up visual states
+        handleDragEnd(e);
+    }
+
+    /**
+     * Move `dragged` to the position of `target` (insertion reorder), save the new
+     * order to localStorage and switch to 'custom' mode. Shared by mouse and touch.
+     * @param {Element} dragged
+     * @param {Element} target
+     */
+    function commitReorder(dragged, target) {
+        var draggedCard = dragged;
+        var targetCard = target;
         var grid = document.getElementById('ore-price-grid');
         if (!grid) return;
 
@@ -413,9 +578,6 @@
         // Save order and switch to custom mode
         setCustomOrder(newOrder);
         setSortMode('custom');
-
-        // Clean up visual states
-        handleDragEnd(e);
     }
 
     /**
@@ -442,7 +604,7 @@
 
     /**
      * Initialise drag-and-drop on all .ore-card elements.
-     * Sets draggable attribute, touch-action style, and attaches event listeners.
+     * Sets draggable attribute and attaches event listeners.
      * Can be re-called after HTMX swaps to re-attach to new DOM elements.
      */
     function initDragAndDrop() {
@@ -455,7 +617,6 @@
 
             // Set draggable attribute and touch-action for mobile
             card.setAttribute('draggable', 'true');
-            card.style.touchAction = 'none';
 
             // Remove existing listeners to prevent duplicates (safe for re-init)
             card.removeEventListener('dragstart', handleDragStart);
@@ -485,6 +646,7 @@
             }
         }
         initDragAndDrop();
+        initTouchReorder();
     });
 
     // ─── Dropdown interaction ─────────────────────────────────────────────────────
