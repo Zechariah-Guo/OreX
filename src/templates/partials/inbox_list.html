@@ -1,28 +1,25 @@
-{# Notification list items — renders inside .inbox__list (role="list") #}
+{# The notification list. One source of truth for the list, select mode and the
+   detail screen: every row is a real link to /inbox?selected=<id> (works without
+   JS), and inbox.js turns it into open / long-press / select behaviour. #}
+<section id="inbox-list" class="inbox__list" aria-label="Notification list" role="list" data-filter="{{ current_filter }}">
 {% if notifications %}
     {% for n in notifications %}
     <div class="inbox__list-item{% if n.is_read %} inbox__list-item--read{% else %} inbox__list-item--unread{% endif %}"
          role="listitem"
-         tabindex="0"
-         hx-post="{{ url_for('inbox.inbox_mark_read', id=n.id) }}"
-         hx-target=".inbox__detail"
-         hx-swap="innerHTML"
-         hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'>
-        <span class="inbox__list-item-icon {{ n.css_class }}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960" fill="currentColor"><path d="{{ n.icon }}"/></svg>
+         data-id="{{ n.id }}">
+        <a class="inbox__row-link"
+           href="{{ url_for('inbox.inbox_page', selected=n.id, filter=(current_filter if current_filter != 'all' else none)) }}"
+           draggable="false">
+            <span class="inbox__list-item-icon {{ n.css_class }}" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor"><path d="{{ n.icon }}"/></svg>
+            </span>
+            <span class="inbox__list-item-message">{% if not n.is_read %}<span class="inbox__sr">Unread: </span>{% endif %}{{ n.message }}</span>
+            <time class="inbox__list-item-time" datetime="{{ n.created_at }}">{{ n.created_at | timeago }}</time>
+        </a>
+        <span class="inbox__check">
+            <input type="checkbox" class="inbox__check-input" value="{{ n.id }}"
+                   aria-label="Select notification: {{ n.message }}">
         </span>
-        <span class="inbox__list-item-message">{{ n.message }}</span>
-        <time class="inbox__list-item-time" datetime="{{ n.created_at }}">{{ n.created_at | timeago }}</time>
-        <button class="inbox__delete-btn"
-                type="button"
-                aria-label="Delete notification"
-                hx-delete="{{ url_for('inbox.inbox_delete', id=n.id) }}"
-                hx-target=".inbox__list"
-                hx-swap="innerHTML"
-                hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'
-                onclick="event.stopPropagation();">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 -960 960 960" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
-        </button>
     </div>
     {% endfor %}
 {% else %}
@@ -36,3 +33,4 @@
         {% endif %}
     </div>
 {% endif %}
+</section>

@@ -10,58 +10,98 @@
 {% endblock %}
 
 {% block content %}
-<div class="inbox">
-    <header class="inbox__header">
-        <h1>Inbox</h1>
-        <nav class="inbox__filters" aria-label="Notification filters">
-            <a href="{{ url_for('inbox.inbox_page', filter='all') }}"
-               class="inbox__filter-tab{% if current_filter == 'all' %} inbox__filter-tab--active{% endif %}"
-               aria-current="{% if current_filter == 'all' %}page{% endif %}"
-               hx-get="{{ url_for('inbox.inbox_page', filter='all') }}"
-               hx-target=".inbox__list"
-               hx-select=".inbox__list"
-               hx-swap="outerHTML"
-               hx-push-url="true">All</a>
-            <a href="{{ url_for('inbox.inbox_page', filter='read') }}"
-               class="inbox__filter-tab{% if current_filter == 'read' %} inbox__filter-tab--active{% endif %}"
-               aria-current="{% if current_filter == 'read' %}page{% endif %}"
-               hx-get="{{ url_for('inbox.inbox_page', filter='read') }}"
-               hx-target=".inbox__list"
-               hx-select=".inbox__list"
-               hx-swap="outerHTML"
-               hx-push-url="true">Read</a>
-            <a href="{{ url_for('inbox.inbox_page', filter='unread') }}"
-               class="inbox__filter-tab{% if current_filter == 'unread' %} inbox__filter-tab--active{% endif %}"
-               aria-current="{% if current_filter == 'unread' %}page{% endif %}"
-               hx-get="{{ url_for('inbox.inbox_page', filter='unread') }}"
-               hx-target=".inbox__list"
-               hx-select=".inbox__list"
-               hx-swap="outerHTML"
-               hx-push-url="true">Unread</a>
-        </nav>
-        <form hx-post="{{ url_for('inbox.inbox_mark_all_read') }}"
-              hx-target=".inbox__list"
-              hx-swap="innerHTML"
-              aria-label="Mark all notifications as read">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn--secondary inbox__mark-all-btn">Mark all as read</button>
-        </form>
-    </header>
+{# One flow at every width: list -> select mode -> full-screen detail.
+   data-view picks the screen (list | detail), data-mode picks browse | select.
+   inbox.js switches both; the CSS only shows what they select. #}
+{% set filter_labels = {'all': 'All', 'unread': 'Unread', 'read': 'Read'} %}
+<div class="inbox" id="inbox"
+     data-view="{{ 'detail' if selected_notification else 'list' }}"
+     data-mode="browse"
+     data-bulk-read-url="{{ url_for('inbox.inbox_bulk_read') }}"
+     data-bulk-delete-url="{{ url_for('inbox.inbox_bulk_delete') }}"
+     data-item-url="{{ url_for('inbox.inbox_page') }}">
 
-    <div class="inbox__panels">
-        <section class="inbox__list" aria-label="Notification list" role="list">
-            {% include 'partials/inbox_list.html' %}
-        </section>
+    {# ---------- Screens 1 and 2: list / select mode ---------- #}
+    <div class="inbox__screen inbox__screen--list">
+        <header class="inbox__bar inbox__bar--list">
+            <div class="inbox__titlewrap">
+                <h1 class="inbox__title" id="inbox-title" tabindex="-1">Inbox</h1>
+                <p class="inbox__hint">
+                    <span class="inbox__hint-touch">Tap and hold to select</span>
+                    <span class="inbox__hint-mouse">Tick a row to choose several</span>
+                </p>
+            </div>
 
-        <section class="inbox__detail" aria-label="Notification detail" aria-live="polite">
+            <div class="inbox__bar-actions">
+                <div class="inbox__filter" id="inbox-filter">
+                    <button type="button" class="inbox__filter-btn" id="inbox-filter-btn"
+                            aria-haspopup="menu" aria-expanded="false" aria-controls="inbox-filter-menu"
+                            aria-label="Filter notifications: {{ filter_labels[current_filter] }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M400-240v-80h160v80H400ZM240-440v-80h480v80H240ZM120-640v-80h720v80H120Z"/></svg>
+                        <span class="inbox__filter-label" id="inbox-filter-label">{{ filter_labels[current_filter] }}</span>
+                        <svg class="inbox__filter-caret" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M480-360 280-560h400L480-360Z"/></svg>
+                    </button>
+                    <div class="inbox__filter-menu" id="inbox-filter-menu" role="menu" aria-label="Show notifications" hidden>
+                        {% for key, label in filter_labels.items() %}
+                        <a href="{{ url_for('inbox.inbox_page', filter=(key if key != 'all' else none)) }}"
+                           class="inbox__filter-item{% if key == current_filter %} inbox__filter-item--active{% endif %}"
+                           role="menuitemradio" aria-checked="{{ 'true' if key == current_filter else 'false' }}"
+                           data-filter="{{ key }}" tabindex="-1">
+                            <span>{{ label }}</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <header class="inbox__bar inbox__bar--select" id="inbox-select-bar">
+            <button type="button" class="inbox__icon-btn inbox__icon-btn--back" id="inbox-select-exit" aria-label="Exit select mode">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z"/></svg>
+            </button>
+            <p class="inbox__count" id="inbox-count" role="status" aria-live="polite"><span id="inbox-count-n">0</span><span class="inbox__count-w"> selected</span></p>
+            <div class="inbox__select-actions">
+                <button type="button" class="inbox__action-btn" id="inbox-select-all" aria-label="Select all" data-label-all="Select all" data-label-none="Deselect all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="m424-312 282-282-56-56-226 226-114-114-56 56 170 170ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Z"/></svg>
+                    <span class="inbox__action-label">Select all</span>
+                </button>
+                <button type="button" class="inbox__action-btn" id="inbox-bulk-read" aria-label="Mark as read" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M160-160q-33 0-56.5-23.5T80-240v-360q0-21 10-39t28-29l322-195q10-6 20-9t20-3q10 0 20 3t20 9l322 195q18 11 28 29t10 39v360q0 33-23.5 56.5T800-160H160Zm320-300 320-196-320-196-320 196 320 196Zm0 80L160-576v336h640v-336L480-380Z"/></svg>
+                    <span class="inbox__action-label">Mark as read</span>
+                </button>
+                <button type="button" class="inbox__action-btn inbox__action-btn--danger" id="inbox-bulk-delete" aria-label="Delete" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                    <span class="inbox__action-label">Delete</span>
+                </button>
+            </div>
+        </header>
+
+        {% include 'partials/inbox_list.html' %}
+    </div>
+
+    {# ---------- Screen 3: full-screen detail ---------- #}
+    <div class="inbox__screen inbox__screen--detail">
+        <h1 class="inbox__title inbox__title--detail">Inbox</h1>
+        <div class="inbox__detail-bar">
+            <a href="{{ url_for('inbox.inbox_page', filter=(current_filter if current_filter != 'all' else none)) }}"
+               class="inbox__back" id="inbox-back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z"/></svg>
+                <span>Back</span>
+            </a>
+            <button type="button" class="inbox__detail-delete" id="inbox-detail-delete" aria-label="Delete this notification"
+                    data-id="{{ selected_notification['id'] if selected_notification else '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                <span>Delete</span>
+            </button>
+        </div>
+        <div class="inbox__detail" id="inbox-detail" aria-live="polite" tabindex="-1">
             {% if selected_notification %}
                 {% with notification=selected_notification, css_class=selected_css_class, icon=selected_icon, advancement=selected_advancement, trade=selected_trade, bonus=selected_bonus %}
                     {% include 'partials/inbox_detail.html' %}
                 {% endwith %}
-            {% else %}
-                {% include 'partials/inbox_detail.html' %}
             {% endif %}
-        </section>
+        </div>
     </div>
 </div>
 {% endblock %}

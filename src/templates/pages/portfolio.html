@@ -137,6 +137,17 @@
     .portfolio-tabs__finances:hover .portfolio-tabs__finances-arrow {
         transform: translateX(3px);
     }
+    /* Phones: the balance pill already links to Finances, so drop the link and
+       let the two tabs share the row equally */
+    @media (max-width: 640px) {
+        .portfolio-tabs__finances {
+            display: none;
+        }
+        .portfolio-tabs .trade-tabs__tab {
+            flex: 1 1 0;
+            text-align: center;
+        }
+    }
     .portfolio-tab-content {
         display: none;
     }

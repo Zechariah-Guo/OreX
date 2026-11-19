@@ -790,26 +790,6 @@ def mark_notification_read(notification_id, user_id):
     return cursor.rowcount > 0
 
 
-def mark_all_notifications_read(user_id):
-    """Mark all notifications as read for a user.
-
-    Sets is_read=1 for every notification belonging to the user.
-
-    Args:
-        user_id: The user's ID.
-
-    Returns:
-        int: The number of notifications that were updated.
-    """
-    db = get_db()
-    cursor = db.execute(
-        "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0",
-        (user_id,),
-    )
-    db.commit()
-    return cursor.rowcount
-
-
 def delete_notification(notification_id, user_id):
     """Delete a single notification owned by the specified user.
 
@@ -830,6 +810,42 @@ def delete_notification(notification_id, user_id):
     )
     db.commit()
     return cursor.rowcount > 0
+
+
+def mark_notifications_read(notification_ids, user_id):
+    """Mark the given notifications as read, limited to those the user owns.
+
+    Returns:
+        int: How many notifications were updated.
+    """
+    if not notification_ids:
+        return 0
+    db = get_db()
+    placeholders = ",".join("?" * len(notification_ids))
+    cursor = db.execute(
+        f"UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0 AND id IN ({placeholders})",
+        [user_id, *notification_ids],
+    )
+    db.commit()
+    return cursor.rowcount
+
+
+def delete_notifications(notification_ids, user_id):
+    """Delete the given notifications, limited to those the user owns.
+
+    Returns:
+        int: How many notifications were deleted.
+    """
+    if not notification_ids:
+        return 0
+    db = get_db()
+    placeholders = ",".join("?" * len(notification_ids))
+    cursor = db.execute(
+        f"DELETE FROM notifications WHERE user_id = ? AND id IN ({placeholders})",
+        [user_id, *notification_ids],
+    )
+    db.commit()
+    return cursor.rowcount
 
 
 _NOTIFICATION_ICON_PATHS = {

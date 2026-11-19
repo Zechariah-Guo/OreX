@@ -14,6 +14,7 @@ from app.bonus import (
 from app.database import get_db
 from app.models import (
     delete_notification,
+    delete_notifications,
     get_new_notifications_since,
     get_notification_detail,
     get_notification_trade,
@@ -21,8 +22,8 @@ from app.models import (
     get_notifications,
     get_pending_toasts,
     has_unread_notifications,
-    mark_all_notifications_read,
     mark_notification_read,
+    mark_notifications_read,
     mark_notifications_toasted,
 )
 
@@ -190,23 +191,59 @@ def _enrich_notifications(rows):
     return enriched
 
 
+_MAX_BULK_IDS = 500
+
+
+@inbox_bp.after_request
+def _add_unread_header(response):
+    """Tell the page whether unread notifications remain, so the navbar dot can
+    update straight after a read/delete without waiting for the next poll."""
+    if request.method != "GET" and current_user.is_authenticated:
+        response.headers["X-Inbox-Has-Unread"] = "1" if has_unread_notifications(current_user.id) else "0"
+    return response
+
+
+def _request_filter():
+    """The list filter named in the query string or form, defaulting to 'all'."""
+    value = request.values.get("filter", "all")
+    return value if value in _VALID_FILTERS else "all"
+
+
+def _list_partial():
+    """Render the notification list (current filter) for a fetch swap."""
+    current_filter = _request_filter()
+    rows = get_notifications(current_user.id, filter=current_filter)
+    return render_template(
+        "partials/inbox_list.html",
+        notifications=_enrich_notifications(rows),
+        current_filter=current_filter,
+    )
+
+
+def _posted_ids():
+    """Notification IDs from the 'ids' form field, ignoring anything not an int."""
+    ids = []
+    for raw in request.form.getlist("ids")[:_MAX_BULK_IDS]:
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    return ids
+
+
 @inbox_bp.route("")
 @login_required
 def inbox_page():
-    """Full inbox page with notification list and empty detail panel.
+    """Full inbox page: the list, select mode and a full-screen detail view.
 
     Query params:
         filter: One of 'all', 'read', 'unread' (default 'all').
-        selected: Optional notification ID to pre-load in the detail panel.
+        selected: Optional notification ID to open straight into the detail view.
     """
-    current_filter = request.args.get("filter", "all")
-    if current_filter not in _VALID_FILTERS:
-        current_filter = "all"
+    current_filter = _request_filter()
 
-    rows = get_notifications(current_user.id, filter=current_filter)
-    notifications = _enrich_notifications(rows)
-
-    # Pre-load a selected notification's detail if specified
+    # Open a selected notification's detail if specified (toast and advancement
+    # links deep-link here). Done before the list is read so the list shows it as read.
     selected_notification = None
     selected_css_class = None
     selected_icon = None
@@ -230,6 +267,9 @@ def inbox_page():
         except (TypeError, ValueError):
             pass
 
+    rows = get_notifications(current_user.id, filter=current_filter)
+    notifications = _enrich_notifications(rows)
+
     return render_template(
         "pages/inbox.html",
         notifications=notifications,
@@ -240,30 +280,6 @@ def inbox_page():
         selected_advancement=selected_advancement,
         selected_trade=selected_trade,
         selected_bonus=selected_bonus,
-    )
-
-
-@inbox_bp.route("/<int:id>")
-@login_required
-def inbox_detail(id):
-    """Detail panel partial for a single notification (htmx).
-
-    Returns 404 if the notification doesn't exist or doesn't belong to user.
-    """
-    row = get_notification_detail(id, current_user.id)
-    if row is None:
-        abort(404)
-
-    css_class, icon, _duration = get_notification_style(row["category"])
-
-    return render_template(
-        "partials/inbox_detail.html",
-        notification=row,
-        css_class=css_class,
-        icon=icon,
-        advancement=_advancement_for(row),
-        trade=_trade_for(row),
-        bonus=_bonus_for(row),
     )
 
 
@@ -295,38 +311,30 @@ def inbox_mark_read(id):
     )
 
 
-@inbox_bp.route("/mark-all-read", methods=["POST"])
+@inbox_bp.route("/bulk-read", methods=["POST"])
 @login_required
-def inbox_mark_all_read():
-    """Mark all notifications as read and return the updated list partial."""
-    mark_all_notifications_read(current_user.id)
+def inbox_bulk_read():
+    """Mark the posted 'ids' as read and return the list partial for 'filter'."""
+    mark_notifications_read(_posted_ids(), current_user.id)
+    return _list_partial()
 
-    rows = get_notifications(current_user.id, filter="all")
-    notifications = _enrich_notifications(rows)
 
-    return render_template(
-        "partials/inbox_list.html",
-        notifications=notifications,
-        current_filter="all",
-    )
+@inbox_bp.route("/bulk-delete", methods=["POST"])
+@login_required
+def inbox_bulk_delete():
+    """Delete the posted 'ids' (no undo) and return the list partial for 'filter'."""
+    delete_notifications(_posted_ids(), current_user.id)
+    return _list_partial()
 
 
 @inbox_bp.route("/<int:id>", methods=["DELETE"])
 @login_required
 def inbox_delete(id):
-    """Delete a notification and return the updated list partial.
+    """Delete a notification and return the list partial for the 'filter' query param.
 
     Returns 404 if the notification doesn't exist or doesn't belong to user.
     """
     success = delete_notification(id, current_user.id)
     if not success:
         abort(404)
-
-    rows = get_notifications(current_user.id, filter="all")
-    notifications = _enrich_notifications(rows)
-
-    return render_template(
-        "partials/inbox_list.html",
-        notifications=notifications,
-        current_filter="all",
-    )
+    return _list_partial()

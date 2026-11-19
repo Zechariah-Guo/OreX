@@ -8,6 +8,7 @@ Validates: Requirements 3.1, 6.1, 7.2, 8.1, 4.1, 10.1, 10.3
 """
 
 import os
+import re
 import sys
 import sqlite3
 
@@ -48,9 +49,12 @@ def disable_bonus_reminder(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def _get_csrf_from_page(client):
-    """Fetch the inbox page and extract a CSRF token from hidden input."""
-    resp = client.get('/inbox')
-    return get_csrf_token(resp)
+    """Fetch the inbox page and read the CSRF token from its csrf-token meta tag
+    (the page's JS sends it as X-CSRFToken)."""
+    html = client.get('/inbox').data.decode('utf-8')
+    match = re.search(r'<meta name="csrf-token" content="([^"]+)"', html)
+    assert match, 'csrf-token meta tag missing from /inbox'
+    return match.group(1)
 
 
 # ---------------------------------------------------------------------------
@@ -231,19 +235,155 @@ class TestMarkReadEndpoint:
 # ---------------------------------------------------------------------------
 
 class TestInboxPageLayout:
-    """Tests for the inbox page two-panel layout."""
+    """Tests for the inbox page: list / select mode / full-screen detail."""
 
-    def test_inbox_renders_two_panel_layout(self, client, app):
-        """GET /inbox renders the inbox page with inbox__list and inbox__detail sections."""
+    def test_inbox_renders_list_screen(self, client, app):
+        """GET /inbox opens on the list screen with the filter menu and select bar."""
         register_user(client, 'LayoutUser', 'Password123!')
 
         response = client.get('/inbox')
         html = response.data.decode('utf-8')
 
         assert response.status_code == 200
-        assert 'inbox__list' in html
-        assert 'inbox__detail' in html
-        assert 'inbox__panels' in html
+        assert 'data-view="list"' in html
+        assert 'id="inbox-list"' in html
+        assert 'id="inbox-filter-menu"' in html
+        assert 'role="menuitemradio"' in html
+        assert 'id="inbox-select-all"' in html
+        assert 'id="inbox-bulk-read"' in html
+        assert 'id="inbox-bulk-delete"' in html
+        assert 'Tap and hold to select' in html
+        # The old two-pane markup and four filter links are gone
+        assert 'inbox__panels' not in html
+        assert 'inbox__filter-tab' not in html
+        assert 'Select a notification to view details.' not in html
+
+    def test_rows_link_to_detail_and_have_checkboxes(self, client, app):
+        register_user(client, 'RowUser', 'Password123!')
+        user_id = _user_id(app, 'RowUser')
+        with app.app_context():
+            notif_id = create_notification(user_id, 'system', 'Row message')
+
+        html = client.get('/inbox').data.decode('utf-8')
+        assert f'href="/inbox?selected={notif_id}"' in html
+        assert f'class="inbox__check-input" value="{notif_id}"' in html
+        assert 'aria-label="Select notification: Row message"' in html
+
+    def test_deep_link_opens_detail_screen_and_marks_read(self, client, app):
+        """The toast/advancement link /inbox?selected=<id> lands on the detail screen."""
+        register_user(client, 'DeepUser', 'Password123!')
+        user_id = _user_id(app, 'DeepUser')
+        with app.app_context():
+            notif_id = create_notification(user_id, 'stop_loss', 'Deep linked stop loss')
+            action_url = get_notifications(user_id)[0]['action_url']
+
+        html = client.get(action_url).data.decode('utf-8')
+        assert 'data-view="detail"' in html
+        assert 'inbox__detail-content' in html
+        assert 'Deep linked stop loss' in html
+        assert re.search(r'id="inbox-detail-delete"[^>]*data-id="%d"' % notif_id, html)
+        # Opening it marks it read, so the list row and the navbar dot agree
+        assert 'inbox__list-item--unread' not in html
+        assert 'nav__dropdown-icon--unread' not in html
+
+    def test_unknown_selected_id_falls_back_to_list(self, client, app):
+        register_user(client, 'NoSuchUser', 'Password123!')
+        html = client.get('/inbox?selected=999999').data.decode('utf-8')
+        assert 'data-view="list"' in html
+
+
+def _user_id(app, username):
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    row = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+    conn.close()
+    return row[0]
+
+
+def _read_flags(app, ids):
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    placeholders = ",".join("?" * len(ids))
+    rows = conn.execute(
+        f"SELECT id, is_read FROM notifications WHERE id IN ({placeholders})", ids
+    ).fetchall()
+    conn.close()
+    return dict(rows)
+
+
+class TestBulkEndpoints:
+    """POST /inbox/bulk-read and /inbox/bulk-delete (select mode actions)."""
+
+    def _setup(self, client, app, name, count=3):
+        register_user(client, name, 'Password123!')
+        user_id = _user_id(app, name)
+        with app.app_context():
+            ids = [create_notification(user_id, 'system', f'Message {i}') for i in range(count)]
+        return user_id, ids, _get_csrf_from_page(client)
+
+    def test_bulk_read_marks_only_posted_ids(self, client, app):
+        _, ids, csrf = self._setup(client, app, 'BulkReadUser')
+        response = client.post('/inbox/bulk-read', data={'ids': ids[:2], 'filter': 'all'},
+                               headers={'X-CSRFToken': csrf})
+        assert response.status_code == 200
+        assert response.headers['X-Inbox-Has-Unread'] == '1'
+        flags = _read_flags(app, ids)
+        assert flags[ids[0]] == 1 and flags[ids[1]] == 1 and flags[ids[2]] == 0
+        assert 'id="inbox-list"' in response.data.decode('utf-8')
+
+    def test_bulk_read_all_clears_unread_header(self, client, app):
+        _, ids, csrf = self._setup(client, app, 'BulkReadAll')
+        response = client.post('/inbox/bulk-read', data={'ids': ids},
+                               headers={'X-CSRFToken': csrf})
+        assert response.headers['X-Inbox-Has-Unread'] == '0'
+        assert set(_read_flags(app, ids).values()) == {1}
+
+    def test_bulk_read_respects_filter(self, client, app):
+        _, ids, csrf = self._setup(client, app, 'BulkReadFilter')
+        response = client.post('/inbox/bulk-read', data={'ids': ids[:1], 'filter': 'unread'},
+                               headers={'X-CSRFToken': csrf})
+        html = response.data.decode('utf-8')
+        assert 'data-filter="unread"' in html
+        assert 'Message 0' not in html
+        assert 'Message 1' in html
+
+    def test_bulk_delete_removes_posted_ids(self, client, app):
+        _, ids, csrf = self._setup(client, app, 'BulkDelUser')
+        response = client.post('/inbox/bulk-delete', data={'ids': ids[:2]},
+                               headers={'X-CSRFToken': csrf})
+        assert response.status_code == 200
+        assert list(_read_flags(app, ids)) == [ids[2]]
+        html = response.data.decode('utf-8')
+        assert 'Message 2' in html and 'Message 0' not in html
+
+    def test_bulk_actions_ignore_other_users_ids(self, client, app):
+        _, ids, _csrf = self._setup(client, app, 'OwnerUser', count=1)
+        client.get('/logout')
+        register_user(client, 'IntruderUser', 'Password123!')
+        csrf = _get_csrf_from_page(client)
+        client.post('/inbox/bulk-read', data={'ids': ids}, headers={'X-CSRFToken': csrf})
+        client.post('/inbox/bulk-delete', data={'ids': ids}, headers={'X-CSRFToken': csrf})
+        assert _read_flags(app, ids) == {ids[0]: 0}
+
+    def test_bulk_ignores_junk_ids(self, client, app):
+        _, ids, csrf = self._setup(client, app, 'JunkUser', count=1)
+        response = client.post('/inbox/bulk-delete', data={'ids': ['abc', '']},
+                               headers={'X-CSRFToken': csrf})
+        assert response.status_code == 200
+        assert _read_flags(app, ids) == {ids[0]: 0}
+
+    def test_bulk_requires_csrf(self, client, app):
+        _, ids, _csrf = self._setup(client, app, 'NoCsrfUser', count=1)
+        response = client.post('/inbox/bulk-delete', data={'ids': ids})
+        assert response.status_code in (400, 403)
+        assert _read_flags(app, ids) == {ids[0]: 0}
+
+    def test_single_delete_keeps_filter_and_sets_header(self, client, app):
+        _, ids, csrf = self._setup(client, app, 'SingleDelUser', count=2)
+        response = client.delete(f'/inbox/{ids[0]}?filter=unread', headers={'X-CSRFToken': csrf})
+        assert response.status_code == 200
+        assert response.headers['X-Inbox-Has-Unread'] == '1'
+        html = response.data.decode('utf-8')
+        assert 'data-filter="unread"' in html
+        assert 'Message 1' in html and 'Message 0' not in html
 
 
 # ---------------------------------------------------------------------------
@@ -449,7 +589,7 @@ class TestBonusDetailPanel:
                 user_id, 'bonus', 'Your daily bonus of $10,000 is ready to collect.',
                 target_url='/profile',
             )
-        return client.get(f'/inbox/{notif_id}').data.decode('utf-8')
+        return client.get(f'/inbox?selected={notif_id}').data.decode('utf-8')
 
     def test_available_bonus_shows_ready_day_and_collect_button(self, client, app):
         html = self._setup(client, app, 'BonusReady', cycle_day=2, collected_today=False)

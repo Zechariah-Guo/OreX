@@ -23,7 +23,6 @@ from app.models import (
     has_unread_notifications,
     get_new_notifications_since,
     mark_notification_read,
-    mark_all_notifications_read,
     delete_notification,
 )
 
@@ -190,60 +189,6 @@ def test_list_ordering_newest_first(num_notifications, categories, messages):
             assert ids[i] > ids[i + 1], (
                 f"Notifications not in descending id order: {ids}"
             )
-    finally:
-        db.close()
-
-
-# ---------------------------------------------------------------------------
-# Feature: notification-system, Property 6: Mark-all-read marks all
-# Validates: Requirements 4.5, 7.1
-# ---------------------------------------------------------------------------
-
-
-@settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture, HealthCheck.too_slow])
-@given(
-    num_notifications=st.integers(min_value=1, max_value=10),
-    categories=st.lists(CATEGORIES, min_size=10, max_size=10),
-    messages=st.lists(MESSAGES, min_size=10, max_size=10),
-    read_flags=st.lists(st.booleans(), min_size=10, max_size=10),
-)
-def test_mark_all_read_marks_all(num_notifications, categories, messages, read_flags):
-    """Property 6: For any user with unread notifications,
-    mark_all_notifications_read results in has_unread returning False.
-
-    **Validates: Requirements 4.5, 7.1**
-    """
-    db = _create_test_db()
-    try:
-        with patch('app.models.get_db', return_value=db):
-            # Create notifications
-            notification_ids = []
-            for i in range(num_notifications):
-                nid = create_notification(1, categories[i], messages[i])
-                notification_ids.append(nid)
-
-            # Mark some as already read (to create a mixed state)
-            for i, nid in enumerate(notification_ids):
-                if read_flags[i]:
-                    db.execute(
-                        "UPDATE notifications SET is_read = 1 WHERE id = ?", (nid,)
-                    )
-            db.commit()
-
-            # Ensure at least one is unread before marking all
-            has_any_unread = any(not read_flags[i] for i in range(num_notifications))
-            assume(has_any_unread)
-
-            # Mark all as read
-            mark_all_notifications_read(1)
-
-            # has_unread should now be False
-            result = has_unread_notifications(1)
-
-        assert result is False, (
-            f"Expected has_unread=False after mark_all_notifications_read, "
-            f"but got True"
-        )
     finally:
         db.close()
 

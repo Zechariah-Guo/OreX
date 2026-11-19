@@ -1373,10 +1373,6 @@ html[data-theme="dark"] .nav__brand {
     transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
     display: block;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    /* The background is already opaque; this lifts the card above the falling
-       ores layer (fixed, z-index 0, later in the DOM) that painted over it. */
-    position: relative;
-    z-index: 1;
 }
 
 .ore-card:hover {
@@ -2044,7 +2040,10 @@ input::-webkit-inner-spin-button {
         --nav-top-h: 64px;
         --nav-bottom-h: calc(64px + env(safe-area-inset-bottom));
         --nav-radius: 20px;
-        --nav-edge: color-mix(in srgb, var(--colour-border) 55%, var(--colour-text));
+        --nav-edge: var(--colour-border);
+        /* Bar edge thickness: thicker in light mode, where the edge colour is
+           faint against busy pages. Dark mode keeps the 1px line. */
+        --nav-edge-w: 2px;
         padding-top: var(--nav-top-h);
     }
 
@@ -2119,7 +2118,7 @@ input::-webkit-inner-spin-button {
         right: 0;
         height: var(--nav-top-h);
         background: var(--colour-surface);
-        border-bottom: 1px solid var(--nav-edge);
+        border-bottom: var(--nav-edge-w) solid var(--nav-edge);
         border-radius: 0 0 var(--nav-radius) var(--nav-radius);
         z-index: 1000;
     }
@@ -2186,7 +2185,7 @@ input::-webkit-inner-spin-button {
         padding: calc(4px + var(--nav-radius)) 8px 4px;
         border-radius: 0 0 var(--nav-radius) var(--nav-radius);
         border: 1px solid var(--nav-edge);
-        border-width: 0 0 1px;
+        border-width: 0 0 var(--nav-edge-w);
         pointer-events: auto;
         /* Slides down from behind the top bar (bar is z-index 1000) */
         z-index: 999;
@@ -2350,7 +2349,7 @@ input::-webkit-inner-spin-button {
         bottom: -8px;
         z-index: -1;
         background: var(--colour-surface);
-        border-top: 1px solid var(--nav-edge);
+        border-top: var(--nav-edge-w) solid var(--nav-edge);
         border-radius: var(--nav-radius) var(--nav-radius) 0 0;
     }
 
@@ -2405,7 +2404,8 @@ input::-webkit-inner-spin-button {
         padding: 0 12px;
         border: 2px solid var(--colour-border);
         border-radius: 999px;
-        font-size: 0.85rem;
+        font-size: 1rem;
+        font-weight: 700;
         white-space: nowrap;
     }
 
@@ -2478,12 +2478,21 @@ input::-webkit-inner-spin-button {
         right: auto;
         left: 50%;
         margin-left: calc(var(--toast-w) / -2);
-        /* Flush with the bottom bar's top edge (4px overlap hides the seam).
-           z-index sits below the bar (1000) so toasts rise from behind it. */
-        bottom: calc(var(--nav-bottom-h) - 4px);
+        /* 4px clear of the bottom bar's top edge, so a toast's timer bar is never
+           covered. z-index stays below the bar (1000) so toasts still rise from
+           behind it. */
+        bottom: calc(var(--nav-bottom-h) + 4px);
         width: var(--toast-w);
         z-index: 999;
         transition: transform 0.25s ease;
+    }
+
+    /* The stack is a flex column with a gap, so the empty notification
+       container below the flash messages added an 8px dead strip under flash
+       toasts only. Collapse it so every toast type sits at the same height
+       (logged-in pages only; the logged-out position is set separately). */
+    body:has(.main-nav--auth) .toast-stack .notification-toasts:empty {
+        display: none;
     }
 
     .flash--toast {
@@ -3661,8 +3670,10 @@ details summary:focus-visible {
 }
 
 .theme-switcher__btn {
-    flex: 1;
+    flex: 1 1 0;
+    min-height: 44px;
     display: inline-flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: var(--spacing-xs);

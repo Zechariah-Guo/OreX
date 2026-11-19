@@ -273,13 +273,13 @@ function confirmToggleSubmit() {
         <p class="settings-card__description">Choose your preferred colour theme.</p>
         <div class="theme-switcher" role="radiogroup" aria-label="Theme selection">
             <button class="theme-switcher__btn" data-theme="light" role="radio" aria-checked="false">
-                ☀️ Light
+                <span class="switcher-btn__icon" aria-hidden="true">☀️</span><span>Light</span>
             </button>
             <button class="theme-switcher__btn" data-theme="dark" role="radio" aria-checked="false">
-                🌙 Dark
+                <span class="switcher-btn__icon" aria-hidden="true">🌙</span><span>Dark</span>
             </button>
             <button class="theme-switcher__btn" data-theme="system" role="radio" aria-checked="false">
-                💻 System
+                <span class="switcher-btn__icon" aria-hidden="true">💻</span><span>System</span>
             </button>
         </div>
     </div>
@@ -290,24 +290,24 @@ function confirmToggleSubmit() {
         <p class="settings-card__description">Unlock and apply prestige cosmetic themes. These layer on top of your chosen colour theme.</p>
         <div class="cosmetic-theme-switcher" role="radiogroup" aria-label="Cosmetic theme selection">
             <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="none" role="radio" aria-checked="false">
-                🚫 None
+                <span class="switcher-btn__icon" aria-hidden="true">🚫</span><span>None</span>
             </button>
             {% if money_theme_unlocked %}
             <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="money" role="radio" aria-checked="false">
-                💰 Money
+                <span class="switcher-btn__icon" aria-hidden="true">💰</span><span>Money</span>
             </button>
             {% else %}
             <button class="cosmetic-theme-switcher__btn cosmetic-theme-switcher__btn--locked" disabled aria-disabled="true" title="Earn Multimillionaire to unlock">
-                🔒 Money
+                <span class="switcher-btn__icon" aria-hidden="true">🔒</span><span>Money</span>
             </button>
             {% endif %}
             {% if gold_theme_unlocked %}
             <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="gold" role="radio" aria-checked="false">
-                🏆 Gold
+                <span class="switcher-btn__icon" aria-hidden="true">🏆</span><span>Gold</span>
             </button>
             {% else %}
             <button class="cosmetic-theme-switcher__btn cosmetic-theme-switcher__btn--locked" disabled aria-disabled="true" title="Earn Completionist to unlock">
-                🔒 Gold
+                <span class="switcher-btn__icon" aria-hidden="true">🔒</span><span>Gold</span>
             </button>
             {% endif %}
         </div>

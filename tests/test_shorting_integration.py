@@ -351,7 +351,7 @@ class TestLiquidationRefundKept:
         assert notifs[0]['transaction_id'] == txn['id']
 
         # The inbox detail panel renders the breakdown from that trade
-        html = authenticated_client.get(f"/inbox/{notifs[0]['id']}").data.decode()
+        html = authenticated_client.get(f"/inbox?selected={notifs[0]['id']}").data.decode()
         assert 'Returned to you' in html
         assert '$2,500.00' in html          # refund
         assert '$7,500.00' in html          # collateral locked
