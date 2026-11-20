@@ -2878,6 +2878,19 @@ input::-webkit-inner-spin-button {
     min-width: 0;
 }
 
+/* History table layout: block-level flex, so the icon + name is centred in the
+   row (inline-flex sat on the text baseline and lifted the name) */
+@media (min-width: 961px) {
+    .history-table td {
+        vertical-align: middle;
+    }
+
+    .history-table td.history-table__ore .ore-inline {
+        display: flex;
+        width: fit-content;
+    }
+}
+
 .trade-badge {
     display: inline-block;
     font-size: 0.7rem;
@@ -3570,15 +3583,26 @@ a:not([class]):active {
     gap: 2px;
 }
 
-/* Phone: the ten range buttons wrap under the title instead of widening the page */
+/* Phone: the title sits above the range buttons, which form an even 5 x 2
+   grid (no stray "Max" on its own line, and each button is a comfortable
+   tap target) instead of wrapping unevenly */
 @media (max-width: 640px) {
     .chart-header {
         flex-wrap: wrap;
         gap: var(--spacing-xs);
     }
 
-    .chart-filters {
-        flex-wrap: wrap;
+    .chart-header .chart-filters {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 6px;
+        width: 100%;
+    }
+
+    .chart-header .chart-filter {
+        min-height: 40px;
+        padding: 0 4px;
+        font-size: 0.8rem;
     }
 }
 

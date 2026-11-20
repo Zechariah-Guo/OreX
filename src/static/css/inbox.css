@@ -112,7 +112,7 @@
     min-height: 44px;
     padding: 0 var(--spacing-md);
     border: 1px solid var(--colour-border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     background-color: var(--colour-surface);
     font-size: 1rem;
     transition: background-color 0.15s, border-color 0.15s;

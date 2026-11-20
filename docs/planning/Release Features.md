@@ -114,12 +114,10 @@
 ## Now also including 1.1 features due to delayed deployment
 
 ### Mobile Support
-- Change UI for mobile sized screens <— In progress (still needs leaderboard, history, portfolio, profile) 
+- ~~Change UI for mobile sized screens~~ ✅ Done (Basically)
 - Turn into PWA (add option in settings to download)
 - Maybe get push notifications working on the PWA (bit more complex) (for toasts when the user isnt in the app, like sltp, daily bonus, maybe a login nudge if they want to maintain streak, liquidation, )
 
 ### QoL
-- Allow "forgot password" functionality by leveraging the existing 2fa system
-- ~~Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc) (use python uv library)~~
-- Implement celery and redis for background profile picture processing and storage
-- Migrate all images to avif with webp fallback (use magick)
+- ~~Allow "forgot password" functionality with a  one time key system (built without email: optional one-time recovery key chosen at registration, a Forgot password page that takes username + key then a new password, a fresh key issued after each reset, and `scripts/reset_password.py` for admin resets.)~~ ✅ Done
+- ~~Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc) (use python uv library)~~ ✅ Done

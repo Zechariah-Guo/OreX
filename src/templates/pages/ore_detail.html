@@ -258,7 +258,16 @@
         .short-preview--horizontal .short-preview__group--collateral { grid-area: collateral; }
         .short-preview--horizontal .short-preview__group--fees { grid-area: fees; }
         .short-preview__warning { grid-area: warning; justify-self: start; }
-        .short-preview--horizontal .btn { grid-area: action; min-height: 44px; }
+        /* The button is a little shorter than the Qty field beside it (not stretched
+           to the row, which made it look larger than the input) */
+        .short-preview--horizontal .btn {
+            grid-area: action;
+            align-self: center;
+            min-height: 40px;
+            height: 40px;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
     }
 </style>
 {% endblock %}

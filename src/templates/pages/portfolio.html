@@ -428,22 +428,25 @@
             padding-top: 14px;
             border-top: 1px solid var(--colour-border);
         }
+        /* Two equal columns: "Edit SL/TP" and "Sell" / "Close" are always the same
+           width (a flex row sized them by their text) */
         .holdings-table td.holdings-table__actions,
         .shorts-table td.shorts-table__actions {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 12px;
             padding-top: 14px;
             border-top: 1px solid var(--colour-border);
         }
         .holdings-table td.holdings-table__actions > .btn,
         .shorts-table td.shorts-table__actions > .btn {
-            flex: 1 1 0;
+            min-width: 0;
         }
         .holdings-table td.holdings-table__actions form,
         .shorts-table td.shorts-table__actions form {
             display: flex;
-            flex: 1 1 0;
             min-width: 0;
+            margin: 0;
         }
         .holdings-table td.holdings-table__actions .btn,
         .shorts-table td.shorts-table__actions .btn {
@@ -475,6 +478,21 @@
             min-height: 48px;
             padding: 0 var(--spacing-sm);
             font-size: 16px; /* stops iOS Safari zooming on focus */
+        }
+    }
+
+    /* Table layout (wider than the card breakpoint): the icon + name is a block-level
+       flex box. As inline-flex it sat on the text baseline with a gap under it, which
+       lifted the ore name above the centre line of the row. */
+    @media (min-width: 1141px) {
+        .holdings-table td,
+        .shorts-table td {
+            vertical-align: middle;
+        }
+        .shorts-table td.shorts-table__ore a,
+        .holdings-table td.holdings-table__ore a {
+            display: flex;
+            width: fit-content;
         }
     }
 </style>
