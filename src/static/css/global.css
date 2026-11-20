@@ -2956,6 +2956,20 @@ input::-webkit-inner-spin-button {
     border-color: var(--colour-danger);
 }
 
+/* Install block: hidden until JS reveals it; the author display rule on
+   .btn would otherwise beat the hidden attribute */
+.settings-card[hidden],
+.install-card__btn[hidden],
+#install-ios-hint[hidden] {
+    display: none;
+}
+
+/* Same gap above the button as the other cards' forms (.settings-form) */
+.install-card__btn {
+    margin-top: var(--spacing-md);
+    min-height: 44px;
+}
+
 .settings-divider {
     border-top: 2px solid var(--colour-danger);
     margin-top: var(--spacing-lg);

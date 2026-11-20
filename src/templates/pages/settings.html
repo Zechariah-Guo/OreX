@@ -141,6 +141,48 @@ function confirmToggleSubmit() {
     document.getElementById('advanced-toggle-form').submit();
 }
 
+// Install block: button where the browser offers an install prompt, a hint on iOS Safari, otherwise hidden
+(function () {
+    var card = document.getElementById('install-card');
+    var btn = document.getElementById('install-btn');
+    var hint = document.getElementById('install-ios-hint');
+    if (!card || !btn || !hint) return;
+
+    var installed = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+        navigator.standalone === true;
+    if (installed) return;
+
+    var ua = navigator.userAgent;
+    var isIos = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var isIosSafari = isIos && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+
+    function showButton() {
+        hint.hidden = true;
+        btn.hidden = false;
+        card.hidden = false;
+    }
+
+    if (window.orexInstallPrompt) {
+        showButton();
+    } else if (isIosSafari) {
+        card.hidden = false;
+        hint.hidden = false;
+    }
+
+    document.addEventListener('orex:installready', showButton);
+    document.addEventListener('orex:installed', function () { card.hidden = true; });
+
+    btn.addEventListener('click', function () {
+        var promptEvent = window.orexInstallPrompt;
+        if (!promptEvent) { card.hidden = true; return; }
+        window.orexInstallPrompt = null;  // a prompt event can only be used once
+        promptEvent.prompt();
+        promptEvent.userChoice.then(function () {
+            card.hidden = true;
+        });
+    });
+})();
+
 // Cooldown countdown timer
 (function () {
     var timerEl = document.querySelector('.advanced-mode-box__cooldown-timer');
@@ -186,6 +228,14 @@ function confirmToggleSubmit() {
                 <span class="settings-info__value">${{ "%.2f" | format(user.balance) }}</span>
             </div>
         </div>
+    </div>
+
+    {# Install: hidden until the script below finds the browser can install the app #}
+    <div class="settings-card" id="install-card" hidden>
+        <h2>💾 Install OreX</h2>
+        <p class="settings-card__description">Easily access OreX by installing its browser window, like an app.</p>
+        <button type="button" class="btn btn--primary install-card__btn" id="install-btn" hidden>Install OreX</button>
+        <p class="settings-card__description" id="install-ios-hint" hidden>On iPhone or iPad, tap Share then Add to Home Screen.</p>
     </div>
 
     <!-- Change Password -->

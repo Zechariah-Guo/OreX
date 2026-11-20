@@ -7,6 +7,17 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}OreX{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    {# PWA: manifest + home-screen metadata. theme-color is kept in sync with the active theme by the script at the end of body. #}
+    {# use-credentials: browsers fetch the manifest without cookies by default, so a
+       tunnel or proxy that relies on a cookie (ngrok's free "Visit Site" warning)
+       would serve its HTML warning page instead of the JSON. #}
+    <link rel="manifest" href="{{ url_for('pages.manifest') }}" crossorigin="use-credentials">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/pwa/apple-touch-icon.png') }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="OreX">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/advanced.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
@@ -78,6 +89,37 @@
     <script src="{{ url_for('static', filename='js/nav.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/falling-ores.js') }}" defer></script>
+    <script>
+        // PWA: register the service worker (offline fallback page only, nothing else is cached)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
+            });
+        }
+        // Keep the browser/OS bar colour matching the active theme (light, dark, cosmetic, Advanced)
+        (function () {
+            var meta = document.querySelector('meta[name="theme-color"]');
+            function sync() {
+                var c = getComputedStyle(document.body).getPropertyValue('--colour-surface').trim();
+                if (meta && c) { meta.setAttribute('content', c); }
+            }
+            sync();
+            var observer = new MutationObserver(sync);
+            observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+            observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        })();
+        // Keep the install prompt for the Install button on the Settings page.
+        // No preventDefault(): the browser's own install banner is the only nudge,
+        // and the saved event can still be prompted from the Settings button.
+        window.addEventListener('beforeinstallprompt', function (e) {
+            window.orexInstallPrompt = e;
+            document.dispatchEvent(new Event('orex:installready'));
+        });
+        window.addEventListener('appinstalled', function () {
+            window.orexInstallPrompt = null;
+            document.dispatchEvent(new Event('orex:installed'));
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 
     {% if tutorial_should_load_alpine %}

@@ -115,7 +115,7 @@
 
 ### Mobile Support
 - ~~Change UI for mobile sized screens~~ ✅ Done (Basically)
-- Turn into PWA (add option in settings to download)
+- ~~Turn into PWA (add option in settings to download)~~ ✅ Done
 - Maybe get push notifications working on the PWA (bit more complex) (for toasts when the user isnt in the app, like sltp, daily bonus, maybe a login nudge if they want to maintain streak, liquidation, )
 
 ### QoL

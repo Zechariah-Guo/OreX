@@ -92,10 +92,8 @@
 - Maybe get push notifications working on the PWA (bit more complex)
 
 ### QoL
-- Allow "forgot password" functionality: optional one-time recovery key at registration, a Forgot password page (username + recovery key, then a new password), and an admin reset script (`scripts/reset_password.py`). 2FA stays a separate factor.
+- Allow "forgot password" functionality: optional one-time recovery key system
 - Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc) (use python uv library)
-- Implement celery and redis for background profile picture processing and storage
-- Migrate all images to avif with webp fallback (use magick)
 
 ## Version 1.1
 
