@@ -130,6 +130,28 @@ uv run pytest
 
 Some 2FA property tests are slow because they hash many passwords. Skip them with `uv run pytest -m "not slow"`, and skip the real-browser tests with `-m "not browser"`.
 
+### Safari-Engine Check (dev only)
+
+`scripts/safari_check.py` loads the main pages in Playwright's WebKit with iPhone and iPad presets, saves screenshots to `screenshots/safari/` and prints a pass/fail table. One-time setup: `uv sync` then `uv run playwright install webkit`. Run: `uv run python scripts/safari_check.py` (add `--compare` to diff against Chrome). It is a WebKit port, not real Safari, so it cannot show safe-area insets, the iOS address bar or input zoom.
+
+To hand-test in a visible WebKit window, start the dev server first (it must be running), then either:
+
+```bash
+uv run playwright open --browser webkit --device "iPhone 13" http://127.0.0.1:5000
+```
+
+(use `--viewport-size "360,800"` instead of `--device` for a custom size; `--save-storage screenshots/state.json` and `--load-storage screenshots/state.json` keep a login between runs. That file holds a session cookie, so keep it under the git-ignored `screenshots/`), or from Python:
+
+```python
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    page = p.webkit.launch(headless=False).new_context(**p.devices["iPhone 13"]).new_page()
+    page.goto("http://127.0.0.1:5000")
+    page.pause()  # close the Inspector window to finish
+```
+
+Caveats: no Safari toolbar or address bar, safe-area insets are 0, and mouse input is turned into touch events.
+
 ### Managing Dependencies
 
 | Task | Command |

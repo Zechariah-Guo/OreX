@@ -25,6 +25,7 @@ dev = [
     "pytest==9.1.1",
     "bandit==1.9.4",
     "pip-audit==2.10.0",
+    "playwright==1.65.2",
 ]
 # Production server only (Docker / Oracle VM): `uv sync --no-dev --group prod`.
 prod = [
