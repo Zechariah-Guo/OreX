@@ -20,8 +20,7 @@
         <input type="hidden" name="recovery_token" value="{{ recovery_token }}" autocomplete="off">
 
         <div class="reset-warning" role="alert">
-            <p><strong>Save this key now.</strong></p>
-            <p>It works once and will not be shown again. Anyone with it can reset your password, so keep it somewhere safe and private.</p>
+            <p><strong>Save this key now.</strong> It works once and will not be shown again. Anyone with it can reset your password, so keep it somewhere safe and private.</p>
         </div>
 
         {% if recovery_notice %}
@@ -29,7 +28,10 @@
         {% endif %}
 
         <div class="recovery-key">
-            <code class="recovery-key__value" id="recovery-key-value">{{ recovery_key }}</code>
+            <div class="recovery-key__field" id="recovery-key-field">
+                <code class="recovery-key__value" id="recovery-key-value">{{ recovery_key }}</code>
+                <span class="recovery-key__flash" id="recovery-key-flash" aria-hidden="true"></span>
+            </div>
             <button type="button" class="btn btn--secondary recovery-key__copy" id="recovery-key-copy"
                     aria-label="Copy recovery key" title="Copy recovery key">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
@@ -70,6 +72,9 @@
         var keyEl = document.getElementById('recovery-key-value');
         var copyBtn = document.getElementById('recovery-key-copy');
         var statusEl = document.getElementById('recovery-key-status');
+        var fieldEl = document.getElementById('recovery-key-field');
+        var flashEl = document.getElementById('recovery-key-flash');
+        var flashTimer = null;
 
         // Never carry "saved" over to a page that shows a different key (browser form restore).
         confirmBox.checked = false;
@@ -85,6 +90,19 @@
         sync();
 
         function setStatus(text) { statusEl.textContent = text; }
+
+        // Brief confirmation shown over the key itself (the key is hidden for a moment,
+        // the box keeps its size). Screen readers get the same text from the live region.
+        function flash(ok) {
+            clearTimeout(flashTimer);
+            flashEl.textContent = ok ? 'Copied' : 'Copy failed';
+            fieldEl.classList.toggle('is-failed', !ok);
+            fieldEl.classList.add('is-flashing');
+            flashTimer = setTimeout(function () {
+                fieldEl.classList.remove('is-flashing', 'is-failed');
+                setStatus('');
+            }, ok ? 1500 : 2500);
+        }
 
         function fallbackCopy(text) {
             var ta = document.createElement('textarea');
@@ -104,6 +122,7 @@
             var text = keyEl.textContent.trim();
             function done(ok) {
                 setStatus(ok ? 'Copied' : 'Copy failed. Select the key and copy it manually.');
+                flash(ok);
             }
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text).then(

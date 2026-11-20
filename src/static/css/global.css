@@ -902,7 +902,24 @@ html[data-theme="dark"] .nav__brand {
    The section is revealed by CSS alone; the script only enhances. */
 .recovery-block__section {
     display: none;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+}
+
+/* Compact spacing inside the block (the shared form-group and warning
+   styles are roomier than this block needs). */
+.recovery-block .form-group {
+    margin-bottom: var(--spacing-sm);
+}
+
+.recovery-block .reset-warning {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.recovery-block .reset-warning p {
+    margin: 0;
 }
 
 .recovery-block:has(.recovery-toggle:checked) .recovery-block__section {
@@ -920,6 +937,43 @@ html[data-theme="dark"] .nav__brand {
     gap: var(--spacing-sm);
     align-items: stretch;
     margin-bottom: var(--spacing-sm);
+}
+
+.recovery-key__field {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    text-align: center;
+    align-items: center;
+}
+
+/* "Copied" replaces the key for a moment; the key stays in the layout
+   (hidden), so the box never changes size. */
+.recovery-key__flash {
+    display: none;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--colour-success, #2ecc71);
+    border-radius: var(--radius);
+    background-color: var(--colour-bg);
+    color: var(--colour-success, #2ecc71);
+    font-weight: 700;
+}
+
+.recovery-key__field.is-flashing .recovery-key__flash {
+    display: flex;
+}
+
+.recovery-key__field.is-flashing .recovery-key__value {
+    visibility: hidden;
+}
+
+.recovery-key__field.is-failed .recovery-key__flash {
+    border-color: var(--colour-danger);
+    color: var(--colour-danger);
 }
 
 .recovery-key__value {
@@ -945,13 +999,20 @@ html[data-theme="dark"] .nav__brand {
     min-height: 44px;
     min-width: 44px;
     padding: var(--spacing-xs);
+    border-width: 1px;
 }
 
+/* Screen-reader announcement only; the visible confirmation is on the key. */
 .recovery-key__status {
-    min-height: 1.4em;
-    margin-bottom: var(--spacing-md);
-    color: var(--colour-text-muted);
-    font-size: 0.9rem;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 @media (max-width: 600px) {
