@@ -191,6 +191,13 @@
         font-family: var(--font-main);
         font-weight: 600;
     }
+    .shorts-table td.shorts-table__ore a,
+    .holdings-table td.holdings-table__ore a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 100%;
+    }
     .info-icon {
         display: inline-block;
         font-size: 0.7rem;
@@ -308,7 +315,7 @@
         }
         .holdings-table td:nth-child(1) a,
         .shorts-table td:nth-child(1) a {
-            display: inline-block;
+            display: inline-flex;
             padding: 9px 0;
             margin: -9px 0;
             font-size: 1.1rem;

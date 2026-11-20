@@ -201,7 +201,7 @@ def create_transaction(user_id, ore_id, trade_type, quantity, price_at_trade, to
 def get_transactions_by_user(user_id, limit=None):
     """Fetch transactions for a user, most recent first."""
     db = get_db()
-    query = """SELECT t.*, o.name as ore_name
+    query = """SELECT t.*, o.name as ore_name, o.icon_filename
                FROM transactions t
                JOIN ores o ON t.ore_id = o.id
                WHERE t.user_id = ? AND t.archived = 0
@@ -350,7 +350,7 @@ def get_transactions_paginated(user_id, page=1, per_page=20, show_archived=False
     total_count = count_row['cnt']
 
     rows = db.execute(
-        f"""SELECT t.*, o.name as ore_name
+        f"""SELECT t.*, o.name as ore_name, o.icon_filename
             FROM transactions t
             JOIN ores o ON t.ore_id = o.id
             WHERE t.user_id = ? {archive_filter}

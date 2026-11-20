@@ -25,7 +25,7 @@ def _get_short_positions(user_id: int) -> list:
         """SELECT sp.id, sp.ore_id, sp.share_quantity, sp.entry_price,
                   sp.locked_collateral, sp.cumulative_fees_paid,
                   sp.stop_loss_price, sp.take_profit_price, sp.opened_at,
-                  o.name AS ore_name, o.current_price, o.volatility
+                  o.name AS ore_name, o.icon_filename, o.current_price, o.volatility
            FROM short_positions sp
            JOIN ores o ON sp.ore_id = o.id
            WHERE sp.user_id = ? AND sp.status = 'active'
@@ -71,6 +71,7 @@ def _get_short_positions(user_id: int) -> list:
         results.append({
             'id': pos['id'],
             'ore_name': pos['ore_name'],
+            'icon_filename': pos['icon_filename'],
             'ore_id': pos['ore_id'],
             'share_quantity': shares,
             'entry_price': entry_price,

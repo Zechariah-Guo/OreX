@@ -295,6 +295,7 @@
     display: flex;
     align-items: stretch;
     position: relative;
+    -webkit-tap-highlight-color: transparent;
     min-height: 60px;
     max-height: 200px;
     border-bottom: 1px solid var(--colour-border);

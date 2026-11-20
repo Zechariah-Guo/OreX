@@ -119,6 +119,34 @@ class TestHistoryCards:
             assert badge in html
         assert '2026-01-02 03:04' in html and '$30.00' in html
 
+    def test_history_ore_has_an_icon_before_the_name(self, app, authenticated_client):
+        conn = _db(app)
+        conn.execute('INSERT INTO transactions (user_id, ore_id, type, quantity, price_at_trade, total_value) '
+                     'VALUES (?,?,?,?,?,?)', (_user_id(app), 1, 'buy', 1, 10.0, 10.0))
+        conn.commit()
+        conn.close()
+        html = authenticated_client.get('/history').data.decode()
+        assert re.search(r'data-label="Ore"><span class="ore-inline"><img src="[^"]*images/ores/Coal\.webp" '
+                         r'alt="" class="ore-inline-icon"[^>]*><span>Coal</span>', html)
+
+
+class TestPortfolioOreIcons:
+    def test_longs_have_an_icon_before_the_name(self, app, authenticated_client):
+        _add_holding(app)
+        html = authenticated_client.get('/portfolio').data.decode()
+        assert re.search(r'<img src="[^"]*images/ores/Coal\.webp" alt="" class="ore-inline-icon"[^>]*><span>Coal</span></a>', html)
+
+    def test_shorts_have_an_icon_before_the_name(self, app, authenticated_client):
+        _make_advanced(app)
+        conn = _db(app)
+        conn.execute('INSERT INTO short_positions (user_id, ore_id, share_quantity, entry_price, locked_collateral) '
+                     'VALUES (?,?,?,?,?)', (_user_id(app), 1, 4, 12.0, 72.0))
+        conn.commit()
+        conn.close()
+        html = authenticated_client.get('/portfolio?tab=shorts').data.decode()
+        shorts = html.split('<table class="shorts-table"', 1)[1]
+        assert re.search(r'<img src="[^"]*images/ores/Coal\.webp" alt="" class="ore-inline-icon"[^>]*><span>Coal</span></a>', shorts)
+
 
 class TestLeaderboardRows:
     def _page(self, app, authenticated_client):

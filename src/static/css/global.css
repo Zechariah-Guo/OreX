@@ -89,6 +89,15 @@ a, button, [role="button"], summary, label, input, select, textarea {
     -webkit-tap-highlight-color: transparent;
 }
 
+/* Non-link elements that react to a tap (the property is inherited, so the rows'
+   cells, chevron and expanded detail are covered too). */
+#leaderboard-live,
+.leaderboard-table,
+.leaderboard-table tr,
+.history-table tr {
+    -webkit-tap-highlight-color: transparent;
+}
+
 img {
     max-width: 100%;
     height: auto;
@@ -2267,6 +2276,14 @@ input::-webkit-inner-spin-button {
         stroke-width: 24;
     }
 
+    /* Icon-only buttons (under 480px) are wider than the 22px glyph, so anchor the
+       unread dot to the glyph's top-right corner, not the button's corner. */
+    .main-nav--auth .nav__dropdown-icon--unread::after {
+        right: auto;
+        left: calc(50% + 5px);
+        top: 9px;
+    }
+
     /* Holding a control shows its label (nav.js): stop the browser from
        treating the hold as a scroll, text selection or link preview. */
     .main-nav--auth .nav__dropdown-icon,
@@ -2648,6 +2665,28 @@ input::-webkit-inner-spin-button {
 
 .history-table__row--archived {
     opacity: 0.5;
+}
+
+/* Small ore icon before an ore name (Portfolio, History) */
+.ore-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.ore-inline-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+}
+
+.ore-inline > span,
+.holdings-table__ore a > span,
+.shorts-table__ore a > span {
+    min-width: 0;
 }
 
 .trade-badge {

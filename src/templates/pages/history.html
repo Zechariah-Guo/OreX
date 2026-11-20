@@ -35,7 +35,7 @@
                 {% for t in transactions %}
                 <tr role="row" class="{% if t['archived'] %}history-table__row--archived{% endif %}">
                     <td role="cell" class="history-table__date" data-label="Date">{{ t['created_at'][:16] | replace('T', ' ') }}</td>
-                    <td role="cell" class="history-table__ore" data-label="Ore">{{ t['ore_name'] }}</td>
+                    <td role="cell" class="history-table__ore" data-label="Ore"><span class="ore-inline"><img src="{{ url_for('static', filename='images/ores/' ~ t['icon_filename']) }}" alt="" class="ore-inline-icon" width="24" height="24" onerror="this.style.display='none'"><span>{{ t['ore_name'] }}</span></span></td>
                     <td role="cell" class="history-table__type" data-label="Type">
                         <span class="trade-badge trade-badge--{{ t['type'] }}">
                             {% if t['type'] == 'short_open' %}OPEN SHORT{% elif t['type'] == 'short_close' %}CLOSE SHORT{% elif t['type'] == 'short_liquidated' %}LIQUIDATED{% else %}{{ t['type'] | upper }}{% endif %}

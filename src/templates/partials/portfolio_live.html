@@ -60,7 +60,7 @@
             {% for h in holdings %}
             <tr role="row">
                 <td role="cell" class="holdings-table__ore" data-label="Ore">
-                    <a href="{{ url_for('market.ore_detail', ore_id=h['ore_id']) }}">{{ h['name'] }}</a>
+                    <a href="{{ url_for('market.ore_detail', ore_id=h['ore_id']) }}"><img src="{{ url_for('static', filename='images/ores/' ~ h['icon_filename']) }}" alt="" class="ore-inline-icon" width="24" height="24" onerror="this.style.display='none'"><span>{{ h['name'] }}</span></a>
                 </td>
                 <td role="cell" data-label="Quantity">{{ h['quantity'] }}</td>
                 <td role="cell" data-label="Avg. price">${{ "%.2f" | format(h['avg_purchase_price']) }}</td>
@@ -158,7 +158,7 @@
                 {% set net_pnl = sp['unrealized_pnl'] - sp['cumulative_fees_paid'] %}
                 <tr role="row">
                     <td role="cell" class="shorts-table__ore" data-label="Ore">
-                        <a href="{{ url_for('market.ore_detail', ore_id=sp['ore_id']) }}">{{ sp['ore_name'] }}</a>
+                        <a href="{{ url_for('market.ore_detail', ore_id=sp['ore_id']) }}"><img src="{{ url_for('static', filename='images/ores/' ~ sp['icon_filename']) }}" alt="" class="ore-inline-icon" width="24" height="24" onerror="this.style.display='none'"><span>{{ sp['ore_name'] }}</span></a>
                     </td>
                     <td role="cell" data-label="Quantity">{{ sp['share_quantity'] }}</td>
                     <td role="cell" data-label="Entry price">${{ "%.2f" | format(sp['entry_price']) }}</td>
