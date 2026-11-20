@@ -108,6 +108,18 @@ def register():
         login_user(user)
         update_last_login(user_id)
 
+        # Optional recovery key: show it once before landing on the dashboard.
+        # (Imported here because recovery.py imports the rate limiter from this module.)
+        if request.form.get('generate_recovery_key'):
+            from app.routes.recovery import start_key_display
+            from app.totp import generate_recovery_key, hash_recovery_key
+            from app.models import set_recovery_key_hash
+
+            recovery_key = generate_recovery_key()
+            set_recovery_key_hash(user_id, hash_recovery_key(recovery_key))
+            start_key_display(user_id, recovery_key, 'dashboard')
+            return redirect(url_for('recovery.show_key'))
+
         flash('Account created successfully. Welcome to OreX!', 'success')
         return redirect(url_for('dashboard.overview'))
 

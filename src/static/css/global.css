@@ -850,6 +850,95 @@ html[data-theme="dark"] .nav__brand {
     color: var(--colour-text-muted);
 }
 
+/* Recovery key pages (logged-out) */
+.auth-card__link {
+    display: inline-block;
+    padding: var(--spacing-sm) 0;
+    min-height: 44px;
+    line-height: 28px;
+}
+
+.form-input--mono {
+    font-family: monospace;
+    letter-spacing: 0.05em;
+}
+
+.form-check {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    min-height: 44px;
+    cursor: pointer;
+}
+
+.form-check input[type="checkbox"] {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    margin: 10px 0 0;
+    cursor: pointer;
+}
+
+.form-check__title {
+    display: block;
+    padding-top: 10px;
+    font-weight: 500;
+}
+
+.form-check__help {
+    display: block;
+    color: var(--colour-text-muted);
+    font-size: 0.9rem;
+}
+
+.form-notice {
+    margin-bottom: var(--spacing-md);
+    color: var(--colour-text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.recovery-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    align-items: stretch;
+    margin-bottom: var(--spacing-sm);
+}
+
+.recovery-key__value {
+    flex: 1 1 100%;
+    min-width: 0;
+    padding: var(--spacing-sm) var(--spacing-sm);
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+    background-color: var(--colour-bg);
+    font-family: monospace;
+    font-size: clamp(0.8rem, 4.2vw, 1.05rem);
+    text-align: center;
+    white-space: nowrap;
+    user-select: all;
+}
+
+.recovery-key__copy {
+    flex: 1 1 100%;
+    min-height: 44px;
+    min-width: 44px;
+}
+
+.recovery-key__status {
+    min-height: 1.4em;
+    margin-bottom: var(--spacing-md);
+    color: var(--colour-text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.auth-form .btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* ===== Landing Page ===== */
 .landing {
     text-align: center;

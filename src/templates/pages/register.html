@@ -45,6 +45,17 @@
                 {% endif %}
             </div>
 
+            <div class="form-group">
+                <label class="form-check" for="generate_recovery_key">
+                    <input type="checkbox" id="generate_recovery_key" name="generate_recovery_key" value="1"
+                           {% if request.form.get('generate_recovery_key') %}checked{% endif %}>
+                    <span>
+                        <span class="form-check__title">Generate a recovery key (optional)</span>
+                        <span class="form-check__help">Lets you reset your password if you forget it. You will see it once; save it somewhere safe.</span>
+                    </span>
+                </label>
+            </div>
+
             <button type="submit" class="btn btn--primary btn--full">Create Account</button>
         </form>
 

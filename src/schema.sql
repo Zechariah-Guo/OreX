@@ -88,6 +88,14 @@ CREATE TABLE IF NOT EXISTS backup_codes (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- One optional, single-use account recovery key per user (hash only).
+CREATE TABLE IF NOT EXISTS recovery_keys (
+    user_id INTEGER PRIMARY KEY,
+    key_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS stop_loss_take_profit (
     id INTEGER PRIMARY KEY,
     holding_id INTEGER NOT NULL,

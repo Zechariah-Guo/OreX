@@ -80,7 +80,7 @@ OreX/
 │   ├── static/              # CSS, JS, images, audio, tutorial data
 │   └── data/                # SQLite database (auto-created)
 ├── migrations/              # Database migrations
-├── scripts/                 # Developer utilities (screenshots, user cleanup)
+├── scripts/                 # Developer utilities (screenshots, user cleanup via `drop_user.py`, password resets via `reset_password.py`)
 ├── tests/                   # Pytest test suite
 └── docs/                    # Planning documents and assets
 ```
@@ -204,6 +204,7 @@ Deployment settings are read from environment variables. See [`.env.example`](.e
 
 - **Password hashing**: Passwords and 2FA backup codes are hashed with Werkzeug.
 - **Two-factor authentication**: Optional TOTP with QR code setup and backup codes.
+- **Password recovery**: An optional one-time recovery key (shown once at registration, stored only as a hash) lets a user reset a forgotten password. It is rotated after each use and shares the login rate limiter. If a user has no key, an admin can run `python scripts/reset_password.py <username>` (prompts for the new password; add `--random` to generate a temporary one). 2FA is not affected.
 - **CSRF protection**: All forms are protected with Flask-WTF.
 - **Rate limiting**: The login endpoint limits repeated attempts.
 - **Parameterised queries**: All database access uses bound parameters to prevent SQL injection.

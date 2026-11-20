@@ -13,6 +13,7 @@ def register_blueprints(app):
     from app.routes.leaderboard import leaderboard_bp
     from app.routes.pages import pages_bp
     from app.routes.two_factor import two_factor_bp
+    from app.routes.recovery import recovery_bp
     from app.routes.finances import finances_bp
     from app.routes.testing import testing_bp
     from app.routes.inbox import inbox_bp
@@ -29,6 +30,7 @@ def register_blueprints(app):
     app.register_blueprint(settings_bp)
     app.register_blueprint(leaderboard_bp)
     app.register_blueprint(two_factor_bp)
+    app.register_blueprint(recovery_bp)
     app.register_blueprint(finances_bp)
     app.register_blueprint(testing_bp)
     app.register_blueprint(inbox_bp)

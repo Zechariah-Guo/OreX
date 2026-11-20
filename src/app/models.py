@@ -444,6 +444,7 @@ def delete_account(user_id):
     db.execute("DELETE FROM transactions WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM holdings WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM recovery_keys WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM users WHERE id = ?", (user_id,))
     db.commit()
 
@@ -580,6 +581,95 @@ def get_remaining_backup_code_count(user_id):
         (user_id,)
     ).fetchone()
     return row["cnt"]
+
+
+# --- Recovery Key Model ---
+
+def set_recovery_key_hash(user_id, key_hash):
+    """Store (or replace) the hashed recovery key for a user."""
+    db = get_db()
+    db.execute(
+        "INSERT OR REPLACE INTO recovery_keys (user_id, key_hash) VALUES (?, ?)",
+        (user_id, key_hash)
+    )
+    db.commit()
+
+
+def get_recovery_key_hash(user_id):
+    """Fetch the recovery key hash for a user. Returns str or None."""
+    db = get_db()
+    row = db.execute(
+        "SELECT key_hash FROM recovery_keys WHERE user_id = ?",
+        (user_id,)
+    ).fetchone()
+    return row['key_hash'] if row else None
+
+
+def consume_recovery_key(user_id):
+    """Delete a user's recovery key. Returns True if one existed (single-use)."""
+    db = get_db()
+    cursor = db.execute("DELETE FROM recovery_keys WHERE user_id = ?", (user_id,))
+    db.commit()
+    return cursor.rowcount > 0
+
+
+RECOVERY_RESET_NOTIFICATION = 'Your password was reset using your recovery key.'
+
+
+def reset_password_with_recovery_key(user_id, old_key_hash, new_password_hash, new_key_hash):
+    """Reset a password with a recovery key in ONE transaction.
+
+    Consumes the old key, sets the new password hash, stores the new key hash
+    and inserts the 'security' notification, then commits once. Any exception
+    rolls everything back and is re-raised.
+
+    The consume is a DELETE of the exact key hash that was verified
+    (``old_key_hash``), with the row count checked inside the transaction. Two
+    simultaneous resets with the same key cannot both succeed, and a second one
+    can never consume the NEW key the first one stored.
+
+    Returns:
+        bool: True if committed; False (nothing changed) if the key was already
+        consumed or the user no longer exists.
+    """
+    db = get_db()
+    try:
+        # First write statement opens the transaction (and takes the write lock).
+        if db.execute(
+            "DELETE FROM recovery_keys WHERE user_id = ? AND key_hash = ?",
+            (user_id, old_key_hash),
+        ).rowcount == 0:
+            db.rollback()
+            return False
+
+        if db.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (new_password_hash, user_id),
+        ).rowcount == 0:
+            db.rollback()
+            return False
+
+        db.execute(
+            "INSERT INTO recovery_keys (user_id, key_hash) VALUES (?, ?)",
+            (user_id, new_key_hash),
+        )
+
+        cursor = db.execute(
+            """INSERT INTO notifications (user_id, category, message, action_url, target_url, is_read, created_at)
+               VALUES (?, 'security', ?, NULL, NULL, 0, datetime('now', 'localtime'))""",
+            (user_id, RECOVERY_RESET_NOTIFICATION),
+        )
+        notif_id = cursor.lastrowid
+        db.execute(
+            "UPDATE notifications SET action_url = ? WHERE id = ?",
+            (f'/inbox?selected={notif_id}', notif_id),
+        )
+
+        db.commit()
+        return True
+    except Exception:
+        db.rollback()
+        raise
 
 
 # --- Notifications Model ---

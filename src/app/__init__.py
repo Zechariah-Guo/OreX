@@ -235,6 +235,10 @@ def create_app(test_config=None):
             return empty
         try:
             from flask import request
+            # Never overlay the one-time recovery key page: a tutorial tap could
+            # navigate away before the user has saved the key.
+            if (request.endpoint or '').startswith('recovery.'):
+                return empty
             from app.tutorial.data import load_all_tracks
             from app.tutorial.models import (
                 get_all_tutorial_states, pick_active_state, should_auto_trigger,

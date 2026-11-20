@@ -77,6 +77,38 @@ def generate_backup_codes(count: int = 8) -> list[str]:
     return codes
 
 
+# Unambiguous alphabet (no 0/O, 1/I): 32 symbols x 20 chars = 100 bits.
+RECOVERY_KEY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+RECOVERY_KEY_LENGTH = 20
+RECOVERY_KEY_GROUP = 4
+
+
+def generate_recovery_key() -> str:
+    """Generate a random recovery key shown as XXXX-XXXX-XXXX-XXXX-XXXX."""
+    raw = "".join(
+        secrets.choice(RECOVERY_KEY_ALPHABET) for _ in range(RECOVERY_KEY_LENGTH)
+    )
+    return "-".join(
+        raw[i:i + RECOVERY_KEY_GROUP]
+        for i in range(0, RECOVERY_KEY_LENGTH, RECOVERY_KEY_GROUP)
+    )
+
+
+def normalize_recovery_key(key: str) -> str:
+    """Strip whitespace and dashes and uppercase, so formatting never matters."""
+    return "".join(ch for ch in key if not ch.isspace() and ch != "-").upper()
+
+
+def hash_recovery_key(key: str) -> str:
+    """Hash the normalized recovery key (same approach as backup codes)."""
+    return generate_password_hash(normalize_recovery_key(key))
+
+
+def verify_recovery_key(stored_hash: str, key: str) -> bool:
+    """Check a user-entered recovery key against its stored hash."""
+    return check_password_hash(stored_hash, normalize_recovery_key(key))
+
+
 def hash_backup_code(code: str) -> str:
     """Hash a backup code using Werkzeug generate_password_hash."""
     return generate_password_hash(code)
