@@ -1,16 +1,23 @@
 # OreX app image: rehearsal of the Oracle VM setup (Ubuntu 24.04 ships Python 3.12).
 FROM python:3.12-slim
 
+# uv binary, pinned to the version used to write uv.lock.
+COPY --from=ghcr.io/astral-sh/uv:0.13.9 /uv /uvx /bin/
+
 ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_NO_CACHE=1 \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PROJECT_ENVIRONMENT=/app/.venv \
+    PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
 
-# Same installs as the plan: requirements.txt + gunicorn (pinned as in
-# docs/planning/deployment/requirements-prod.txt).
-COPY requirements.txt ./requirements.txt
-RUN pip install -r requirements.txt \
-    && pip install gunicorn==23.0.0 oci==2.191.0
+# Install exactly what uv.lock pins: runtime deps + the prod group (gunicorn, oci),
+# no dev tools. --locked fails the build if uv.lock is out of date with pyproject.toml.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev --group prod
 
 COPY src ./src
 

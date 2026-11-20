@@ -147,14 +147,14 @@ cd /home/ubuntu
 git clone https://github.com/Zechariah-Guo/OreX.git orex
 cd orex
 
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.local/bin/env
 
-# Install dependencies (includes prod extras like gunicorn)
-pip install --upgrade pip
-pip install -r requirements.txt
-pip install -r docs/planning/deployment/requirements-prod.txt
+# Create ./venv from uv.lock: runtime deps + prod group (gunicorn, oci), no dev tools.
+# UV_PROJECT_ENVIRONMENT keeps the venv at ./venv so the systemd paths below still work.
+export UV_PROJECT_ENVIRONMENT=venv
+uv sync --locked --no-dev --group prod --python 3.12
 ```
 
 ### 5.4 Environment Configuration
@@ -394,8 +394,7 @@ ssh -i /path/to/key.pem ubuntu@YOUR_INSTANCE_IP
 
 cd /home/ubuntu/orex
 git pull
-source venv/bin/activate
-pip install -r requirements.txt
+UV_PROJECT_ENVIRONMENT=venv uv sync --locked --no-dev --group prod
 sudo systemctl restart orex
 ```
 

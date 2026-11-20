@@ -1,0 +1,63 @@
+[project]
+name = "orex"
+version = "0.1.0"
+description = "OreX ore trading game (Flask)"
+readme = "README.md"
+# Docker/Oracle target is Python 3.12 (Ubuntu 24.04); local dev uses .python-version.
+requires-python = ">=3.12"
+# Direct dependencies only. Transitive versions are pinned in uv.lock.
+dependencies = [
+    "cryptography==50.0.0",
+    "flask==3.1.3",
+    "flask-login==0.6.3",
+    "flask-wtf==1.3.0",
+    "pillow==13.0.0",
+    "pyotp==2.9.0",
+    "qrcode==8.0",
+    "werkzeug==3.1.9",
+    "wtforms==3.2.2",
+]
+
+[dependency-groups]
+# Installed by default with `uv sync`.
+dev = [
+    "hypothesis==6.155.7",
+    "pytest==9.1.1",
+    "bandit==1.9.4",
+    "pip-audit==2.10.0",
+]
+# Production server only (Docker / Oracle VM): `uv sync --no-dev --group prod`.
+prod = [
+    "gunicorn==23.0.0",
+    # Avatar storage on Oracle Object Storage (STORAGE_BACKEND=oci)
+    "oci==2.191.0",
+]
+
+[tool.uv]
+# The app runs from src/ and is not an installable package.
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "account_settings: Account settings tests",
+    "advanced_integration: Advanced Mode integration tests",
+    "advancements_integration: Advancements (achievements) integration tests",
+    "authentication: Authentication tests",
+    "error_handling: Error handling tests",
+    "integration_2fa: Two-factor authentication integration tests",
+    "leaderboard: Leaderboard tests",
+    "market_browsing: Market browsing tests",
+    "market_engine: Market engine tests",
+    "portfolio: Portfolio tests",
+    "security: Security tests",
+    "settings_advanced: Advanced Mode settings route tests",
+    "trade_sltp: Trade SL/TP route tests",
+    "trading: Trading tests",
+    "shorting_integration: Shorting system integration tests",
+    "transaction_history: Transaction history tests",
+    "finances: Finances page tests",
+    "tutorial: Tutorial system integration tests",
+    "slow: Slow tests (heavy password hashing in property tests). Deselect with -m \"not slow\"",
+    "browser: Real-browser tests (headless Chrome/Edge via scripts/screenshot.py); skipped if no browser or no internet. Deselect with -m \"not browser\"",
+]

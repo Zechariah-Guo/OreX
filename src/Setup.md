@@ -18,8 +18,7 @@ A Minecraft-themed stock market simulation built with Python and Flask. Trade or
 
 ## Prerequisites
 
-- Python 3.9 or later
-- pip (included with Python)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (installs the required Python version automatically)
 - A modern web browser
 
 No other software is required. No database server, no Docker, no cloud accounts.
@@ -33,43 +32,20 @@ No other software is required. No database server, no Docker, no cloud accounts.
    cd at3-major-project-Zechariah-Guo
    ```
 
-2. **Create a virtual environment**
+2. **Install dependencies** (creates `.venv` from `uv.lock`)
 
    ```
-   python -m venv venv
+   uv sync
    ```
 
-3. **Activate the virtual environment**
-
-   Windows (Command Prompt):
-   ```
-   venv\Scripts\activate
-   ```
-
-   Windows (PowerShell):
-   ```
-   .\venv\Scripts\Activate.ps1
-   ```
-
-   macOS / Linux:
-   ```
-   source venv/bin/activate
-   ```
-
-4. **Install dependencies**
-
-   ```
-   pip install -r requirements.txt
-   ```
-
-5. **Run the application**
+3. **Run the application**
 
    ```
    cd src
-   python run.py
+   uv run python run.py
    ```
 
-6. **Open in browser**
+4. **Open in browser**
 
    Navigate to [http://localhost:4000](http://localhost:4000)
 
@@ -88,7 +64,7 @@ The SQLite database is created and seeded with ore data automatically on first r
 
 ```
 at3-major-project-Zechariah-Guo/
-├── requirements.txt         # Python dependencies
+├── pyproject.toml           # Python dependencies (locked in uv.lock)
 ├── src/
 │   ├── app/
 │   │   ├── __init__.py      # Flask app factory

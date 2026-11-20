@@ -47,8 +47,9 @@ OreX is in active development. Features, balancing, and the database schema may 
 
 ```
 OreX/
-├── requirements.txt         # Python dependencies
-├── requirements-dev.txt     # Testing and security scanning dependencies
+├── pyproject.toml           # Dependencies (runtime, dev, prod groups) and pytest config
+├── uv.lock                  # Exact pinned versions, managed by uv
+├── .python-version          # Python version uv uses locally
 ├── Dockerfile               # App image (Gunicorn, 1 worker)
 ├── docker-compose.yml       # Local Nginx -> Gunicorn -> SQLite stack
 ├── .env.example             # Environment variable template
@@ -88,8 +89,7 @@ OreX/
 
 ### Prerequisites
 
-- Python 3.10 or later
-- pip
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (it installs the right Python version for you)
 
 ### Installation
 
@@ -99,27 +99,18 @@ OreX/
    cd OreX
    ```
 
-2. Create and activate a virtual environment:
+2. Create `.venv` and install the locked dependencies (including dev tools):
    ```bash
-   python -m venv .venv
-   # Windows
-   .venv\Scripts\activate
-   # macOS / Linux
-   source .venv/bin/activate
+   uv sync
    ```
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run the application:
+3. Run the application:
    ```bash
    cd src
-   python run.py
+   uv run python run.py
    ```
 
-5. Open your browser and navigate to `http://127.0.0.1:4000`
+4. Open your browser and navigate to `http://127.0.0.1:4000`
 
 The SQLite database is created and seeded with the 9 ores on first run. To reset it, stop the server, delete `src/data/orex.db`, and start the server again.
 
@@ -134,11 +125,23 @@ The Docker Compose setup runs the production stack locally (Nginx, Gunicorn with
 ### Running Tests
 
 ```bash
-pip install -r requirements-dev.txt
-pytest
+uv run pytest
 ```
 
-Some 2FA property tests are slow because they hash many passwords. Skip them with `pytest -m "not slow"`, and skip the real-browser tests with `-m "not browser"`.
+Some 2FA property tests are slow because they hash many passwords. Skip them with `uv run pytest -m "not slow"`, and skip the real-browser tests with `-m "not browser"`.
+
+### Managing Dependencies
+
+| Task | Command |
+|------|---------|
+| Add a runtime dependency | `uv add <pkg>` |
+| Add a dev-only dependency | `uv add --dev <pkg>` |
+| Add a production-server dependency | `uv add --group prod <pkg>` |
+| Remove a dependency | `uv remove <pkg>` |
+| Upgrade one package | `uv lock --upgrade-package <pkg>` then `uv sync` |
+| Security audit | `uv export --no-dev --no-hashes -o .kiro/tmp/req.txt` then `uv run pip-audit -r .kiro/tmp/req.txt` |
+
+Commit both `pyproject.toml` and `uv.lock` after any change.
 
 ## Pages
 
