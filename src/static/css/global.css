@@ -898,32 +898,53 @@ html[data-theme="dark"] .nav__brand {
     text-align: center;
 }
 
+/* Inline recovery key block (Register, Set a New Password).
+   The section is revealed by CSS alone; the script only enhances. */
+.recovery-block__section {
+    display: none;
+    margin-bottom: var(--spacing-md);
+}
+
+.recovery-block:has(.recovery-toggle:checked) .recovery-block__section {
+    display: block;
+}
+
+@supports not selector(:has(*)) {
+    .recovery-block__section {
+        display: block;
+    }
+}
+
 .recovery-key {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--spacing-sm);
     align-items: stretch;
     margin-bottom: var(--spacing-sm);
 }
 
 .recovery-key__value {
-    flex: 1 1 100%;
+    flex: 1 1 auto;
     min-width: 0;
-    padding: var(--spacing-sm) var(--spacing-sm);
+    padding: var(--spacing-sm);
     border: 1px solid var(--colour-border);
     border-radius: var(--radius);
     background-color: var(--colour-bg);
     font-family: monospace;
-    font-size: clamp(0.8rem, 4.2vw, 1.05rem);
-    text-align: center;
-    white-space: nowrap;
+    font-size: clamp(0.85rem, 4vw, 1.05rem);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    word-break: break-all;
     user-select: all;
 }
 
 .recovery-key__copy {
-    flex: 1 1 100%;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     min-height: 44px;
     min-width: 44px;
+    padding: var(--spacing-xs);
 }
 
 .recovery-key__status {
@@ -931,12 +952,30 @@ html[data-theme="dark"] .nav__brand {
     margin-bottom: var(--spacing-md);
     color: var(--colour-text-muted);
     font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+    /* 44px touch targets for the auth forms on phones */
+    .auth-form .form-input,
+    .auth-form .btn {
+        min-height: 44px;
+    }
+}
+
+.required-mark {
+    color: var(--colour-danger);
+    font-weight: 700;
+}
+
+.recovery-hint {
+    margin-top: var(--spacing-sm);
+    color: var(--colour-text-muted);
+    font-size: 0.9rem;
     text-align: center;
 }
 
-.auth-form .btn[disabled] {
-    opacity: 0.5;
-    cursor: not-allowed;
+.recovery-hint[hidden] {
+    display: none;
 }
 
 /* ===== Landing Page ===== */

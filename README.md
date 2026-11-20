@@ -204,7 +204,7 @@ Deployment settings are read from environment variables. See [`.env.example`](.e
 
 - **Password hashing**: Passwords and 2FA backup codes are hashed with Werkzeug.
 - **Two-factor authentication**: Optional TOTP with QR code setup and backup codes.
-- **Password recovery**: An optional one-time recovery key (shown once at registration, stored only as a hash) lets a user reset a forgotten password. It is rotated after each use and shares the login rate limiter. If a user has no key, an admin can run `python scripts/reset_password.py <username>` (prompts for the new password; add `--random` to generate a temporary one). 2FA is not affected.
+- **Password recovery**: An optional one-time recovery key (shown inside the registration form, which cannot be submitted until the user confirms they saved it; stored only as a hash, and only when the account is created) lets a user reset a forgotten password. The key travels in a signed, time-limited token, so nothing is stored before the form is submitted. The reset form offers a new key the same way (ticked by default) and the old key is consumed in the same transaction. It shares the login rate limiter. If a user has no key, an admin can run `python scripts/reset_password.py <username>` (prompts for the new password; add `--random` to generate a temporary one). 2FA is not affected.
 - **CSRF protection**: All forms are protected with Flask-WTF.
 - **Rate limiting**: The login endpoint limits repeated attempts.
 - **Parameterised queries**: All database access uses bound parameters to prevent SQL injection.

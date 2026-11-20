@@ -1,0 +1,118 @@
+{# Shared inline recovery-key block for the Register and Set a New Password forms.
+   Expects: recovery_key, recovery_token, recovery_wanted, recovery_notice,
+   recovery_error, and `recovery_submit_label` (the primary button text).
+   The section is revealed by CSS alone (:has); the script only enables/disables the
+   button, shows the hint and powers Copy. The server re-checks everything. #}
+<div class="recovery-block" data-recovery-block>
+    <div class="form-group">
+        <label class="form-check" for="generate_recovery_key">
+            <input type="checkbox" id="generate_recovery_key" name="generate_recovery_key" value="1"
+                   class="recovery-toggle" autocomplete="off"
+                   {% if recovery_wanted %}checked{% endif %}>
+            <span>
+                <span class="form-check__title">Generate a recovery key (optional)</span>
+                <span class="form-check__help">Lets you reset your password if you forget it.</span>
+            </span>
+        </label>
+    </div>
+
+    <div class="recovery-block__section" id="recovery-section">
+        <input type="hidden" name="recovery_token" value="{{ recovery_token }}" autocomplete="off">
+
+        <div class="reset-warning" role="alert">
+            <p><strong>Save this key now.</strong></p>
+            <p>It works once and will not be shown again. Anyone with it can reset your password, so keep it somewhere safe and private.</p>
+        </div>
+
+        {% if recovery_notice %}
+        <p class="form-notice" role="status">{{ recovery_notice }}</p>
+        {% endif %}
+
+        <div class="recovery-key">
+            <code class="recovery-key__value" id="recovery-key-value">{{ recovery_key }}</code>
+            <button type="button" class="btn btn--secondary recovery-key__copy" id="recovery-key-copy"
+                    aria-label="Copy recovery key" title="Copy recovery key">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+            </button>
+        </div>
+        <p class="recovery-key__status" id="recovery-key-status" role="status" aria-live="polite"></p>
+
+        <div class="form-group">
+            <label class="form-check" for="recovery_saved">
+                <input type="checkbox" id="recovery_saved" name="recovery_saved" value="1"
+                       autocomplete="off" aria-required="true">
+                <span>
+                    <span class="form-check__title">I have saved my recovery key
+                        <span class="required-mark" aria-hidden="true">*</span></span>
+                </span>
+            </label>
+            {% if recovery_error %}
+            <p class="form-error" role="alert">{{ recovery_error }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn--primary btn--full" id="recovery-submit"
+            aria-describedby="recovery-hint">{{ recovery_submit_label }}</button>
+    <p class="recovery-hint" id="recovery-hint" hidden>Tick "I have saved my recovery key" to continue.</p>
+</div>
+
+<script>
+    (function () {
+        var toggle = document.getElementById('generate_recovery_key');
+        var confirmBox = document.getElementById('recovery_saved');
+        var submitBtn = document.getElementById('recovery-submit');
+        var hint = document.getElementById('recovery-hint');
+        var keyEl = document.getElementById('recovery-key-value');
+        var copyBtn = document.getElementById('recovery-key-copy');
+        var statusEl = document.getElementById('recovery-key-status');
+
+        // Never carry "saved" over to a page that shows a different key (browser form restore).
+        confirmBox.checked = false;
+
+        function sync() {
+            var gated = toggle.checked && !confirmBox.checked;
+            submitBtn.disabled = gated;
+            hint.hidden = !gated;
+        }
+        toggle.addEventListener('change', sync);
+        confirmBox.addEventListener('change', sync);
+        window.addEventListener('pageshow', sync);
+        sync();
+
+        function setStatus(text) { statusEl.textContent = text; }
+
+        function fallbackCopy(text) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            var ok = false;
+            try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+            document.body.removeChild(ta);
+            return ok;
+        }
+
+        copyBtn.addEventListener('click', function () {
+            var text = keyEl.textContent.trim();
+            function done(ok) {
+                setStatus(ok ? 'Copied' : 'Copy failed. Select the key and copy it manually.');
+            }
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(
+                    function () { done(true); },
+                    function () { done(fallbackCopy(text)); }
+                );
+            } else {
+                done(fallbackCopy(text));
+            }
+        });
+    })();
+</script>

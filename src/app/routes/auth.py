@@ -11,6 +11,8 @@ from app.models import (
     verify_password, update_last_login, get_2fa_status
 )
 from app.utils.validation import validate_username, validate_password
+from app.recovery_form import fresh_option, read_option, render_no_store
+from app.totp import hash_recovery_key
 from app.database import get_db
 from app.advancements import update_login_streak
 
@@ -70,60 +72,48 @@ def register():
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
 
+        # Optional inline recovery key (signed token + "I have saved" confirmation).
+        option = read_option(request.form, 'register')
+
+        def render(**errors):
+            # The page holds a key, so it is never cached. A failed submit keeps
+            # the same key (re-signed) so a copy the user already saved stays valid.
+            return render_no_store(
+                'pages/register.html', username=username, **option.context, **errors
+            )
+
         # Validate inputs
         valid, error = validate_username(username)
         if not valid:
-            return render_template(
-                'pages/register.html',
-                username=username,
-                username_error=error,
-            )
+            return render(username_error=error)
 
         valid, error = validate_password(password)
         if not valid:
-            return render_template(
-                'pages/register.html',
-                username=username,
-                password_error=error,
-            )
+            return render(password_error=error)
 
         if password != confirm_password:
-            return render_template(
-                'pages/register.html',
-                username=username,
-                confirm_error='Passwords do not match.',
-            )
+            return render(confirm_error='Passwords do not match.')
 
         # Check uniqueness
         if get_user_by_username(username):
-            return render_template(
-                'pages/register.html',
-                username=username,
-                username_error='That username is already taken.',
-            )
+            return render(username_error='That username is already taken.')
 
-        # Create user and log in
-        user_id = create_user(username, password)
+        if option.error:
+            return render()
+
+        # Create the user (and the recovery key hash, if wanted) in one transaction, then log in
+        recovery_hash = hash_recovery_key(option.key) if option.key else None
+        user_id = create_user(username, password, recovery_hash)
         user = User(user_id, username, current_app.config['DEFAULT_BALANCE'])
         login_user(user)
         update_last_login(user_id)
 
-        # Optional recovery key: show it once before landing on the dashboard.
-        # (Imported here because recovery.py imports the rate limiter from this module.)
-        if request.form.get('generate_recovery_key'):
-            from app.routes.recovery import start_key_display
-            from app.totp import generate_recovery_key, hash_recovery_key
-            from app.models import set_recovery_key_hash
-
-            recovery_key = generate_recovery_key()
-            set_recovery_key_hash(user_id, hash_recovery_key(recovery_key))
-            start_key_display(user_id, recovery_key, 'dashboard')
-            return redirect(url_for('recovery.show_key'))
-
         flash('Account created successfully. Welcome to OreX!', 'success')
         return redirect(url_for('dashboard.overview'))
 
-    return render_template('pages/register.html')
+    return render_no_store(
+        'pages/register.html', **fresh_option('register').context
+    )
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
