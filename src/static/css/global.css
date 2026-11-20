@@ -4009,3 +4009,310 @@ a:not([class]):active {
     border-left: 4px solid var(--colour-danger);
     background-color: var(--colour-surface-hover);
 }
+
+
+/* ===== Phone / tablet card layouts: History and Leaderboard =====
+   Below 960px these two tables are restyled as cards with CSS only (the Portfolio
+   tables do the same in portfolio.html; keep the breakpoints in step). The markup
+   is unchanged, so links, forms, ids and the htmx swap keep working. The header
+   row stays in the DOM for screen readers; the tables carry role attributes
+   because overriding `display` can drop table semantics in some browsers. */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* The leaderboard chevron column only exists in the phone layout */
+.leaderboard-table__toggle,
+.leaderboard-table__toggle-head {
+    display: none;
+}
+
+@keyframes leaderboardReveal {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 960px) {
+    .history-table-wrapper,
+    .leaderboard-table-wrapper {
+        overflow: visible;
+    }
+
+    .history-table,
+    .leaderboard-table {
+        display: block;
+        background: none;
+    }
+
+    .history-table thead,
+    .leaderboard-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .history-table tbody,
+    .leaderboard-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .history-table td,
+    .leaderboard-table td {
+        display: block;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    /* --- History: compact two-line card, about 64px tall --- */
+    .history-table tr {
+        display: grid;
+        grid-template-columns: auto auto minmax(0, 1fr) auto;
+        column-gap: var(--spacing-sm);
+        row-gap: 4px;
+        align-items: center;
+        min-height: 64px;
+        padding: 10px 14px;
+        background-color: var(--colour-surface);
+        border: 1px solid var(--colour-border);
+        border-radius: var(--radius);
+    }
+
+    .history-table td.history-table__ore {
+        grid-column: 1;
+        grid-row: 1;
+        font-family: var(--font-main);
+        font-size: 1rem;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .history-table td.history-table__type {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .history-table td.history-table__total {
+        grid-column: 3 / 5;
+        grid-row: 1;
+        justify-self: end;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .history-table td.history-table__date {
+        grid-column: 1 / 3;
+        grid-row: 2;
+        font-size: 0.8rem;
+        color: var(--colour-text-muted);
+    }
+
+    .history-table td.history-table__qty {
+        grid-column: 3;
+        grid-row: 2;
+        justify-self: end;
+        margin-right: -4px;
+        font-size: 0.85rem;
+    }
+
+    .history-table td.history-table__price {
+        grid-column: 4;
+        grid-row: 2;
+        font-size: 0.85rem;
+    }
+
+    /* "12 x $16.80": the multiplication sign is decorative */
+    .history-table td.history-table__price::before {
+        content: "\00d7\00a0";
+        content: "\00d7\00a0" / "";
+    }
+
+    .history-filter .btn,
+    .pagination .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 var(--spacing-md);
+    }
+
+    .pagination {
+        flex-wrap: wrap;
+        gap: var(--spacing-sm) var(--spacing-md);
+    }
+
+    /* --- Leaderboard: one slim line per player, tap to expand --- */
+    .leaderboard-table tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        column-gap: 6px;
+        min-height: 56px;
+        padding: 0 4px 0 4px;
+        background-color: var(--colour-surface);
+        border: 1px solid var(--colour-border);
+        border-radius: var(--radius);
+        cursor: pointer;
+    }
+
+    .leaderboard-table tr:active {
+        border-color: var(--colour-accent);
+    }
+
+    .leaderboard-table tr.leaderboard-table__row--current {
+        background-image: linear-gradient(rgba(46, 204, 113, 0.1), rgba(46, 204, 113, 0.1));
+    }
+
+    /* forced line break between the slim line and the details */
+    .leaderboard-table tr::after {
+        content: "";
+        order: 4;
+        flex: 0 0 100%;
+        height: 0;
+    }
+
+    .leaderboard-table td.leaderboard-table__rank {
+        order: 1;
+        flex: 0 0 1.75rem;
+        width: auto;
+        font-size: 1.1rem;
+        text-align: center;
+    }
+
+    .leaderboard-table td.leaderboard-table__username {
+        order: 2;
+        flex: 1 1 0;
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        min-width: 0;
+    }
+
+    .leaderboard__player-link,
+    .leaderboard__bot-name {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    /* the link is only avatar + name, so the empty space to its right toggles the row */
+    .leaderboard__player-link {
+        min-height: 44px;
+        padding-right: var(--spacing-sm);
+    }
+
+    .leaderboard__player-link .leaderboard__username {
+        text-decoration: underline;
+        text-decoration-color: var(--colour-border);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+    }
+
+    .leaderboard__username {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* the bot avatar already marks bots; drop the extra emoji to give names room */
+    .leaderboard-table .leaderboard-bot {
+        display: none;
+    }
+
+    .leaderboard-avatar,
+    .leaderboard-table__username .avatar-circle {
+        flex: 0 0 auto;
+    }
+
+    .leaderboard-table td.leaderboard-table__total {
+        order: 3;
+        flex: 0 0 auto;
+        font-size: 0.85rem;
+        text-align: right;
+    }
+
+    .leaderboard-table td.leaderboard-table__toggle {
+        order: 3;
+        display: block;
+        flex: 0 0 auto;
+    }
+
+    .leaderboard-table__chevron {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: var(--radius);
+        background-color: var(--colour-bg);
+        color: var(--colour-text-muted);
+        cursor: pointer;
+    }
+
+    .leaderboard-table__chevron:focus-visible {
+        outline: 2px solid var(--colour-accent);
+        outline-offset: 2px;
+    }
+
+    .leaderboard-table__chevron-icon {
+        transition: transform 0.2s;
+    }
+
+    .leaderboard-table tr.is-expanded .leaderboard-table__chevron-icon {
+        transform: rotate(180deg);
+    }
+
+    /* details: hidden until the row is expanded */
+    .leaderboard-table td.leaderboard-table__detail {
+        order: 5;
+        display: none;
+        flex: 1 1 6.5rem;
+        padding: 2px 4px 12px;
+        font-size: 0.9rem;
+    }
+
+    .leaderboard-table tr.is-expanded td.leaderboard-table__detail {
+        display: block;
+        animation: leaderboardReveal 0.18s ease-out;
+    }
+
+    .leaderboard-table td.leaderboard-table__detail::before {
+        content: attr(data-label);
+        content: attr(data-label) / "";
+        display: block;
+        font-family: var(--font-main);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--colour-text-muted);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .leaderboard-table__chevron-icon {
+            transition: none;
+        }
+
+        .leaderboard-table tr.is-expanded td.leaderboard-table__detail {
+            animation: none;
+        }
+    }
+}

@@ -203,6 +203,273 @@
     @media (max-width: 768px) {
         .shorts-table-wrapper { overflow-x: auto; }
     }
+
+    /* SL/TP text: "SL: 30.00 / TP: —" on the table; the card shows only the parts that are set */
+    .sltp-key--long,
+    .shorts-table__hint {
+        display: none;
+    }
+
+    /* ===== Phone / tablet card layout =====
+       One block restyles both Portfolio tables (Longs and Shorts) as cards. The same
+       <tr>/<td> markup is used, so forms, buttons, the SL/TP modal trigger and the
+       20s htmx swap are untouched. 1140px is where the Advanced Longs table
+       (about 1061px wide, plus 64px of page padding) starts to fit; the Standard
+       Longs table needs 961px. History and Leaderboard use 960px (global.css and
+       the matchMedia in leaderboard.html). */
+    @media (max-width: 1140px) {
+        .holdings-table-wrapper,
+        .shorts-table-wrapper {
+            overflow: visible;
+        }
+        .holdings-table,
+        .shorts-table {
+            display: block;
+            background: none;
+            white-space: normal;
+        }
+        /* keep the header row for screen readers; the cells carry their own captions */
+        .holdings-table thead,
+        .shorts-table thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
+        }
+        .holdings-table tbody,
+        .shorts-table tbody {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        .holdings-table tr,
+        .shorts-table tr {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            row-gap: 14px;
+            align-items: start;
+            padding: 14px 16px;
+            background: var(--colour-surface);
+            border: 1px solid var(--colour-border);
+            border-radius: var(--radius);
+        }
+        .holdings-table td,
+        .shorts-table td {
+            display: block;
+            min-width: 0;
+            padding: 0;
+            border: 0;
+            background: none;
+            font-size: 1rem;
+            overflow-wrap: anywhere;
+        }
+        .holdings-table td::before,
+        .shorts-table td::before {
+            content: attr(data-label);
+            content: attr(data-label) / "";
+            display: block;
+            margin-bottom: 2px;
+            font-family: var(--font-main);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--colour-text-muted);
+        }
+
+        /* header: ore name left, P/L right (flex order puts them first) */
+        .holdings-table td:nth-child(1),
+        .shorts-table td:nth-child(1) { order: 1; }
+        .holdings-table td:nth-child(6) { order: 2; }
+        .shorts-table td:nth-child(5) { order: 2; }
+        .holdings-table td:nth-child(1)::before,
+        .holdings-table td:nth-child(6)::before,
+        .shorts-table td:nth-child(1)::before,
+        .shorts-table td:nth-child(5)::before,
+        .holdings-table td:nth-child(n+7)::before,
+        .shorts-table td:nth-child(n+7)::before {
+            display: none;
+        }
+        .holdings-table td:nth-child(1),
+        .holdings-table td:nth-child(6),
+        .shorts-table td:nth-child(1),
+        .shorts-table td:nth-child(5) {
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--colour-border);
+        }
+        .holdings-table td:nth-child(6),
+        .shorts-table td:nth-child(5) {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: right;
+        }
+        .holdings-table td:nth-child(1) a,
+        .shorts-table td:nth-child(1) a {
+            display: inline-block;
+            padding: 9px 0;
+            margin: -9px 0;
+            font-size: 1.1rem;
+        }
+
+        /* Longs: the name cell spans the full header row (so the divider is one line)
+           and the P/L sits on top of its right end, on one line */
+        .holdings-table td:nth-child(1) {
+            grid-column: 1 / -1;
+            grid-row: 1;
+        }
+        .holdings-table td:nth-child(6) {
+            grid-column: 1 / -1;
+            grid-row: 1;
+            justify-self: end;
+            border-bottom: 0;
+            white-space: nowrap;
+            font-size: 1rem;
+            z-index: 1;
+        }
+
+        /* Shorts: the Net P/L cell is taller (it carries the hint), so the divider is
+           drawn above the first figures row instead of under the header cells */
+        .shorts-table td:nth-child(1),
+        .shorts-table td:nth-child(5) {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+        .shorts-table td:nth-child(2),
+        .shorts-table td:nth-child(3) {
+            padding-top: 14px;
+            border-top: 1px solid var(--colour-border);
+        }
+
+        /* 2x2 figures */
+        .holdings-table td:nth-child(2) { order: 3; }
+        .holdings-table td:nth-child(3) { order: 4; }
+        .holdings-table td:nth-child(4) { order: 5; }
+        .holdings-table td:nth-child(5) { order: 6; }
+        .shorts-table td:nth-child(2) { order: 3; }
+        .shorts-table td:nth-child(3) { order: 4; }
+        .shorts-table td:nth-child(4) { order: 5; }
+        .shorts-table td:nth-child(6) { order: 6; }
+        /* squeeze price is the risk number */
+        .shorts-table td:nth-child(6) {
+            padding: 6px 8px;
+            margin: -6px -8px;
+            border-radius: var(--radius-sm);
+            background: rgba(231, 76, 60, 0.1);
+            color: #c0392b;
+            font-weight: 700;
+        }
+        .shorts-table td:nth-child(6)::before {
+            color: inherit;
+            opacity: 0.8;
+        }
+        html[data-theme="dark"] .shorts-table td:nth-child(6) {
+            background: rgba(255, 107, 107, 0.14);
+            color: #ff6b6b;
+        }
+        .shorts-table__hint {
+            display: block;
+            margin: 2px 0 0 auto;
+            max-width: 15rem;
+            font-family: var(--font-main);
+            font-size: 0.7rem;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--colour-text-muted);
+        }
+
+        /* Stop loss / Take profit line, and the footer */
+        .holdings-table td:nth-child(7),
+        .holdings-table td:nth-child(8),
+        .shorts-table td:nth-child(7),
+        .shorts-table td:nth-child(8) {
+            grid-column: 1 / -1;
+            order: 7;
+        }
+        .holdings-table td:nth-child(8),
+        .shorts-table td:nth-child(8) {
+            order: 8;
+        }
+        .holdings-table td.sltp-cell--empty,
+        .shorts-table td.sltp-cell--empty {
+            display: none;
+        }
+        .holdings-table td.holdings-table__sltp {
+            min-width: 0;
+        }
+        .sltp-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 20px;
+            font-size: 0.9rem;
+        }
+        .sltp-part--unset,
+        .sltp-sep,
+        .sltp-key--short {
+            display: none;
+        }
+        .sltp-key--long {
+            display: inline;
+            font-family: var(--font-main);
+            color: var(--colour-text-muted);
+        }
+        /* Standard Mode: the 7th cell is the Qty + Buy + Sell row, so treat it as the footer */
+        .holdings-table td.holdings-table__trade {
+            order: 8;
+            padding-top: 14px;
+            border-top: 1px solid var(--colour-border);
+        }
+        .holdings-table td.holdings-table__actions,
+        .shorts-table td.shorts-table__actions {
+            display: flex;
+            gap: 12px;
+            padding-top: 14px;
+            border-top: 1px solid var(--colour-border);
+        }
+        .holdings-table td.holdings-table__actions > .btn,
+        .shorts-table td.shorts-table__actions > .btn {
+            flex: 1 1 0;
+        }
+        .holdings-table td.holdings-table__actions form,
+        .shorts-table td.shorts-table__actions form {
+            display: flex;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+        .holdings-table td.holdings-table__actions .btn,
+        .shorts-table td.shorts-table__actions .btn {
+            width: 100%;
+            min-height: 48px;
+            padding: 0 var(--spacing-md);
+            font-size: 1rem;
+        }
+        /* Qty + Buy + Sell: touch sized (global.css only does this up to 900px) */
+        .holdings-table td.holdings-table__trade .ore-card__quick-trade {
+            margin-top: 0;
+            gap: 12px;
+        }
+        .holdings-table td.holdings-table__trade .qt-form {
+            display: flex;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+        .holdings-table td.holdings-table__trade .btn {
+            width: 100%;
+            min-height: 48px;
+            padding: 0 var(--spacing-md);
+            font-size: 1rem;
+        }
+        .holdings-table td.holdings-table__trade .quick-trade-input {
+            flex: 1 1 0;
+            width: auto;
+            min-width: 0;
+            min-height: 48px;
+            padding: 0 var(--spacing-sm);
+            font-size: 16px; /* stops iOS Safari zooming on focus */
+        }
+    }
 </style>
 {% endblock %}
 

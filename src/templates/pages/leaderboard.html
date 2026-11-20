@@ -21,3 +21,53 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+/* Phone layout: tap a row (or its chevron) to expand it in place.
+   - The username link is left alone, so tapping the name still navigates.
+   - Expanded rows are remembered by player id in this closure; the wrapper itself is
+     not replaced by the 20s htmx refresh (only its contents), and the state is
+     re-applied right after the swap, before the browser paints, so a refresh never
+     collapses a row or moves the page. */
+(function () {
+    var wrap = document.getElementById('leaderboard-live');
+    if (!wrap) return;
+    var phone = window.matchMedia('(max-width: 960px)');
+    var expanded = {};
+
+    function setRow(row, open) {
+        row.classList.toggle('is-expanded', open);
+        var btn = row.querySelector('.leaderboard-table__chevron');
+        if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function applyState() {
+        wrap.querySelectorAll('tr[data-player-id]').forEach(function (row) {
+            setRow(row, !!expanded[row.getAttribute('data-player-id')]);
+        });
+    }
+
+    wrap.addEventListener('click', function (e) {
+        if (!phone.matches) return;
+        var row = e.target.closest('tr[data-player-id]');
+        if (!row || !wrap.contains(row)) return;
+        if (e.target.closest('a')) return; /* the profile link navigates */
+        var id = row.getAttribute('data-player-id');
+        if (expanded[id]) { delete expanded[id]; } else { expanded[id] = true; }
+        setRow(row, !!expanded[id]);
+    });
+
+    var scrollY = 0;
+    wrap.addEventListener('htmx:beforeSwap', function (e) {
+        if (e.target !== wrap) return;
+        scrollY = window.pageYOffset;
+    });
+    wrap.addEventListener('htmx:afterSwap', function (e) {
+        if (e.target !== wrap) return;
+        applyState();
+        if (Math.abs(window.pageYOffset - scrollY) > 1) window.scrollTo(0, scrollY);
+    });
+})();
+</script>
+{% endblock %}

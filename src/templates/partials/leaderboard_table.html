@@ -1,29 +1,39 @@
-<table class="leaderboard-table">
-    <thead>
-        <tr>
-            <th>Rank</th>
-            <th>Username</th>
-            <th>Balance</th>
-            <th>Holdings</th>
-            <th>Short Equity</th>
-            <th>Total Value</th>
+{#
+  Phone layout (global.css): each row is one slim line (rank, avatar + name, Total
+  Value, chevron button). Tapping the row, or the chevron, expands it to show
+  Balance, Holdings and Short Equity. The username link is excluded from that
+  toggle so it still navigates. The expanded set is kept by leaderboard.html,
+  keyed on data-player-id, so it survives the 20s refresh.
+#}
+<table class="leaderboard-table" role="table">
+    <thead role="rowgroup">
+        <tr role="row">
+            <th role="columnheader">Rank</th>
+            <th role="columnheader">Username</th>
+            <th role="columnheader">Balance</th>
+            <th role="columnheader">Holdings</th>
+            <th role="columnheader">Short Equity</th>
+            <th role="columnheader">Total Value</th>
+            <th role="columnheader" class="leaderboard-table__toggle-head"><span class="visually-hidden">Details</span></th>
         </tr>
     </thead>
-    <tbody>
+    <tbody role="rowgroup">
         {% for user in rankings %}
-        <tr class="{% if user['id'] == current_user_id %}leaderboard-table__row--current{% endif %}">
-            <td class="leaderboard-table__rank">
+        <tr role="row" class="{% if user['id'] == current_user_id %}leaderboard-table__row--current{% endif %}" data-player-id="{{ user['id'] }}">
+            <td role="cell" class="leaderboard-table__rank" data-label="Rank">
                 {% if loop.index == 1 %}🥇
                 {% elif loop.index == 2 %}🥈
                 {% elif loop.index == 3 %}🥉
                 {% else %}{{ loop.index }}
                 {% endif %}
             </td>
-            <td class="leaderboard-table__username">
+            <td role="cell" class="leaderboard-table__username" data-label="Username">
                 {% set is_bot = 'Bot' in user['username'] or 'Trader' in user['username'] or 'Investor' in user['username'] or 'Miner' in user['username'] or 'Broker' in user['username'] or 'Dealer' in user['username'] or 'Merchant' in user['username'] %}
                 {% if is_bot %}
+                    <span class="leaderboard__bot-name">
                     <img src="{{ url_for('static', filename=get_bot_icon_filename(user['username'])) }}" alt="Bot" class="leaderboard-avatar leaderboard-avatar--bot" width="32" height="32">
                     <span class="leaderboard__username {% if user['advanced_active'] %}leaderboard__username--advanced{% endif %}">{{ user['username'] }}</span>
+                    </span>
                 {% else %}
                 {# Players link to their profile (your own row goes to /profile); bots stay unlinked #}
                 <a class="leaderboard__player-link"
@@ -40,16 +50,22 @@
                 {% if user['id'] != current_user_id and is_bot %}<span class="leaderboard-bot">🤖</span>
                 {% endif %}
             </td>
-            <td>${{ "%.2f" | format(user['balance']) }}</td>
-            <td>${{ "%.2f" | format(user['holdings_value']) }}</td>
-            <td class="{% if user['short_equity'] > 0 %}text--success{% elif user['short_equity'] < 0 %}text--danger{% endif %}">
+            <td role="cell" class="leaderboard-table__detail" data-label="Balance">${{ "%.2f" | format(user['balance']) }}</td>
+            <td role="cell" class="leaderboard-table__detail" data-label="Holdings">${{ "%.2f" | format(user['holdings_value']) }}</td>
+            <td role="cell" class="leaderboard-table__detail {% if user['short_equity'] > 0 %}text--success{% elif user['short_equity'] < 0 %}text--danger{% endif %}" data-label="Short equity">
                 {% if user['short_equity'] != 0 %}
                     {% if user['short_equity'] >= 0 %}+{% endif %}${{ "%.2f" | format(user['short_equity']) }}
                 {% else %}
                     —
                 {% endif %}
             </td>
-            <td class="leaderboard-table__total">${{ "%.2f" | format(user['total_value']) }}</td>
+            <td role="cell" class="leaderboard-table__total" data-label="Total value">${{ "%.2f" | format(user['total_value']) }}</td>
+            <td role="cell" class="leaderboard-table__toggle">
+                <button type="button" class="leaderboard-table__chevron" aria-expanded="false"
+                        aria-label="Show balance, holdings and short equity for {{ user['username'] }}">
+                    <svg class="leaderboard-table__chevron-icon" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false"><path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

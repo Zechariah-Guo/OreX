@@ -35,7 +35,7 @@ class TestLeaderboard:
         # Extract total values from the leaderboard table cells
         # The total value column has class "leaderboard-table__total"
         total_values = re.findall(
-            r'<td class="leaderboard-table__total">\$([0-9]+\.[0-9]+)</td>', html
+            r'<td [^>]*class="leaderboard-table__total"[^>]*>\$([0-9]+\.[0-9]+)</td>', html
         )
         assert len(total_values) > 1, "Expected multiple users on the leaderboard"
 
@@ -63,7 +63,7 @@ class TestLeaderboard:
 
         # Find all rows with the current-user CSS class
         current_rows = re.findall(
-            r'<tr class="leaderboard-table__row--current">', html
+            r'<tr [^>]*class="leaderboard-table__row--current"[^>]*>', html
         )
         assert len(current_rows) == 1, (
             f"Expected exactly 1 row with 'leaderboard-table__row--current', "
@@ -72,7 +72,7 @@ class TestLeaderboard:
 
         # Verify the current user's name appears in that highlighted row
         match = re.search(
-            r'<tr class="leaderboard-table__row--current">.*?</tr>',
+            r'<tr [^>]*class="leaderboard-table__row--current"[^>]*>.*?</tr>',
             html,
             re.DOTALL,
         )
@@ -102,7 +102,7 @@ class TestLeaderboard:
         # Should contain the leaderboard table
         assert 'leaderboard-table' in html
         assert '<table' in html
-        assert '<thead>' in html
+        assert '<thead' in html
 
 
 # Feature: orex-test-suite, Property 6: Leaderboard ordering invariant
@@ -158,7 +158,7 @@ class TestLeaderboardProperties:
 
         # Extract total values from the leaderboard table cells
         total_values = re.findall(
-            r'<td class="leaderboard-table__total">\$([0-9]+\.[0-9]+)</td>', html
+            r'<td [^>]*class="leaderboard-table__total"[^>]*>\$([0-9]+\.[0-9]+)</td>', html
         )
         assert len(total_values) > 1, "Expected multiple users on the leaderboard"
 
