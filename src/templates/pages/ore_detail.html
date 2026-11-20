@@ -237,7 +237,8 @@
     @media (max-width: 768px) {
         .short-form-horizontal form {
             display: grid;
-            grid-template-columns: minmax(96px, 7.5rem) 1fr;
+            /* Qty field takes the larger share; the button is narrower */
+            grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
             grid-template-areas:
                 "title title"
                 "collateral collateral"
@@ -258,15 +259,13 @@
         .short-preview--horizontal .short-preview__group--collateral { grid-area: collateral; }
         .short-preview--horizontal .short-preview__group--fees { grid-area: fees; }
         .short-preview__warning { grid-area: warning; justify-self: start; }
-        /* The button is a little shorter than the Qty field beside it (not stretched
-           to the row, which made it look larger than the input) */
+        /* Same height as the Qty field, in the narrower column */
         .short-preview--horizontal .btn {
             grid-area: action;
-            align-self: center;
-            min-height: 40px;
-            height: 40px;
-            padding-top: 0;
-            padding-bottom: 0;
+            min-height: 44px;
+            padding-left: var(--spacing-sm);
+            padding-right: var(--spacing-sm);
+            white-space: nowrap;
         }
     }
 </style>

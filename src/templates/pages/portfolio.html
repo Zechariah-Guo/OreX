@@ -428,8 +428,9 @@
             padding-top: 14px;
             border-top: 1px solid var(--colour-border);
         }
-        /* Two equal columns: "Edit SL/TP" and "Sell" / "Close" are always the same
-           width (a flex row sized them by their text) */
+        /* Two equal columns: the SL/TP edit button and the Sell / Close button are
+           always the same width (a flex row sized them by their text). Do not write
+           the button labels in this comment: tests check the page text for them. */
         .holdings-table td.holdings-table__actions,
         .shorts-table td.shorts-table__actions {
             display: grid;
