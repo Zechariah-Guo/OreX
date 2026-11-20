@@ -19,6 +19,7 @@ Usage (run from the repo root):
     python scripts/screenshot.py /dashboard --with-tutorial --wait 2500
     python scripts/screenshot.py /market --click "#some-button" --wait-for ".result"
     python scripts/screenshot.py /help --click "[data-tutorial-replay=beginner]" --settle 4000
+    python scripts/screenshot.py /market --touch --viewport 390x844 --viewport 820x1180
 
 Files are written to ./screenshots/ (git-ignored) as <page>_<viewport>_<theme>.png.
 
@@ -594,7 +595,8 @@ def parse_args():
     parser.add_argument('--out', default=os.path.join(ROOT, 'screenshots'), help='output folder (default: ./screenshots)')
     parser.add_argument('--theme', choices=['light', 'dark', 'both'], default='light')
     parser.add_argument('--viewport', action='append', type=parse_viewport, metavar='SIZE',
-                        help='WIDTHxHEIGHT or a preset; repeatable (default: desktop)')
+                        help='WIDTHxHEIGHT (any width, e.g. 390x844) or a preset; repeatable '
+                             '(default: desktop)')
     parser.add_argument('--full-page', action='store_true', help='capture the whole scrollable page')
     parser.add_argument('--selector', metavar='CSS', help='capture only the first element matching this selector')
     parser.add_argument('--wait', type=int, default=800, metavar='MS', help='settle time after load (default 800)')
@@ -603,7 +605,8 @@ def parse_args():
                         help='pause after each --click/--eval, e.g. for animations or a page change (default 400)')
     parser.add_argument('--click', action='append', metavar='CSS', help='click this element first; repeatable')
     parser.add_argument('--eval', action='append', metavar='JS', help='run this JavaScript first; repeatable')
-    parser.add_argument('--touch', action='store_true', help='emulate a touch device (pointer: coarse, no hover)')
+    parser.add_argument('--touch', action='store_true', help='emulate a touch device (pointer: coarse, no hover) at every --viewport '
+                             'width; not applied by --tutorial-walk')
     parser.add_argument('--advanced', action='store_true', help='user has Advanced Mode purchased and active')
     parser.add_argument('--balance', type=float, metavar='N', help='set the user balance')
     parser.add_argument('--cosmetic', choices=['money', 'gold'], help='unlock and apply a cosmetic theme')

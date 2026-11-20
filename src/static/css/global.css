@@ -2016,10 +2016,6 @@ input::-webkit-inner-spin-button {
         grid-template-columns: 1fr;
     }
 
-    .confirm-card__actions {
-        flex-direction: column;
-    }
-
     .nav__container {
         flex-direction: row;
         flex-wrap: wrap;
@@ -3328,92 +3324,6 @@ a:not([class]):active {
     gap: var(--spacing-sm);
     margin-top: var(--spacing-sm);
 }
-
-.quick-trade-form {
-    display: flex;
-    gap: var(--spacing-xs);
-    flex: 1;
-}
-
-.quick-trade-form__input {
-    width: 60px;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border: 1px solid var(--colour-border);
-    border-radius: var(--radius-sm);
-    background-color: var(--colour-bg);
-    color: var(--colour-text);
-    font-size: 0.85rem;
-    text-align: center;
-}
-
-.quick-trade-form__input:focus {
-    outline: none;
-    border-color: var(--colour-accent);
-}
-
-
-/* ===== Quick Trade Bar (Fixed Footer) ===== */
-.quick-trade-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: var(--colour-surface);
-    border-top: 2px solid var(--colour-border);
-    padding: var(--spacing-sm) var(--spacing-lg);
-    z-index: 100;
-}
-
-.quick-trade-bar__form {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    max-width: var(--max-width);
-    margin: 0 auto;
-}
-
-.quick-trade-bar__select {
-    flex: 1;
-    max-width: 280px;
-    padding: var(--spacing-sm);
-    border: 1px solid var(--colour-border);
-    border-radius: var(--radius-sm);
-    background-color: var(--colour-bg);
-    color: var(--colour-text);
-    font-size: 0.9rem;
-}
-
-.quick-trade-bar__qty {
-    width: 70px;
-    padding: var(--spacing-sm);
-    border: 1px solid var(--colour-border);
-    border-radius: var(--radius-sm);
-    background-color: var(--colour-bg);
-    color: var(--colour-text);
-    font-size: 0.9rem;
-    text-align: center;
-}
-
-.quick-trade-bar__select:focus,
-.quick-trade-bar__qty:focus {
-    outline: none;
-    border-color: var(--colour-accent);
-}
-
-.quick-trade-bar__btn {
-    padding: var(--spacing-sm) var(--spacing-md);
-}
-
-@media (max-width: 768px) {
-    .quick-trade-bar__form {
-        flex-wrap: wrap;
-    }
-    .quick-trade-bar__select {
-        max-width: none;
-        flex: 1 1 100%;
-    }
-}
-
 
 /* ===== Chart Filters ===== */
 .chart-header {

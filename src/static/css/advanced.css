@@ -332,60 +332,6 @@ html[data-theme="dark"] .rs-info-box__value {
 }
 
 
-/* ===== Confirmation Popup (Toggle Action) ===== */
-.confirm-popup-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 2000;
-    align-items: center;
-    justify-content: center;
-}
-
-.confirm-popup-overlay--active {
-    display: flex;
-}
-
-.confirm-popup {
-    background-color: var(--colour-surface);
-    border: 2px solid var(--colour-border);
-    border-radius: var(--radius);
-    padding: var(--spacing-lg);
-    max-width: 420px;
-    width: calc(100% - 2rem);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-}
-
-.confirm-popup__title {
-    font-size: 1.25rem;
-    margin-bottom: var(--spacing-md);
-}
-
-.confirm-popup__message {
-    color: var(--colour-text-muted);
-    line-height: 1.7;
-    margin-bottom: var(--spacing-md);
-}
-
-.confirm-popup__list {
-    list-style: disc;
-    margin-left: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
-    color: var(--colour-text-muted);
-    line-height: 1.8;
-}
-
-.confirm-popup__actions {
-    display: flex;
-    gap: var(--spacing-md);
-    justify-content: flex-end;
-}
-
-
 /* ===== Responsive Adjustments ===== */
 @media (max-width: 768px) {
     .advanced-theme main {
@@ -412,10 +358,6 @@ html[data-theme="dark"] .rs-info-box__value {
         flex-direction: column;
         align-items: flex-start;
         gap: var(--spacing-sm);
-    }
-
-    .confirm-popup__actions {
-        flex-direction: column;
     }
 }
 
