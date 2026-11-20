@@ -226,13 +226,39 @@
         .short-preview--horizontal { flex-direction: column; gap: var(--spacing-sm); }
     }
 
-    /* Phone: let the Short form wrap instead of widening the page (the fixed
-       bars and the tutorial overlay misplace themselves on a page that
-       scrolls sideways) */
-    @media (max-width: 640px) {
-        .short-form-horizontal form { flex-wrap: wrap; }
-        .short-form-horizontal .short-preview--horizontal { flex: 1 1 100%; align-items: stretch; }
+    /* Phone and small tablet: the Short form is a grid instead of a row, so it
+       never widens the page (the fixed bars and the tutorial overlay misplace
+       themselves on a page that scrolls sideways). The preview wrapper
+       (#short-preview, swapped by htmx on every keystroke) uses
+       display: contents so its groups and the Open Short button become grid
+       items of the form. That puts the Qty field in the same row as the
+       button, at the bottom, without moving the input into the swapped
+       fragment (which would drop focus while typing). */
+    @media (max-width: 768px) {
+        .short-form-horizontal form {
+            display: grid;
+            grid-template-columns: minmax(96px, 7.5rem) 1fr;
+            grid-template-areas:
+                "title title"
+                "collateral collateral"
+                "fees fees"
+                "warning warning"
+                "qty action";
+            gap: var(--spacing-sm);
+            align-items: stretch;
+        }
+        .short-form-horizontal .short-form-title { grid-area: title; }
+        .short-form-horizontal .form-group { grid-area: qty; }
+        .short-form-horizontal .form-group .form-input {
+            width: 100%;
+            min-height: 44px;
+        }
+        .short-form-horizontal .short-preview--horizontal { display: contents; }
         .short-preview--horizontal .short-preview__group { flex-wrap: wrap; }
+        .short-preview--horizontal .short-preview__group--collateral { grid-area: collateral; }
+        .short-preview--horizontal .short-preview__group--fees { grid-area: fees; }
+        .short-preview__warning { grid-area: warning; justify-self: start; }
+        .short-preview--horizontal .btn { grid-area: action; min-height: 44px; }
     }
 </style>
 {% endblock %}

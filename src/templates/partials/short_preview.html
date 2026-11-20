@@ -24,7 +24,9 @@
             <span class="confirm-row__value">—</span>
         </div>
     </div>
-    <button type="submit" class="btn btn--primary" disabled>Open Short</button>
+    {# Not disabled: submitting with an empty Qty shows the browser's
+       "fill out this field" tooltip (the input is `required`), like Buy. #}
+    <button type="submit" class="btn btn--primary">Open Short</button>
     {% else %}
     <div class="short-preview__group short-preview__group--collateral" id="short-preview-collateral">
         <div class="confirm-row">
