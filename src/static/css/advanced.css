@@ -338,12 +338,14 @@ html[data-theme="dark"] .rs-info-box__value {
         max-width: 100%;
     }
 
-    /* Resistance and Support stay on one line: items share the row and the
-       text tightens instead of stacking */
+    /* Resistance and Support share one line; the text tightens instead of
+       stacking. Each item never breaks internally, and the row may wrap only
+       when the two items cannot fit (about 320px screens), so the page can
+       never be pushed wider than the viewport. */
     .rs-info-box {
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         justify-content: space-between;
-        gap: var(--spacing-sm);
+        gap: var(--spacing-xs) var(--spacing-sm);
         padding: var(--spacing-sm);
     }
 
@@ -352,6 +354,13 @@ html[data-theme="dark"] .rs-info-box__value {
         gap: 0.3rem;
         font-size: 0.8rem;
         white-space: nowrap;
+    }
+
+    @media (max-width: 400px) {
+        .rs-info-box__item {
+            gap: 0.25rem;
+            font-size: 0.72rem;
+        }
     }
 
     .advanced-mode-box__cooldown {
