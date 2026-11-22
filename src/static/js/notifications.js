@@ -362,6 +362,50 @@
         observer.observe(dropdown, { attributes: true, attributeFilter: ['class'] });
     });
 
+    // ─── Presence: page instance id and the "left" signal ───────────────────────
+    // The server counts the player as present while any of their pages polled
+    // visibly in the last minute. Each page instance has its own id (kept per tab
+    // in sessionStorage), so one page leaving does not hide another that is still
+    // visible. When this page is hidden or closed it sends one beacon so push
+    // notifications start at once instead of after the 60 second timeout.
+    var clientId = (function () {
+        var id = '';
+        try {
+            id = sessionStorage.getItem('orexClientId') || '';
+        } catch (e) {}
+        if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) {
+            id = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+            try {
+                sessionStorage.setItem('orexClientId', id);
+            } catch (e) {}
+        }
+        return id;
+    })();
+    var awayToken = '';
+    var awaySent = false;
+
+    function sendAway() {
+        if (awaySent) {
+            return;
+        }
+        awaySent = true;
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        var token = awayToken || (meta ? meta.getAttribute('content') : '');
+        var form = new FormData();
+        form.append('csrf_token', token);
+        form.append('client_id', clientId);
+        var sent = false;
+        try {
+            sent = !!(navigator.sendBeacon && navigator.sendBeacon('/push/away', form));
+        } catch (e) {}
+        if (!sent) {
+            try {
+                fetch('/push/away', { method: 'POST', body: form, credentials: 'same-origin', keepalive: true })
+                    .catch(function () {});
+            } catch (e) {}
+        }
+    }
+
     /**
      * Poll the server for new notifications and handle the response.
      */
@@ -372,7 +416,12 @@
             return;
         }
 
-        fetch('/inbox/poll', {
+        // Tell the server whether this page is visible. Only visible polls count
+        // as the player being present (which keeps Web Push quiet); a hidden page
+        // gets no toasts, they wait until the player returns.
+        var visible = document.visibilityState === 'visible' ? '1' : '0';
+
+        fetch('/inbox/poll?visible=' + visible + '&c=' + encodeURIComponent(clientId), {
             method: 'GET',
             credentials: 'same-origin',
             headers: {
@@ -388,6 +437,10 @@
         .then(function (data) {
             if (!data) {
                 return;
+            }
+
+            if (data.csrf) {
+                awayToken = data.csrf;
             }
 
             // Toggle red dot based on has_unread
@@ -406,6 +459,26 @@
     document.addEventListener('DOMContentLoaded', function () {
         if (getInboxIcon()) {
             setInterval(pollNotifications, POLL_INTERVAL);
+            // Poll right away on load and whenever the page becomes visible again,
+            // so presence and waiting toasts are current without a 20 second lag.
+            pollNotifications();
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') {
+                    awaySent = false;
+                    pollNotifications();
+                } else {
+                    sendAway();
+                }
+            });
+            // Closing a tab or the app may skip the hidden event on some browsers
+            window.addEventListener('pagehide', sendAway);
+            // Back/forward cache restore: the page is live again
+            window.addEventListener('pageshow', function (event) {
+                if (event.persisted) {
+                    awaySent = false;
+                    pollNotifications();
+                }
+            });
         }
     });
 })();

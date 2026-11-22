@@ -53,7 +53,8 @@ def _create_test_db():
             avatar_color TEXT DEFAULT NULL,
             peak_net_worth REAL NOT NULL DEFAULT 10000,
             bonus_cycle_day INTEGER NOT NULL DEFAULT 1,
-            last_bonus_collected_date TEXT DEFAULT NULL
+            last_bonus_collected_date TEXT DEFAULT NULL,
+            session_version INTEGER NOT NULL DEFAULT 0
         )
     """)
 
@@ -120,6 +121,14 @@ def _create_test_db():
             id INTEGER PRIMARY KEY,
             user_id INTEGER NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    # Create push_subscriptions table (referenced by reset_account)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER NOT NULL
         )
     """)
 

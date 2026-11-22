@@ -18,7 +18,8 @@ PRIVATE_KEY = 'a-private-test-secret'
 def clean_env(monkeypatch):
     """Start every test from a known env (not debug, no overrides) with no engine thread."""
     for name in ('FLASK_DEBUG', 'SECRET_KEY', 'SESSION_COOKIE_SECURE',
-                 'OREX_TRUST_PROXY', 'OREX_ALLOW_DEFAULT_SECRET'):
+                 'OREX_TRUST_PROXY', 'OREX_ALLOW_DEFAULT_SECRET',
+                 'OREX_ENABLE_TESTING_PAGE'):
         monkeypatch.delenv(name, raising=False)
     import app.market.engine as engine
     monkeypatch.setattr(engine, 'start_engine', lambda app: None)
@@ -58,6 +59,23 @@ def test_dev_routes_available_in_debug(tmp_path):
     resp = app.test_client().get('/testing')
     assert resp.status_code == 302   # reaches login_required instead of 404
     assert '/login' in resp.headers['Location']
+
+
+def test_dev_routes_available_with_env_flag_outside_debug(tmp_path, monkeypatch):
+    monkeypatch.setenv('OREX_ENABLE_TESTING_PAGE', '1')
+    app = make_app(tmp_path)   # production-style: not debug, not testing
+    assert not app.debug
+    assert app.config['ENABLE_TESTING_PAGE'] is True
+    resp = app.test_client().get('/testing')
+    assert resp.status_code == 302   # reaches login_required instead of 404
+    assert '/login' in resp.headers['Location']
+
+
+def test_dev_routes_stay_404_with_env_flag_off(tmp_path, monkeypatch):
+    monkeypatch.setenv('OREX_ENABLE_TESTING_PAGE', '0')
+    app = make_app(tmp_path)
+    assert not app.config.get('ENABLE_TESTING_PAGE')
+    assert app.test_client().get('/testing').status_code == 404
 
 
 def test_real_advancements_module_unaffected():

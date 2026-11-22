@@ -2,9 +2,7 @@
 {% block title %}{% if is_own_profile %}Profile{% else %}{{ user['username'] }}{% endif %} - OreX{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"
-    integrity="sha512-UtLOu9C7NuThQhuXXrGwx9Jb/z9zPQJctuAgNUBK3Z6kkSYT9wJ+2+dh6klS+TDBCV9kNPBbAxbVD+vCcfGPaA=="
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/cropperjs/1.6.2/cropper.min.css') }}" />
 <style>
     /* ===== Profile Page Layout ===== */
     .profile {
@@ -1112,7 +1110,7 @@
                         <div class="achievement-badge__img-wrapper">
                             <img src="{{ url_for('static', filename='images/advancements/' ~ centre.image) }}"
                                 alt="{{ centre.name }}" class="achievement-badge__img" width="120" height="120"
-                                loading="lazy">
+                                loading="lazy" decoding="async">
                         </div>
                         <div class="achievement-badge__tooltip" role="tooltip">
                             <span class="achievement-badge__tooltip-title">{{ centre.name }}</span>
@@ -1136,7 +1134,7 @@
                         <div class="achievement-badge__img-wrapper">
                             <img src="{{ url_for('static', filename='images/advancements/' ~ ach.image) }}"
                                 alt="{{ ach.name }}" class="achievement-badge__img" width="90" height="90"
-                                loading="lazy">
+                                loading="lazy" decoding="async">
                         </div>
                         <div class="achievement-badge__tooltip" role="tooltip">
                             <span class="achievement-badge__tooltip-title">{{ ach.name }}</span>
@@ -1170,7 +1168,7 @@
                     data-earned-at="{{ ach.earned_at[:10] if ach.earned and ach.earned_at else '' }}">
                     <img src="{{ url_for('static', filename='images/advancements/' ~ ach.image) }}" alt=""
                         class="ach-carousel__img{% if not ach.earned %} ach-carousel__img--locked{% endif %}"
-                        width="170" height="170" draggable="false" loading="lazy">
+                        width="170" height="170" draggable="false" loading="lazy" decoding="async">
                 </div>
                 {% endfor %}
                 <button type="button" class="ach-carousel__btn ach-carousel__btn--prev"
@@ -1216,9 +1214,7 @@
 {% block extra_js %}
 {% if is_own_profile %}
 <script src="{{ url_for('static', filename='js/bonus-countdown.js') }}" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"
-    integrity="sha512-JyCZjCOZoyeQZSd5+YEAcFgz2fowJ1F1hyJOXgtKu4llIa0KneLcidn5bwfutiehUTiOuK87A986BZJMko0eWQ=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ url_for('static', filename='vendor/cropperjs/1.6.2/cropper.min.js') }}"></script>
 {% endif %}
 <script src="{{ url_for('static', filename='js/achievements-carousel.js') }}" defer></script>
 <script>
@@ -1411,7 +1407,6 @@
                         tmp.innerHTML = html.trim();
                         var newImg = tmp.querySelector('img');
                         if (newImg && oldImg) {
-                            newImg.src = newImg.src + '?t=' + Date.now();
                             newImg.classList.add('profile__avatar-img');
                             newImg.setAttribute('width', '140');
                             newImg.setAttribute('height', '140');
@@ -1423,7 +1418,8 @@
                         if (navBtn && newImg) {
                             var navImg = document.getElementById('nav-avatar-img');
                             var navInitials = document.getElementById('nav-avatar-initials');
-                            var imgSrc = newImg.src + '?t=' + Date.now();
+                            // The server URL already carries ?v=<new file time>
+                            var imgSrc = newImg.src;
                             if (navImg) {
                                 navImg.src = imgSrc;
                             } else if (navInitials) {

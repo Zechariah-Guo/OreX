@@ -22,7 +22,10 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_path TEXT DEFAULT NULL,
     peak_net_worth REAL NOT NULL DEFAULT 10000,
     bonus_cycle_day INTEGER NOT NULL DEFAULT 1,
-    last_bonus_collected_date TEXT DEFAULT NULL
+    last_bonus_collected_date TEXT DEFAULT NULL,
+    session_version INTEGER NOT NULL DEFAULT 0,
+    suspended_at TEXT DEFAULT NULL,
+    suspended_reason TEXT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ores (
@@ -171,7 +174,57 @@ CREATE TABLE IF NOT EXISTS tutorial_progress (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Web Push (opt-in). One row per browser/device that enabled notifications.
+-- A subscription belongs to the account that created it.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    user_agent TEXT DEFAULT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_success_at TEXT DEFAULT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Per-account push settings. No row = every category on and never seen present.
+-- last_visible_at is the unix time of the player's latest poll from a visible
+-- page (stored in the database so every process and the engine thread agree).
+CREATE TABLE IF NOT EXISTS push_settings (
+    user_id INTEGER PRIMARY KEY,
+    notify_take_profit INTEGER NOT NULL DEFAULT 1,
+    notify_stop_loss INTEGER NOT NULL DEFAULT 1,
+    notify_liquidation INTEGER NOT NULL DEFAULT 1,
+    notify_bonus INTEGER NOT NULL DEFAULT 1,
+    notify_achievement INTEGER NOT NULL DEFAULT 1,
+    last_visible_at REAL NOT NULL DEFAULT 0,
+    last_test_at REAL NOT NULL DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Presence per page instance. client_id is a random id the page keeps in
+-- sessionStorage ('' for a poll that sends none). The player counts as present
+-- while any row is recent. A page that is hidden or closed deletes its own row.
+CREATE TABLE IF NOT EXISTS push_presence (
+    user_id INTEGER NOT NULL,
+    client_id TEXT NOT NULL,
+    seen_at REAL NOT NULL,
+    PRIMARY KEY (user_id, client_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- A notification that was claimed for push. The PRIMARY KEY makes the claim
+-- atomic (INSERT OR IGNORE), so two engine threads or processes never both
+-- send it. A separate table, not a column, so existing databases need no ALTER.
+CREATE TABLE IF NOT EXISTS notification_pushes (
+    notification_id INTEGER PRIMARY KEY,
+    pushed_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE
+);
+
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id_desc ON notifications(user_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_holdings_user ON holdings(user_id);

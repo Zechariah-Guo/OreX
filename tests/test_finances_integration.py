@@ -237,9 +237,11 @@ class TestFinancesIntegrationLifecycle:
         assert response.status_code == 200
 
         # Perform account reset (this clears advanced mode state)
-        with app.app_context():
-            from app.models import reset_account
-            reset_account(user_id)
+        # (through the real route: it keeps this browser signed in after the reset)
+        from conftest import get_csrf_token
+        token = get_csrf_token(authenticated_client.get('/settings/reset'))
+        authenticated_client.post(
+            '/settings/reset', data={'confirmation': 'TestUser1', 'csrf_token': token})
 
         # Next request to finances should return 403 (advanced mode revoked)
         response = authenticated_client.get('/finances')

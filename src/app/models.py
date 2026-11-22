@@ -4,6 +4,7 @@ All database queries live here. Functions accept and return
 sqlite3.Row objects or dictionaries.
 """
 
+import logging
 from datetime import datetime
 
 from flask import current_app
@@ -13,16 +14,47 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.database import get_db
 from app.storage import get_storage_backend
 
+logger = logging.getLogger(__name__)
+
 
 # --- User Model ---
 
 class User(UserMixin):
     """User class for Flask-Login integration."""
 
-    def __init__(self, id, username, balance):
+    def __init__(self, id, username, balance, session_version=0, suspended_at=None):
         self.id = id
         self.username = username
         self.balance = balance
+        self.session_version = session_version
+        self.suspended_at = suspended_at
+
+    def get_id(self):
+        """Session/remember-cookie identity: '<id>:<session_version>'.
+
+        Raising the stored session_version (password change, reset, ...) makes
+        every cookie issued before it fail the check in the user loader.
+        """
+        return f'{self.id}:{self.session_version}'
+
+
+def load_session_user(session_id):
+    """Resolve a Flask-Login session id to a User, or None.
+
+    '<id>:<version>' must match the stored session_version. A plain '<id>'
+    (cookie issued before versions existed) is accepted only while the stored
+    version is still 0.
+    """
+    raw_id, sep, raw_version = str(session_id).partition(':')
+    try:
+        user_id = int(raw_id)
+        version = int(raw_version) if sep else 0
+    except ValueError:
+        return None
+    user = get_user_by_id(user_id)
+    if user is None or user.session_version != version or user.suspended_at:
+        return None
+    return user
 
 
 def create_user(username, password, recovery_key_hash=None):
@@ -56,7 +88,7 @@ def get_user_by_id(user_id):
     db = get_db()
     row = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     if row:
-        return User(row['id'], row['username'], row['balance'])
+        return User(row['id'], row['username'], row['balance'], row['session_version'], row['suspended_at'])
     return None
 
 
@@ -376,7 +408,18 @@ def update_password(user_id, new_password):
     """Update a user's password hash."""
     db = get_db()
     new_hash = generate_password_hash(new_password)
-    db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user_id))
+    # Raising session_version signs out every other session and remember cookie
+    db.execute(
+        "UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?",
+        (new_hash, user_id),
+    )
+    db.commit()
+
+
+def revoke_all_sessions(user_id):
+    """Sign out every session and remember cookie the user has (raises session_version)."""
+    db = get_db()
+    db.execute("UPDATE users SET session_version = session_version + 1 WHERE id = ?", (user_id,))
     db.commit()
 
 
@@ -406,6 +449,7 @@ def reset_account(user_id):
         """UPDATE users
            SET advanced_eligible=0, advanced_purchased=0, advanced_active=0, advanced_toggled_at=NULL,
                balance = ?,
+               session_version = session_version + 1,
                bonus_cycle_day = 1,
                last_bonus_collected_date = NULL
            WHERE id = ?""",
@@ -421,6 +465,7 @@ def reset_account(user_id):
     db.execute("DELETE FROM holdings WHERE user_id = ?", (user_id,))
     db.execute("UPDATE transactions SET archived = 1 WHERE user_id = ? AND archived = 0", (user_id,))
     db.execute("DELETE FROM notifications WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM push_subscriptions WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM tutorial_progress WHERE user_id = ?", (user_id,))
     db.commit()
 
@@ -437,8 +482,9 @@ def delete_account(user_id):
         if user_row and user_row['avatar_path']:
             storage = get_storage_backend(current_app)
             storage.delete(f"{user_id}.webp")
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning('Avatar file delete failed for user id %s (%s); deleting the account anyway',
+                       user_id, type(exc).__name__)
 
     # Delete short positions before the user row (FK uses ON DELETE RESTRICT)
     db.execute("DELETE FROM short_positions WHERE user_id = ?", (user_id,))
@@ -453,6 +499,9 @@ def delete_account(user_id):
     db.execute("DELETE FROM holdings WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM recovery_keys WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM push_subscriptions WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM push_settings WHERE user_id = ?", (user_id,))
+    db.execute("DELETE FROM push_presence WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM users WHERE id = ?", (user_id,))
     db.commit()
 
@@ -539,6 +588,7 @@ def get_leaderboard():
            FROM users u
            LEFT JOIN holdings h ON h.user_id = u.id
            LEFT JOIN ores o ON h.ore_id = o.id
+           WHERE u.suspended_at IS NULL
            GROUP BY u.id
            ORDER BY total_value DESC"""
     ).fetchall()
@@ -630,7 +680,7 @@ def reset_password_with_recovery_key(user_id, old_key_hash, new_password_hash, n
             return False
 
         if db.execute(
-            "UPDATE users SET password_hash = ? WHERE id = ?",
+            "UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?",
             (new_password_hash, user_id),
         ).rowcount == 0:
             db.rollback()
@@ -815,7 +865,10 @@ def get_pending_toasts(user_id):
     """
     db = get_db()
     rows = db.execute(
-        "SELECT * FROM notifications WHERE user_id = ? AND toasted = 0 ORDER BY id ASC",
+        """SELECT * FROM notifications
+           WHERE user_id = ? AND toasted = 0
+             AND id NOT IN (SELECT notification_id FROM notification_pushes)
+           ORDER BY id ASC""",
         (user_id,),
     ).fetchall()
     return rows

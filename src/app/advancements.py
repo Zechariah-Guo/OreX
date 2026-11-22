@@ -84,15 +84,15 @@ ADVANCEMENT_METADATA = {
 # Badge image filenames in static/images/advancements/ (shared by the profile
 # page and the inbox detail panel).
 ADVANCEMENT_IMAGES = {
-    "millionaire": "Millionaire.png",
-    "multimillionaire": "Multimillionaire.png",
-    "the_big_short": "The Big Short.png",
-    "dedicated": "Dedicated.png",
-    "day_trader": "What a Deal!.png",
-    "budding_enthusiast": "Suit Up.png",
-    "completionist": "Completionist.png",
-    "tragedy": "Post Mortem.png",
-    "best_of_the_rest": "Go for Diamond!.png",
+    "millionaire": "Millionaire.webp",
+    "multimillionaire": "Multimillionaire.webp",
+    "the_big_short": "The Big Short.webp",
+    "dedicated": "Dedicated.webp",
+    "day_trader": "What a Deal!.webp",
+    "budding_enthusiast": "Suit Up.webp",
+    "completionist": "Completionist.webp",
+    "tragedy": "Post Mortem.webp",
+    "best_of_the_rest": "Go for Diamond!.webp",
 }
 
 # Longer flavour text shown in the inbox detail panel for each advancement.

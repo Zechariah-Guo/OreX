@@ -94,6 +94,8 @@
 ### QoL
 - Allow "forgot password" functionality: optional one-time recovery key system
 - Modfiy the whole system to use a pyproject.toml instead of scattered config files (e.g. requirements.txt, .pytest.ini etc) (use python uv library)
+- UI improvements
+- Bug fixes and Performance improvements
 
 ## Version 1.1
 

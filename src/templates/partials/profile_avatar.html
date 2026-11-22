@@ -1,7 +1,11 @@
-{# Avatar image partial — returned by POST /profile/avatar for htmx swap #}
+{# Avatar image partial — returned by POST /profile/avatar for htmx swap.
+   Empty when the user has no uploaded avatar (the default is the initials
+   circle), so a failed first upload leaves the initials in place. #}
+{% if avatar_url %}
 <img src="{{ avatar_url }}"
      alt="Profile avatar"
      class="profile__avatar-img"
      width="300"
      height="300"
      id="profile-avatar-img">
+{% endif %}

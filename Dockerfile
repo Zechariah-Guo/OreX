@@ -21,6 +21,11 @@ RUN uv sync --locked --no-dev --group prod
 
 COPY src ./src
 
+# Admin scripts (reset_password, export_user_data, ...) so they can be run with
+# `docker compose exec app python /app/scripts/admin/<script>.py`. Dev tools
+# (scripts/dev, Playwright) stay out of the image.
+COPY scripts/admin ./scripts/admin
+
 # Non-root user. The data and avatar dirs are created and chowned here so the
 # named volumes mounted on them inherit the ownership on first use.
 RUN useradd --create-home --uid 1000 orex \

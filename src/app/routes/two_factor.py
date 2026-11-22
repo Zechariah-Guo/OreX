@@ -54,6 +54,7 @@ two_factor_bp = Blueprint('two_factor', __name__)
 # Session keys for the pending 2FA state (see design.md).
 PENDING_USER_KEY = 'pending_2fa_user_id'
 PENDING_TIME_KEY = 'pending_2fa_time'
+PENDING_REMEMBER_KEY = 'pending_2fa_remember'
 
 # Pending session validity window in seconds (5 minutes).
 PENDING_SESSION_TTL = 300
@@ -71,6 +72,7 @@ def _clear_pending_session():
     """Remove pending 2FA state from the session."""
     session.pop(PENDING_USER_KEY, None)
     session.pop(PENDING_TIME_KEY, None)
+    session.pop(PENDING_REMEMBER_KEY, None)
 
 
 def _get_pending_user_id():
@@ -96,13 +98,14 @@ def _get_pending_user_id():
 def _complete_login(user_id):
     """Fully authenticate the user and clear the pending 2FA session."""
     user = get_user_by_id(user_id)
-    if user is None:
-        # User disappeared between password step and challenge; bail out.
+    if user is None or user.suspended_at:
+        # User disappeared (or was suspended) between password step and challenge; bail out.
         _clear_pending_session()
         return None
 
+    remember = bool(session.get(PENDING_REMEMBER_KEY))
     _clear_pending_session()
-    login_user(user)
+    login_user(user, remember=remember)
     return user
 
 
@@ -260,7 +263,7 @@ def setup():
     status = get_2fa_status(current_user.id)
     if status['enabled']:
         flash('Two-factor authentication is already enabled.', 'info')
-        return redirect(url_for('settings.overview'))
+        return redirect(url_for('settings.overview', _anchor='account'))
 
     secret = generate_secret()
     session[PENDING_SETUP_SECRET_KEY] = secret
@@ -282,7 +285,7 @@ def confirm():
     if not secret:
         # No pending setup — the flow must be restarted from settings.
         flash('Your 2FA setup session has expired. Please start again.', 'error')
-        return redirect(url_for('settings.overview'))
+        return redirect(url_for('settings.overview', _anchor='account'))
 
     code = request.form.get('code', '').strip()
 
@@ -327,7 +330,7 @@ def disable():
     status = get_2fa_status(current_user.id)
     if not status['enabled']:
         flash('Two-factor authentication is not enabled.', 'info')
-        return redirect(url_for('settings.overview'))
+        return redirect(url_for('settings.overview', _anchor='account'))
 
     code = request.form.get('code', '').strip()
 
@@ -357,8 +360,8 @@ def disable():
 
     if not verified:
         flash('Invalid authentication code. Two-factor authentication was not disabled.', 'error')
-        return redirect(url_for('settings.overview'))
+        return redirect(url_for('settings.overview', _anchor='account'))
 
     disable_2fa(current_user.id)
     flash('Two-factor authentication has been disabled.', 'success')
-    return redirect(url_for('settings.overview'))
+    return redirect(url_for('settings.overview', _anchor='account'))

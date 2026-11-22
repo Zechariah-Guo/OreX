@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 
 DEFAULT_SECRET_KEY = 'orex-local-dev-secret-change-in-production'
@@ -17,6 +18,13 @@ class Config:
     # SESSION_COOKIE_SECURE is resolved in create_app(): the SESSION_COOKIE_SECURE env var
     # wins, otherwise True in production (not debug, not testing) and False elsewhere.
     SESSION_COOKIE_SECURE = False
+
+    # "Stay signed in" cookie (Flask-Login). REMEMBER_COOKIE_SECURE follows
+    # SESSION_COOKIE_SECURE and is resolved in create_app().
+    REMEMBER_COOKIE_DURATION = timedelta(days=30)
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
+    REMEMBER_COOKIE_SECURE = False
 
     # Advanced Mode
     ADVANCED_MODE_THRESHOLD = 100_000    # Net worth eligibility threshold
@@ -59,6 +67,23 @@ class Config:
     OCI_NAMESPACE = os.environ.get('OCI_NAMESPACE', '')
     OCI_BUCKET = os.environ.get('OCI_BUCKET', 'orex-avatars')
     OCI_CONFIG_PATH = os.environ.get('OCI_CONFIG_PATH', '~/.oci/config')
+
+    # Web Push (opt-in). All three must be set or push is switched off.
+    # Generate a pair with scripts/admin/generate_vapid_keys.py.
+    # VAPID_PUBLIC_KEY: base64url uncompressed P-256 point (sent to browsers).
+    # VAPID_PRIVATE_KEY: base64url raw 32-byte private value (server only, never logged).
+    # VAPID_SUBJECT: contact URL, 'mailto:you@example.com' or 'https://...'.
+    VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', '').strip()
+    VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '').strip()
+    VAPID_SUBJECT = os.environ.get('VAPID_SUBJECT', '').strip()
+    PUSH_PRESENCE_SECONDS = 60           # a visible poll this recent means the player is present
+    PUSH_PRESENCE_WRITE_INTERVAL = 15    # refresh the stored presence time at most this often
+    PUSH_MAX_AGE_SECONDS = 300           # only notifications this fresh are pushed
+    PUSH_TEST_COOLDOWN = 30              # seconds between test pushes per user
+
+    # Dev /testing page: always on in debug mode; outside debug only when the env
+    # var OREX_ENABLE_TESTING_PAGE=1 is set (read in create_app). Local Docker only.
+    ENABLE_TESTING_PAGE = False
 
     # Daily Bonus
     BONUS_AMOUNTS = {1: 1000, 2: 10000, 3: 50000}

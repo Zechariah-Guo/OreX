@@ -116,7 +116,8 @@
 ### Mobile Support
 - ~~Change UI for mobile sized screens~~ ✅ Done (Basically)
 - ~~Turn into PWA (add option in settings to download)~~ ✅ Done
-- Maybe get push notifications working on the PWA (bit more complex) (for toasts when the user isnt in the app, like sltp, daily bonus, maybe a login nudge if they want to maintain streak, liquidation, )
+- ~~Maybe get push notifications working on the PWA (bit more complex) (for toasts when the user isnt in the app, like sltp, daily bonus, maybe a login nudge if they want to maintain streak, liquidation, )~~ ✅ Done
+- ~~Improve desktop profile menu, reorganise settings, maybe expand footer~~ ✅ Done
 
 ### QoL
 - ~~Allow "forgot password" functionality with a  one time key system (built without email: optional one-time recovery key chosen at registration, a Forgot password page that takes username + key then a new password, a fresh key issued after each reset, and `scripts/reset_password.py` for admin resets.)~~ ✅ Done

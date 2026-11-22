@@ -61,16 +61,16 @@ def get_bot_icon_filename(username):
     and returns the corresponding icon filename in images/bots/.
 
     Examples:
-        'CreeperTrader' -> 'images/bots/creeper_icon.png'
-        'SteveBot' -> 'images/bots/steve_icon.png'
+        'CreeperTrader' -> 'images/bots/creeper_icon.webp'
+        'SteveBot' -> 'images/bots/steve_icon.webp'
     """
     # Strip the bot identifier suffix to get the character name
     for identifier in BOT_IDENTIFIERS:
         if username.endswith(identifier):
             character = username[:-len(identifier)].lower()
-            return f'images/bots/{character}_icon.png'
+            return f'images/bots/{character}_icon.webp'
     # Fallback: use full username lowercased
-    return f'images/bots/{username.lower()}_icon.png'
+    return f'images/bots/{username.lower()}_icon.webp'
 
 
 def get_avatar_color_hex(color_key):

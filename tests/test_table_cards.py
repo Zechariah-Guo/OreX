@@ -126,7 +126,7 @@ class TestHistoryCards:
         conn.commit()
         conn.close()
         html = authenticated_client.get('/history').data.decode()
-        assert re.search(r'data-label="Ore"><span class="ore-inline"><img src="[^"]*images/ores/Coal\.webp" '
+        assert re.search(r'data-label="Ore"><span class="ore-inline"><img src="[^"]*images/ores/Coal\.webp(?:\?v=\d+)?" '
                          r'alt="" class="ore-inline-icon"[^>]*><span>Coal</span>', html)
 
 
@@ -134,7 +134,7 @@ class TestPortfolioOreIcons:
     def test_longs_have_an_icon_before_the_name(self, app, authenticated_client):
         _add_holding(app)
         html = authenticated_client.get('/portfolio').data.decode()
-        assert re.search(r'<img src="[^"]*images/ores/Coal\.webp" alt="" class="ore-inline-icon"[^>]*><span>Coal</span></a>', html)
+        assert re.search(r'<img src="[^"]*images/ores/Coal\.webp(?:\?v=\d+)?" alt="" class="ore-inline-icon"[^>]*><span>Coal</span></a>', html)
 
     def test_shorts_have_an_icon_before_the_name(self, app, authenticated_client):
         _make_advanced(app)
@@ -145,7 +145,7 @@ class TestPortfolioOreIcons:
         conn.close()
         html = authenticated_client.get('/portfolio?tab=shorts').data.decode()
         shorts = html.split('<table class="shorts-table"', 1)[1]
-        assert re.search(r'<img src="[^"]*images/ores/Coal\.webp" alt="" class="ore-inline-icon"[^>]*><span>Coal</span></a>', shorts)
+        assert re.search(r'<img src="[^"]*images/ores/Coal\.webp(?:\?v=\d+)?" alt="" class="ore-inline-icon"[^>]*><span>Coal</span></a>', shorts)
 
 
 class TestLeaderboardRows:

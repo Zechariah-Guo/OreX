@@ -13,6 +13,7 @@ dependencies = [
     "flask-wtf==1.3.0",
     "pillow==13.0.0",
     "pyotp==2.9.0",
+    "pywebpush==2.5.0",
     "qrcode==8.0",
     "werkzeug==3.1.9",
     "wtforms==3.2.2",
@@ -60,5 +61,5 @@ markers = [
     "finances: Finances page tests",
     "tutorial: Tutorial system integration tests",
     "slow: Slow tests (heavy password hashing in property tests). Deselect with -m \"not slow\"",
-    "browser: Real-browser tests (headless Chrome/Edge via scripts/screenshot.py); skipped if no browser or no internet. Deselect with -m \"not browser\"",
+    "browser: Real-browser tests (headless Chrome/Edge via scripts/dev/screenshot.py); skipped if no browser or no internet. Deselect with -m \"not browser\"",
 ]

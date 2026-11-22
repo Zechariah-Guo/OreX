@@ -68,7 +68,7 @@ class TestServiceWorker:
         source = client.get('/sw.js').data.decode('utf-8')
         block = re.search(r'PRECACHE_URLS\s*=\s*\[(.*?)\]', source, re.S).group(1)
         urls = re.findall(r"'([^']+)'", block)
-        assert urls == ['/static/images/logo.png']
+        assert urls == ['/static/images/logo.webp']
         assert block.split(',')[0].strip() == 'OFFLINE_URL'
         assert "OFFLINE_URL = '/static/offline.html'" in source
         # The only cache writes are the install-time precache
@@ -117,7 +117,8 @@ class TestHeadTags:
         assert ('<link rel="manifest" href="/manifest.webmanifest" '
                 'crossorigin="use-credentials">') in html
         assert '<meta name="theme-color"' in html
-        assert 'rel="apple-touch-icon" href="/static/images/pwa/apple-touch-icon.png"' in html
+        # static URLs carry a ?v=<mtime> cache-busting suffix
+        assert re.search(r'rel="apple-touch-icon" href="/static/images/pwa/apple-touch-icon\.png(\?v=\d+)?"', html)
         assert '<meta name="apple-mobile-web-app-capable" content="yes">' in html
         assert '<meta name="apple-mobile-web-app-title" content="OreX">' in html
         assert 'name="apple-mobile-web-app-status-bar-style"' in html
@@ -135,7 +136,7 @@ class TestHeadTags:
 
 class TestInstallBlock:
 
-    def test_hidden_by_default_directly_under_account_info(self, authenticated_client):
+    def test_hidden_by_default_first_in_the_this_device_section(self, authenticated_client):
         html = authenticated_client.get('/settings').data.decode('utf-8')
         card = re.search(r'<div class="settings-card" id="install-card" hidden>.*?</div>', html, re.S)
         assert card, 'install card missing or not hidden by default'
@@ -144,9 +145,9 @@ class TestInstallBlock:
         assert re.search(r'<button[^>]*id="install-btn"[^>]*\bhidden\b', block)
         assert re.search(r'<p[^>]*id="install-ios-hint"[^>]*\bhidden\b', block)
         assert 'tap Share then Add to Home Screen' in block
-        # Order: Account Information, then Install, then Change Password
-        assert (html.index('Account Information') < html.index('id="install-card"')
-                < html.index('<h2>Change Password</h2>'))
-        # Nothing but the account card sits between Account Information and Install
-        between = html[html.index('Account Information'):html.index('id="install-card"')]
-        assert between.count('class="settings-card"') == 1
+        # Order: Change Password (Account section), then the This device section with Install first
+        assert (html.index('<h3>Change Password</h3>') < html.index('id="device"')
+                < html.index('id="install-card"') < html.index('id="push-card"'))
+        # Nothing sits between the section heading and the Install card
+        between = html[html.index('id="device-heading"'):html.index('id="install-card"')]
+        assert between.count('<div class="settings-card') == 1  # only the install card's own opening tag

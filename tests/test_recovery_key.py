@@ -42,9 +42,11 @@ KEY_SHAPE = r'([A-Z2-9]{4}-){4}[A-Z2-9]{4}'
 @pytest.fixture(autouse=True)
 def clean_session(client):
     """The test client is session-scoped; drop cookies/session between tests."""
+    client.delete_cookie('remember_token')
     with client.session_transaction() as sess:
         sess.clear()
     yield
+    client.delete_cookie('remember_token')
     with client.session_transaction() as sess:
         sess.clear()
 
@@ -795,7 +797,7 @@ class TestKeyHelpers:
 # Admin script
 # ---------------------------------------------------------------------------
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts', 'admin'))
 
 
 class TestResetPasswordScript:

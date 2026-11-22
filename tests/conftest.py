@@ -121,12 +121,15 @@ def login_user(client, username, password):
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(autouse=True)
-def db_reset(app):
+def db_reset(app, client):
     """Reset the test database to its seeded state before each test.
 
     Drops all tables, re-executes schema.sql and seed.sql, and clears
-    the in-memory rate limiter to prevent cross-test contamination.
+    the in-memory rate limiter to prevent cross-test contamination. The shared
+    client also forgets its remember cookie: user ids repeat after a reset, so a
+    leftover cookie would sign the next test in as someone else.
     """
+    client.delete_cookie('remember_token')
     from app.routes.auth import _login_attempts
 
     db_path = app.config['DATABASE_PATH']
@@ -140,7 +143,7 @@ def db_reset(app):
     conn.execute("PRAGMA foreign_keys=OFF")
 
     # Drop tables in reverse FK order
-    for table in ('notifications', 'tutorial_progress', 'short_positions', 'stop_loss_take_profit', 'price_history', 'transactions', 'holdings', 'backup_codes', 'recovery_keys', 'ores', 'users'):
+    for table in ('notification_pushes', 'push_subscriptions', 'push_settings', 'push_presence', 'notifications', 'tutorial_progress', 'short_positions', 'stop_loss_take_profit', 'price_history', 'transactions', 'holdings', 'backup_codes', 'recovery_keys', 'ores', 'users'):
         conn.execute(f'DROP TABLE IF EXISTS {table}')
 
     # Re-create schema

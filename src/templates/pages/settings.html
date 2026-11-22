@@ -2,6 +2,8 @@
 {% block title %}Settings - OreX{% endblock %}
 
 {% block extra_css %}
+{# Inbox stylesheet: the notification card reuses the inbox category icons #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inbox.css') }}">
 <style>
     /* Advanced Mode Toggle Confirmation Modal */
     .toggle-modal-backdrop {
@@ -155,6 +157,15 @@ function confirmToggleSubmit() {
     var ua = navigator.userAgent;
     var isIos = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     var isIosSafari = isIos && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+    // Safari 17+ on a Mac can add a site to the Dock, but (like iOS) never fires
+    // beforeinstallprompt, so it gets a hint too. Other Mac browsers are excluded.
+    var safariVersion = (ua.match(/Version\/(\d+)/) || [])[1];
+    var isMacSafari = !isIos && /Macintosh/.test(ua) && /Safari\//.test(ua) &&
+        !/Chrome|Chromium|CriOS|Edg|Firefox|FxiOS|OPR/.test(ua) &&
+        safariVersion && parseInt(safariVersion, 10) >= 17;
+    if (isMacSafari) {
+        hint.textContent = 'In Safari, choose File, then Add to Dock.';
+    }
 
     function showButton() {
         hint.hidden = true;
@@ -164,7 +175,7 @@ function confirmToggleSubmit() {
 
     if (window.orexInstallPrompt) {
         showButton();
-    } else if (isIosSafari) {
+    } else if (isIosSafari || isMacSafari) {
         card.hidden = false;
         hint.hidden = false;
     }
@@ -206,257 +217,543 @@ function confirmToggleSubmit() {
         timerEl.textContent = 'Cooldown: ' + m + 'm ' + s + 's remaining';
     }, 1000);
 })();
+
+// Category bar: smooth scroll, scroll-spy (aria-current), and the device section's visibility
+(function () {
+    var page = document.querySelector('.settings-page');
+    var bar = document.getElementById('settings-nav');
+    if (!page || !bar) return;
+
+    var links = Array.prototype.slice.call(bar.querySelectorAll('a[href^="#"]'));
+    var sections = links.map(function (link) {
+        return document.getElementById(link.getAttribute('href').slice(1));
+    });
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var topBar = document.querySelector('.main-nav');
+    var lockUntil = 0;
+    var observers = [];
+    var current = null;
+
+    function setCurrent(id) {
+        if (id === current) return;
+        current = id;
+        links.forEach(function (link) {
+            var on = link.getAttribute('href') === '#' + id;
+            if (on) { link.setAttribute('aria-current', 'true'); } else { link.removeAttribute('aria-current'); }
+        });
+    }
+
+    function visible(section) { return section && !section.hidden && section.offsetParent !== null; }
+
+    function watch() {
+        observers.forEach(function (o) { o.disconnect(); });
+        observers = [];
+        if (!window.IntersectionObserver) return;
+
+        var first = sections.filter(visible)[0];
+        var margin = first ? parseFloat(getComputedStyle(first).scrollMarginTop) || 0 : 0;
+        var inBand = {};
+        var lastFull = false;
+        var last = sections[sections.length - 1];
+
+        function pick() {
+            if (Date.now() < lockUntil) return;
+            var id = null;
+            if (lastFull && last) {
+                id = last.id;
+            } else {
+                sections.forEach(function (section) {
+                    if (section && inBand[section.id]) id = section.id;
+                });
+            }
+            if (id) setCurrent(id);
+        }
+
+        // The band under the sticky bars where a section counts as being read
+        var band = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) { inBand[entry.target.id] = entry.isIntersecting; });
+            pick();
+        }, { rootMargin: '-' + Math.round(margin) + 'px 0px -65% 0px', threshold: 0 });
+        // The last section can be too short to reach the band: it wins once fully on screen
+        var end = new IntersectionObserver(function (entries) {
+            lastFull = entries[entries.length - 1].intersectionRatio >= 0.99;
+            pick();
+        }, { threshold: [0.99, 1] });
+
+        sections.forEach(function (section) { if (section) band.observe(section); });
+        if (last) end.observe(last);
+        observers = [band, end];
+    }
+
+    function measure() {
+        // Desktop top bar is sticky, so the category bar parks just below it
+        if (topBar) page.style.setProperty('--settings-nav-h', topBar.offsetHeight + 'px');
+        watch();
+    }
+
+    links.forEach(function (link, i) {
+        link.addEventListener('click', function (e) {
+            var target = sections[i];
+            if (!target || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            var smooth = !reduceMotion.matches;
+            target.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+            var heading = target.querySelector('h2');
+            if (heading) heading.focus({ preventScroll: true });
+            lockUntil = smooth ? Date.now() + 700 : 0;
+            setCurrent(target.id);
+            if (smooth) setTimeout(watch, 750);
+        });
+    });
+
+    if (window.ResizeObserver && topBar) {
+        new ResizeObserver(measure).observe(topBar);
+    } else {
+        window.addEventListener('resize', measure);
+    }
+    measure();
+})();
+
+// Phone accordion: each section header toggles its body. Wider screens hide the
+// toggles and always show every body, so this has no visible effect there.
+(function () {
+    // animate is true only for taps on a section header; everything else opens instantly
+    function setOpen(section, open, animate) {
+        if (!section) return;
+        if (!animate) section.classList.add('settings-section--instant');
+        section.classList.toggle('settings-section--open', open);
+        if (!animate) {
+            void section.offsetHeight;
+            section.classList.remove('settings-section--instant');
+        }
+        var btn = section.querySelector('.settings-section__toggle');
+        if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('.settings-section__toggle'), function (btn) {
+        btn.addEventListener('click', function () {
+            var section = btn.closest('.settings-section');
+            setOpen(section, !section.classList.contains('settings-section--open'), true);
+        });
+    });
+
+    // A #section in the URL (link or redirect) opens and scrolls to that section once,
+    // then leaves the address bar clean so a reload starts fresh (collapsed, at the top).
+    // Nothing else writes the hash. Scroll restoration is manual so a reload never
+    // lands deep inside collapsed sections.
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+    function landOnHash() {
+        var id = decodeURIComponent((location.hash || '').slice(1));
+        var target = id && document.getElementById(id);
+        if (!target) return;
+        setOpen(target.closest('.settings-section'), true);
+        target.scrollIntoView({ block: 'start' });
+        if (window.history && history.replaceState) history.replaceState(history.state, '', location.pathname + location.search);
+    }
+
+    window.addEventListener('hashchange', landOnHash);
+    landOnHash();
+
+    // The tutorial asks for a collapsed target to be shown before spotlighting it
+    document.addEventListener('orex:reveal', function (e) {
+        var section = e.target && e.target.closest && e.target.closest('.settings-section');
+        if (section) setOpen(section, true);
+    });
+})();
 </script>
 {% endblock %}
 
 {% block content %}
+{% set chevron %}<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z"/></svg>{% endset %}
 <div class="settings-page">
     <div class="page-header">
-        <h1>Account Settings</h1>
+        <h1>Settings</h1>
     </div>
 
-    <!-- Account Info -->
-    <div class="settings-card">
-        <h2>Account Information</h2>
-        <div class="settings-info">
-            <div class="settings-info__row">
-                <span class="settings-info__label">Username</span>
-                <span class="settings-info__value">{{ user.username }}</span>
-            </div>
-            <div class="settings-info__row">
-                <span class="settings-info__label">Balance</span>
-                <span class="settings-info__value">${{ "%.2f" | format(user.balance) }}</span>
-            </div>
+    <div class="settings-layout">
+    {# Category bar: a sidebar on wide screens, a row of chips under the title on phones #}
+    <nav class="settings-nav" id="settings-nav" aria-label="Settings sections">
+        <ul class="settings-nav__list">
+            <li><a class="settings-nav__link" href="#account">Account</a></li>
+            <li><a class="settings-nav__link" href="#device">This device</a></li>
+            <li><a class="settings-nav__link" href="#appearance">Appearance</a></li>
+            <li><a class="settings-nav__link" href="#gameplay">Gameplay</a></li>
+        </ul>
+    </nav>
+
+    <div class="settings-content">
+
+    {# Phones show each section as a collapsible row (header button + body); wider screens show every body #}
+    <section class="settings-section" id="account" aria-labelledby="account-heading">
+        <div class="settings-section__header">
+            <h2 class="settings-section__title" id="account-heading" tabindex="-1">Account</h2>
+            <p class="settings-section__summary">Password, two-factor, sign out, danger zone</p>
+            <button type="button" class="settings-section__toggle" aria-expanded="false" aria-controls="account-body" aria-labelledby="account-heading">{{ chevron }}</button>
         </div>
-    </div>
+        <div class="settings-section__body" id="account-body">
+        <div class="settings-section__panel">
 
-    {# Install: hidden until the script below finds the browser can install the app #}
-    <div class="settings-card" id="install-card" hidden>
-        <h2>💾 Install OreX</h2>
-        <p class="settings-card__description">Easily access OreX by installing its browser window, like an app.</p>
-        <button type="button" class="btn btn--primary install-card__btn" id="install-btn" hidden>Install OreX</button>
-        <p class="settings-card__description" id="install-ios-hint" hidden>On iPhone or iPad, tap Share then Add to Home Screen.</p>
-    </div>
-
-    <!-- Change Password -->
-    <div class="settings-card">
-        <h2>Change Password</h2>
-        <form method="POST" action="{{ url_for('settings.change_password') }}" class="settings-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <div class="form-group">
-                <label for="current_password" class="form-label">Current Password</label>
-                <input type="password" id="current_password" name="current_password"
-                       class="form-input" required>
-                {% if current_password_error %}
-                <p class="form-error" role="alert">{{ current_password_error }}</p>
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="new_password" class="form-label">New Password</label>
-                <input type="password" id="new_password" name="new_password"
-                       class="form-input" required minlength="8"
-                       placeholder="Minimum 8 characters">
-                {% if password_error %}
-                <p class="form-error" role="alert">{{ password_error }}</p>
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="confirm_password" class="form-label">Confirm New Password</label>
-                <input type="password" id="confirm_password" name="confirm_password"
-                       class="form-input" required minlength="8">
-                {% if confirm_error %}
-                <p class="form-error" role="alert">{{ confirm_error }}</p>
-                {% endif %}
-            </div>
-
-            <button type="submit" class="btn btn--primary">Update Password</button>
-        </form>
-    </div>
-
-    <!-- Two-Factor Authentication -->
-    <div class="settings-card">
-        <h2>Two-Factor Authentication</h2>
-        <div class="settings-info">
-            <div class="settings-info__row">
-                <span class="settings-info__label">Status</span>
-                <span class="settings-info__value">
-                    {% if two_factor_enabled %}Enabled{% else %}Disabled{% endif %}
-                </span>
+        <!-- Account Info -->
+        <div class="settings-card">
+            <h3>Account Information</h3>
+            <div class="settings-info">
+                <div class="settings-info__row">
+                    <span class="settings-info__label">Username</span>
+                    <span class="settings-info__value">{{ user.username }}</span>
+                </div>
+                <div class="settings-info__row">
+                    <span class="settings-info__label">Balance</span>
+                    <span class="settings-info__value">${{ "%.2f" | format(user.balance) }}</span>
+                </div>
             </div>
         </div>
 
-        {% if two_factor_enabled %}
-        <p class="settings-card__description">
-            Two-factor authentication is active on your account. To disable it, confirm
-            your identity with a code from your authenticator app or a backup code.
-        </p>
-        <form method="POST" action="{{ url_for('two_factor.disable') }}" class="settings-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <div class="form-group">
-                <label for="disable_2fa_code" class="form-label">Authentication Code</label>
-                <input type="text" id="disable_2fa_code" name="code"
-                       class="form-input" required autocomplete="one-time-code"
-                       inputmode="text" placeholder="6-digit code or backup code">
-            </div>
-
-            <button type="submit" class="btn btn--danger">Disable 2FA</button>
-        </form>
-        {% else %}
-        <p class="settings-card__description">
-            Add an extra layer of security to your account by requiring a time-based
-            code from an authenticator app when you log in.
-        </p>
-        <form method="POST" action="{{ url_for('two_factor.setup') }}" class="settings-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn--primary">Enable 2FA</button>
-        </form>
-        {% endif %}
-    </div>
-
-    <!-- Appearance -->
-    <div class="settings-card">
-        <h2>Appearance</h2>
-        <p class="settings-card__description">Choose your preferred colour theme.</p>
-        <div class="theme-switcher" role="radiogroup" aria-label="Theme selection">
-            <button class="theme-switcher__btn" data-theme="light" role="radio" aria-checked="false">
-                <span class="switcher-btn__icon" aria-hidden="true">☀️</span><span>Light</span>
-            </button>
-            <button class="theme-switcher__btn" data-theme="dark" role="radio" aria-checked="false">
-                <span class="switcher-btn__icon" aria-hidden="true">🌙</span><span>Dark</span>
-            </button>
-            <button class="theme-switcher__btn" data-theme="system" role="radio" aria-checked="false">
-                <span class="switcher-btn__icon" aria-hidden="true">💻</span><span>System</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Cosmetic Themes -->
-    <div class="settings-card">
-        <h2>Cosmetic Themes</h2>
-        <p class="settings-card__description">Unlock and apply prestige cosmetic themes. These layer on top of your chosen colour theme.</p>
-        <div class="cosmetic-theme-switcher" role="radiogroup" aria-label="Cosmetic theme selection">
-            <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="none" role="radio" aria-checked="false">
-                <span class="switcher-btn__icon" aria-hidden="true">🚫</span><span>None</span>
-            </button>
-            {% if money_theme_unlocked %}
-            <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="money" role="radio" aria-checked="false">
-                <span class="switcher-btn__icon" aria-hidden="true">💰</span><span>Money</span>
-            </button>
-            {% else %}
-            <button class="cosmetic-theme-switcher__btn cosmetic-theme-switcher__btn--locked" disabled aria-disabled="true" title="Earn Multimillionaire to unlock">
-                <span class="switcher-btn__icon" aria-hidden="true">🔒</span><span>Money</span>
-            </button>
-            {% endif %}
-            {% if gold_theme_unlocked %}
-            <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="gold" role="radio" aria-checked="false">
-                <span class="switcher-btn__icon" aria-hidden="true">🏆</span><span>Gold</span>
-            </button>
-            {% else %}
-            <button class="cosmetic-theme-switcher__btn cosmetic-theme-switcher__btn--locked" disabled aria-disabled="true" title="Earn Completionist to unlock">
-                <span class="switcher-btn__icon" aria-hidden="true">🔒</span><span>Gold</span>
-            </button>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Advanced Mode -->
-    <div class="settings-card" id="advanced-mode-card">
-        <h2><img src="{{ url_for('static', filename='images/hardcore-heart.png') }}" alt="Advanced_Mode" class="advanced__settings__logo"> Advanced Mode</h2>
-
-        {% if not advanced_eligible %}
-        {# State 1: Ineligible - greyed out #}
-        <div class="advanced-mode-box__content advanced-mode-box__content--ineligible">
-            <p class="settings-card__description">
-                Reach <strong>$100,000</strong> net worth to unlock Advanced Mode.
-            </p>
-            <br>
-            <button class="btn btn--primary" disabled aria-disabled="true">
-                Locked
-            </button>
-        </div>
-
-        {% elif not has_advanced_purchased %}
-        {# State 2: Eligible but not purchased #}
-        <div class="advanced-mode-box__content advanced-mode-box__content--eligible">
-            <p class="settings-card__description">
-                You are eligible for Advanced Mode! Unlock stop loss/take profit automation, shorting, 
-                resistance &amp; support overlays, and the OreX Advanced theme.
-            </p>
-            <br>
-            <form method="POST" action="{{ url_for('settings.purchase_advanced') }}">
+        <!-- Change Password -->
+        <div class="settings-card">
+            <h3>Change Password</h3>
+            <form method="POST" action="{{ url_for('settings.change_password') }}" class="settings-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn--primary">
-                    Purchase Advanced Mode &mdash; $50,000
-                </button>
+
+                <div class="form-group">
+                    <label for="current_password" class="form-label">Current Password</label>
+                    <input type="password" id="current_password" name="current_password"
+                           class="form-input" required>
+                    {% if current_password_error %}
+                    <p class="form-error" role="alert">{{ current_password_error }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="new_password" class="form-label">New Password</label>
+                    <input type="password" id="new_password" name="new_password"
+                           class="form-input" required minlength="8"
+                           placeholder="Minimum 8 characters">
+                    {% if password_error %}
+                    <p class="form-error" role="alert">{{ password_error }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password"
+                           class="form-input" required minlength="8">
+                    {% if confirm_error %}
+                    <p class="form-error" role="alert">{{ confirm_error }}</p>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn--primary">Update Password</button>
             </form>
         </div>
 
-        {% else %}
-        {# State 3 & 4: Purchased - toggle with optional cooldown #}
-        <p class="settings-card__description">
-            Advanced Mode is currently
-            <strong>{% if is_advanced_active %}ON{% else %}OFF{% endif %}</strong>.
-        </p>
+        <!-- Two-Factor Authentication -->
+        <div class="settings-card">
+            <h3>Two-Factor Authentication</h3>
+            <div class="settings-info">
+                <div class="settings-info__row">
+                    <span class="settings-info__label">Status</span>
+                    <span class="settings-info__value">
+                        {% if two_factor_enabled %}Enabled{% else %}Disabled{% endif %}
+                    </span>
+                </div>
+            </div>
 
-        {% if advanced_cooldown_remaining > 0 %}
-        {# State 4: Cooldown active - disabled toggle with remaining time #}
-        <br>
-        <div class="advanced-mode-box__cooldown">
-            <button class="btn btn--toggle {% if is_advanced_active %}btn--toggle-on{% endif %}" disabled aria-disabled="true">
-                {% if is_advanced_active %}ON{% else %}OFF{% endif %}
-            </button>
-            <span class="advanced-mode-box__cooldown-timer" aria-live="polite">
-                Cooldown: {{ (advanced_cooldown_remaining // 60) }}m {{ (advanced_cooldown_remaining % 60) }}s remaining
-            </span>
+            {% if two_factor_enabled %}
+            <p class="settings-card__description">
+                Two-factor authentication is active on your account. To disable it, confirm
+                your identity with a code from your authenticator app or a backup code.
+            </p>
+            <form method="POST" action="{{ url_for('two_factor.disable') }}" class="settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-group">
+                    <label for="disable_2fa_code" class="form-label">Authentication Code</label>
+                    <input type="text" id="disable_2fa_code" name="code"
+                           class="form-input" required autocomplete="one-time-code"
+                           inputmode="text" placeholder="6-digit code or backup code">
+                </div>
+
+                <button type="submit" class="btn btn--danger">Disable 2FA</button>
+            </form>
+            {% else %}
+            <p class="settings-card__description">
+                Add an extra layer of security to your account by requiring a time-based
+                code from an authenticator app when you log in.
+            </p>
+            <form method="POST" action="{{ url_for('two_factor.setup') }}" class="settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn--primary">Enable 2FA</button>
+            </form>
+            {% endif %}
         </div>
-        {% else %}
-        {# State 3: No cooldown - active toggle with confirmation #}
-        <br>
-        <form method="POST" action="{{ url_for('settings.toggle_advanced') }}" id="advanced-toggle-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <label class="toggle-switch" for="advanced-mode-toggle">
-                <input type="checkbox" id="advanced-mode-toggle"
-                       {% if is_advanced_active %}checked{% endif %}
-                       onchange="confirmAdvancedToggle(this)"
-                       aria-label="Toggle Advanced Mode">
-                <span class="toggle-switch__slider"></span>
-                <span class="toggle-switch__label">
+
+        <!-- Sign out of other devices -->
+        <div class="settings-card" id="sign-out-others-card">
+            <h3>Sign out of all other devices</h3>
+            <p class="settings-card__description">Signs you out everywhere else, including installed apps. This device stays signed in.</p>
+            <form method="POST" action="{{ url_for('settings.sign_out_others') }}" class="settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn--secondary settings-card__btn">Sign out other devices</button>
+            </form>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="settings-divider">
+            <h3 class="settings-divider__title">Danger Zone</h3>
+        </div>
+
+        <!-- Reset Account -->
+        <div class="settings-card settings-card--danger">
+            <h4>Reset Account</h4>
+            <p class="settings-card__warning">
+                This will reset your balance to $10,000, delete all holdings, clear your inbox, and archive all transactions.
+                This action cannot be undone.
+            </p>
+            <a href="{{ url_for('settings.reset') }}" class="btn btn--danger">Reset Account</a>
+        </div>
+
+        <!-- Delete Account -->
+        <div class="settings-card settings-card--danger">
+            <h4>Delete Account</h4>
+            <p class="settings-card__warning">
+                This will permanently delete your account, all holdings, and all transaction history.
+                This action cannot be undone.
+            </p>
+            <a href="{{ url_for('settings.delete') }}" class="btn btn--danger">Delete Account</a>
+        </div>
+        </div>{# .settings-section__panel #}
+        </div>{# .settings-section__body #}
+    </section>
+
+    <section class="settings-section" id="device" aria-labelledby="device-heading">
+        <div class="settings-section__header">
+            <h2 class="settings-section__title" id="device-heading" tabindex="-1">This device</h2>
+            <p class="settings-section__summary">Install, notifications</p>
+            <button type="button" class="settings-section__toggle" aria-expanded="false" aria-controls="device-body" aria-labelledby="device-heading">{{ chevron }}</button>
+        </div>
+        <div class="settings-section__body" id="device-body">
+        <div class="settings-section__panel">
+
+        {# Install: hidden until the script below finds the browser can install the app #}
+        <div class="settings-card" id="install-card" hidden>
+            <h3>💾 Install OreX</h3>
+            <p class="settings-card__description">Easily access OreX by installing its browser window, like an app.</p>
+            <button type="button" class="btn btn--primary install-card__btn" id="install-btn" hidden>Install OreX</button>
+            <p class="settings-card__description" id="install-ios-hint" hidden>On iPhone or iPad, tap Share then Add to Home Screen.</p>
+        </div>
+
+        {# Notifications: always shown. It starts with the switch disabled and push.js enables it when the browser supports Web Push, or explains why not. No label text in comments. #}
+        <div class="settings-card push-card" id="push-card"
+             data-configured="{{ 'true' if push_configured else 'false' }}"
+             data-public-key="{{ push_public_key if push_configured else '' }}">
+            <h3>🔔 Notifications</h3>
+            <p class="settings-card__description">The first switch turns notifications on for this device only. The category switches below apply to all of your devices.</p>
+            <p class="settings-card__description" id="push-unconfigured" {% if push_configured %}hidden{% endif %}>Notifications are not configured on this server.</p>
+            <div id="push-controls" {% if not push_configured %}hidden{% endif %}>
+                <label class="toggle-switch push-card__device" for="push-device-switch" data-unavailable>
+                    <input type="checkbox" role="switch" id="push-device-switch" disabled>
+                    <span class="toggle-switch__slider"></span>
+                    <span class="push-card__device-label">Enable push notifications for this device</span>
+                </label>
+                <p class="push-card__note" id="push-unsupported" hidden>This browser can't show notifications. Try Chrome, Edge, Firefox or Safari.</p>
+                <p class="push-card__note" id="push-ios-hint" hidden>Add OreX to your Home Screen to get notifications (iOS 16.4 or later).</p>
+                <p class="push-card__note" id="push-denied" hidden>Notifications are blocked for this site. To turn them back on, open this site's settings in your browser, set Notifications to Allow, then reload this page.</p>
+                <p class="push-card__note" id="push-note" role="status" aria-live="polite" hidden></p>
+                <div id="push-prefs" hidden>
+                    <div class="push-card__list" role="group" aria-label="Notification categories">
+                        {% for group in push_groups %}
+                        <label class="toggle-switch toggle-switch--sm push-card__row" for="push-pref-{{ group.key }}">
+                            <input type="checkbox" role="switch" id="push-pref-{{ group.key }}" data-push-group="{{ group.key }}"
+                                   {% if group.on %}checked{% endif %}>
+                            <span class="toggle-switch__slider"></span>
+                            <span class="inbox__list-item-icon push-card__icon {{ group.css_class }}" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor"><path d="{{ group.icon }}"/></svg>
+                            </span>
+                            <span class="push-card__row-label">{{ group.label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <p class="push-card__status" id="push-status" role="status" aria-live="polite"></p>
+                    <div class="push-card__footer">
+                        <div class="push-card__footer-text">
+                            <span id="push-footer-state">Notifications are on for this device</span>
+                        </div>
+                        <button type="button" class="push-card__test" id="push-test-btn">Send a test</button>
+                    </div>
+                    <p class="push-card__status" id="push-test-status" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+        </div>
+        </div>{# .settings-section__panel #}
+        </div>{# .settings-section__body #}
+    </section>
+
+    <section class="settings-section" id="appearance" aria-labelledby="appearance-heading">
+        <div class="settings-section__header">
+            <h2 class="settings-section__title" id="appearance-heading" tabindex="-1">Appearance</h2>
+            <p class="settings-section__summary">Colour theme, cosmetic themes</p>
+            <button type="button" class="settings-section__toggle" aria-expanded="false" aria-controls="appearance-body" aria-labelledby="appearance-heading">{{ chevron }}</button>
+        </div>
+        <div class="settings-section__body" id="appearance-body">
+        <div class="settings-section__panel">
+
+        <!-- Colour theme -->
+        <div class="settings-card">
+            <h3>Colour theme</h3>
+            <p class="settings-card__description">Choose your preferred colour theme.</p>
+            <div class="theme-switcher" role="radiogroup" aria-label="Theme selection">
+                <button class="theme-switcher__btn" data-theme="light" role="radio" aria-checked="false">
+                    <span class="switcher-btn__icon" aria-hidden="true">☀️</span><span>Light</span>
+                </button>
+                <button class="theme-switcher__btn" data-theme="dark" role="radio" aria-checked="false">
+                    <span class="switcher-btn__icon" aria-hidden="true">🌙</span><span>Dark</span>
+                </button>
+                <button class="theme-switcher__btn" data-theme="system" role="radio" aria-checked="false">
+                    <span class="switcher-btn__icon" aria-hidden="true">💻</span><span>System</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Cosmetic Themes -->
+        <div class="settings-card">
+            <h3>Cosmetic Themes</h3>
+            <p class="settings-card__description">Unlock and apply prestige cosmetic themes. These layer on top of your chosen colour theme.</p>
+            <div class="cosmetic-theme-switcher" role="radiogroup" aria-label="Cosmetic theme selection">
+                <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="none" role="radio" aria-checked="false">
+                    <span class="switcher-btn__icon" aria-hidden="true">🚫</span><span>None</span>
+                </button>
+                {% if money_theme_unlocked %}
+                <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="money" role="radio" aria-checked="false">
+                    <span class="switcher-btn__icon" aria-hidden="true">💰</span><span>Money</span>
+                </button>
+                {% else %}
+                <button class="cosmetic-theme-switcher__btn cosmetic-theme-switcher__btn--locked" disabled aria-disabled="true" title="Earn Multimillionaire to unlock">
+                    <span class="switcher-btn__icon" aria-hidden="true">🔒</span><span>Money</span>
+                </button>
+                {% endif %}
+                {% if gold_theme_unlocked %}
+                <button class="cosmetic-theme-switcher__btn" data-cosmetic-theme="gold" role="radio" aria-checked="false">
+                    <span class="switcher-btn__icon" aria-hidden="true">🏆</span><span>Gold</span>
+                </button>
+                {% else %}
+                <button class="cosmetic-theme-switcher__btn cosmetic-theme-switcher__btn--locked" disabled aria-disabled="true" title="Earn Completionist to unlock">
+                    <span class="switcher-btn__icon" aria-hidden="true">🔒</span><span>Gold</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        </div>{# .settings-section__panel #}
+        </div>{# .settings-section__body #}
+    </section>
+
+    <section class="settings-section" id="gameplay" aria-labelledby="gameplay-heading">
+        <div class="settings-section__header">
+            <h2 class="settings-section__title" id="gameplay-heading" tabindex="-1">Gameplay</h2>
+            <p class="settings-section__summary">Advanced Mode, tutorials</p>
+            <button type="button" class="settings-section__toggle" aria-expanded="false" aria-controls="gameplay-body" aria-labelledby="gameplay-heading">{{ chevron }}</button>
+        </div>
+        <div class="settings-section__body" id="gameplay-body">
+        <div class="settings-section__panel">
+
+        <!-- Advanced Mode -->
+        <div class="settings-card" id="advanced-mode-card">
+            <h3><img src="{{ url_for('static', filename='images/hardcore-heart.webp') }}" alt="Advanced_Mode" class="advanced__settings__logo"> Advanced Mode</h3>
+
+            {% if not advanced_eligible %}
+            {# State 1: Ineligible - greyed out #}
+            <div class="advanced-mode-box__content advanced-mode-box__content--ineligible">
+                <p class="settings-card__description">
+                    Reach <strong>$100,000</strong> net worth to unlock Advanced Mode.
+                </p>
+                <br>
+                <button class="btn btn--primary" disabled aria-disabled="true">
+                    Locked
+                </button>
+            </div>
+
+            {% elif not has_advanced_purchased %}
+            {# State 2: Eligible but not purchased #}
+            <div class="advanced-mode-box__content advanced-mode-box__content--eligible">
+                <p class="settings-card__description">
+                    You are eligible for Advanced Mode! Unlock stop loss/take profit automation, shorting, 
+                    resistance &amp; support overlays, and the OreX Advanced theme.
+                </p>
+                <br>
+                <form method="POST" action="{{ url_for('settings.purchase_advanced') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--primary">
+                        Purchase Advanced Mode &mdash; $50,000
+                    </button>
+                </form>
+            </div>
+
+            {% else %}
+            {# State 3 & 4: Purchased - toggle with optional cooldown #}
+            <p class="settings-card__description">
+                Advanced Mode is currently
+                <strong>{% if is_advanced_active %}ON{% else %}OFF{% endif %}</strong>.
+            </p>
+
+            {% if advanced_cooldown_remaining > 0 %}
+            {# State 4: Cooldown active - disabled toggle with remaining time #}
+            <br>
+            <div class="advanced-mode-box__cooldown">
+                <button class="btn btn--toggle {% if is_advanced_active %}btn--toggle-on{% endif %}" disabled aria-disabled="true">
                     {% if is_advanced_active %}ON{% else %}OFF{% endif %}
+                </button>
+                <span class="advanced-mode-box__cooldown-timer" aria-live="polite">
+                    Cooldown: {{ (advanced_cooldown_remaining // 60) }}m {{ (advanced_cooldown_remaining % 60) }}s remaining
                 </span>
-            </label>
-        </form>
-        {% endif %}
-        {% endif %}
-    </div>
+            </div>
+            {% else %}
+            {# State 3: No cooldown - active toggle with confirmation #}
+            <br>
+            <form method="POST" action="{{ url_for('settings.toggle_advanced') }}" id="advanced-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label class="toggle-switch" for="advanced-mode-toggle">
+                    <input type="checkbox" id="advanced-mode-toggle"
+                           {% if is_advanced_active %}checked{% endif %}
+                           onchange="confirmAdvancedToggle(this)"
+                           aria-label="Toggle Advanced Mode">
+                    <span class="toggle-switch__slider"></span>
+                    <span class="toggle-switch__label">
+                        {% if is_advanced_active %}ON{% else %}OFF{% endif %}
+                    </span>
+                </label>
+            </form>
+            {% endif %}
+            {% endif %}
+        </div>
 
-    <!-- Danger Zone -->
-    <div class="settings-divider">
-        <h2 class="settings-divider__title">Danger Zone</h2>
-    </div>
+        <!-- Tutorials -->
+        <div class="settings-card" id="tutorials-card">
+            <h3>Tutorials</h3>
+            <p class="settings-card__description">Replay any tutorial from the <a href="{{ url_for('pages.help_page') }}#tutorials">tutorial list on the Help page</a>.</p>
+        </div>
+        </div>{# .settings-section__panel #}
+        </div>{# .settings-section__body #}
+    </section>
 
-    <!-- Reset Account -->
-    <div class="settings-card settings-card--danger">
-        <h2>Reset Account</h2>
-        <p class="settings-card__warning">
-            This will reset your balance to $10,000, delete all holdings, clear your inbox, and archive all transactions.
-            This action cannot be undone.
-        </p>
-        <a href="{{ url_for('settings.reset') }}" class="btn btn--danger">Reset Account</a>
-    </div>
+    {# Runs during parsing, before first paint: open the section named in the URL hash
+       and any section holding a form error, so phones never flash collapsed content #}
+    <script>
+    (function () {
+        var id = (location.hash || '').slice(1);
+        var target = id && document.getElementById(id);
+        var section = target && target.closest && target.closest('.settings-section');
+        if (section) section.classList.add('settings-section--open');
+        Array.prototype.forEach.call(document.querySelectorAll('.settings-section .form-error'), function (err) {
+            err.closest('.settings-section').classList.add('settings-section--open');
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('.settings-section--open .settings-section__toggle'), function (btn) {
+            btn.setAttribute('aria-expanded', 'true');
+        });
+    })();
+    </script>
 
-    <!-- Delete Account -->
-    <div class="settings-card settings-card--danger">
-        <h2>Delete Account</h2>
-        <p class="settings-card__warning">
-            This will permanently delete your account, all holdings, and all transaction history.
-            This action cannot be undone.
-        </p>
-        <a href="{{ url_for('settings.delete') }}" class="btn btn--danger">Delete Account</a>
-    </div>
+    </div>{# .settings-content #}
+    </div>{# .settings-layout #}
 </div>
 
 <!-- Advanced Mode Toggle Confirmation Modal -->

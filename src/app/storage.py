@@ -10,7 +10,7 @@ The active backend is selected via the STORAGE_BACKEND config key.
 import abc
 import os
 
-from flask import url_for
+from app.static_cache import versioned_static_url
 
 
 class StorageBackend(abc.ABC):
@@ -73,7 +73,9 @@ class LocalStorage(StorageBackend):
         return False
 
     def get_url(self, filename: str) -> str:
-        return url_for('static', filename=f'uploads/avatars/{filename}')
+        # ?v=<mtime>: the file name is reused on every upload, so the URL must
+        # change with the file or a long-cached avatar would never refresh.
+        return versioned_static_url(f'uploads/avatars/{filename}')
 
 
 class OCIStorage(StorageBackend):

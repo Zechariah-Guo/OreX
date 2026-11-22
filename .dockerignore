@@ -10,7 +10,7 @@ venv
 .env
 docs
 tests
-scripts
+scripts/dev
 migrations
 **/__pycache__
 **/*.pyc

@@ -10,6 +10,9 @@ from app.models import get_all_ores
 
 pages_bp = Blueprint('pages', __name__)
 
+# Shown on /privacy and /terms; change it whenever either document changes.
+LEGAL_LAST_UPDATED = '23 November 2026'
+
 
 def _market_ticker():
     """Public snapshot of the 9 ores for the landing page's live strip.
@@ -71,7 +74,7 @@ def _pwa_manifest():
         'id': '/',
         'name': 'OreX',
         'short_name': 'OreX',
-        'description': 'A Minecraft-themed stock market simulation. Trade ores and build your fortune.',
+        'description': 'A gamified stock market simulation with Minecraft-inspired ores. Trade ores and build your fortune.',
         'start_url': '/',
         'scope': '/',
         'display': 'standalone',
@@ -110,6 +113,18 @@ def service_worker():
 def about():
     """About / How It Works page."""
     return render_template('pages/about.html')
+
+
+@pages_bp.route('/privacy')
+def privacy():
+    """Privacy Policy (public)."""
+    return render_template('pages/privacy.html', last_updated=LEGAL_LAST_UPDATED)
+
+
+@pages_bp.route('/terms')
+def terms():
+    """Terms of Use (public)."""
+    return render_template('pages/terms.html', last_updated=LEGAL_LAST_UPDATED)
 
 
 @pages_bp.route('/help')

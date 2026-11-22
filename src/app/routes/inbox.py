@@ -1,6 +1,6 @@
 """Inbox blueprint — notification polling and inbox page endpoints."""
 
-from flask import Blueprint, abort, jsonify, render_template, request
+from flask import Blueprint, abort, current_app, jsonify, render_template, request
 from flask_login import current_user, login_required
 
 from app.advancements import advancement_key_from_message, get_advancement_detail
@@ -26,6 +26,10 @@ from app.models import (
     mark_notifications_read,
     mark_notifications_toasted,
 )
+
+from flask_wtf.csrf import generate_csrf
+
+from app.push import clean_client_id, record_visible_poll
 
 inbox_bp = Blueprint("inbox", __name__, url_prefix="/inbox")
 
@@ -134,7 +138,23 @@ def poll():
     except Exception:
         pass
 
-    rows = get_pending_toasts(current_user.id)
+    # The page says whether it is visible (?visible=1 / 0). A visible poll counts
+    # as the player being present, which is what keeps Web Push quiet. A hidden
+    # page neither counts as present nor consumes toasts nobody can see; they wait
+    # for the visible poll sent when the player returns. No parameter (an old
+    # cached script) behaves as before: toasts are delivered, presence unchanged.
+    visible = request.args.get("visible")
+    if visible == "1":
+        try:
+            record_visible_poll(
+                get_db(), current_user.id,
+                write_interval=current_app.config["PUSH_PRESENCE_WRITE_INTERVAL"],
+                client_id=clean_client_id(request.args.get("c")),
+            )
+        except Exception:
+            pass
+
+    rows = [] if visible == "0" else get_pending_toasts(current_user.id)
     unread = has_unread_notifications(current_user.id)
 
     notifications = []
@@ -158,12 +178,15 @@ def poll():
     # Mark as toasted so they never fire again
     mark_notifications_toasted(ids_to_mark)
 
-    return jsonify(
-        {
-            "notifications": notifications,
-            "has_unread": unread,
-        }
-    )
+    body = {
+        "notifications": notifications,
+        "has_unread": unread,
+    }
+    if visible == "1":
+        # Fresh token for the page's away beacon (the one in the page's meta tag
+        # expires after an hour, and a phone app can stay open far longer).
+        body["csrf"] = generate_csrf()
+    return jsonify(body)
 
 _VALID_FILTERS = ("all", "read", "unread")
 

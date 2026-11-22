@@ -27,6 +27,14 @@ class TestNavMarkup:
         html = authenticated_client.get('/dashboard').data.decode('utf-8')
         assert 'title="Inbox"' in html
 
+    def test_menu_sits_in_clip_wrapper_after_pill(self, authenticated_client):
+        html = authenticated_client.get('/dashboard').data.decode('utf-8')
+        pill = html.index('class="nav__profile-pill"')
+        clip = html.index('class="nav__dropdown-clip"')
+        menu = html.index('id="nav-dropdown"')
+        assert pill < clip < menu
+        assert html.count('class="nav__dropdown-clip"') == 1
+
     def test_portfolio_tab_active(self, authenticated_client):
         html = authenticated_client.get('/portfolio').data.decode('utf-8')
         active = [t for t in _tab_links(html) if 'nav__tab-link--active' in t]

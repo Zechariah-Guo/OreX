@@ -337,6 +337,28 @@
         return { top: top, bottom: bottom };
     }
 
+    /**
+     * Ask the page to show a target that is in the DOM but collapsed (for example
+     * a Settings section on phones). Pages listen for the bubbling 'orex:reveal'.
+     */
+    function revealTarget(selector) {
+        var list = Array.isArray(selector) ? selector : [selector];
+        list.forEach(function (s) {
+            var el;
+            try { el = document.querySelector(s); } catch (e) { return; }
+            if (el && el.getClientRects().length === 0) {
+                el.dispatchEvent(new CustomEvent('orex:reveal', { bubbles: true }));
+            }
+        });
+    }
+
+    /** Desktop: bottom edge of the sticky top navbar (its real height, scrolled state included). */
+    function desktopTopInset() {
+        var nav = document.querySelector('.main-nav');
+        if (!nav) return 0;
+        return Math.max(0, nav.getBoundingClientRect().bottom);
+    }
+
     /** True when the target is part of the fixed phone navbar (never scrolled or clipped). */
     function isNavTarget(el) {
         return !!(el && el.closest && el.closest('.main-nav--auth'));
@@ -678,6 +700,7 @@
                 var step = effectiveStep(this.steps[index]);
 
                 this.applyReveal(step);
+                revealTarget(step.selector);
                 var el = await this.waitForElement(step.selector, SELECTOR_WAIT_MS);
                 if (token !== this._stepToken) return; // superseded
 
@@ -919,6 +942,11 @@
                     var lo = ins.top, hi = root.innerHeight - ins.bottom;
                     var top = Math.max(box.top, lo), bottom = Math.min(box.top + box.height, hi);
                     if (bottom > top) { box.top = top; box.height = bottom - top; }
+                } else if (!isPhone() && !el.closest('.main-nav')) {
+                    // Desktop: same rule against the sticky navbar and the viewport bottom
+                    var dlo = desktopTopInset(), dhi = root.innerHeight;
+                    var dtop = Math.max(box.top, dlo), dbottom = Math.min(box.top + box.height, dhi);
+                    if (dbottom > dtop) { box.top = dtop; box.height = dbottom - dtop; }
                 }
                 this.setHighlight(box);
                 return true;
@@ -1003,7 +1031,8 @@
                 var rect = el.getBoundingClientRect();
                 var vh = root.innerHeight;
                 var margin = 12;
-                return rect.top < margin || rect.bottom > vh - margin;
+                var inset = el.closest('.main-nav') ? 0 : desktopTopInset();
+                return rect.top < inset + margin || rect.bottom > vh - margin;
             },
 
             async scrollToTarget(el) {
@@ -1015,17 +1044,16 @@
                     root.scrollBy({ top: delta, left: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
                 } else {
                     if (!this.needsScroll(el)) return;   // already fully in view: no scroll
-                    el.scrollIntoView({
-                        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-                        // When we do scroll, bring the target as far ONTO screen as the
-                        // page allows — centre it (a near-bottom target just scrolls to
-                        // the page's max, landing comfortably in view rather than barely
-                        // peeking at the edge). A tall target aligns to the top instead.
-                        // Note: whether we scroll at all is decided by needsScroll (full
-                        // visibility), not by centring — so this doesn't re-introduce a
-                        // scroll on every step.
-                        block: tall ? 'start' : 'center'
-                    });
+                    // When we do scroll, centre the target in the area under the sticky
+                    // navbar (a near-bottom target just scrolls to the page's max). A tall
+                    // target aligns its top just below the navbar instead, so it is never
+                    // hidden behind it. Whether we scroll at all is decided by needsScroll.
+                    var inset = el.closest('.main-nav') ? 0 : desktopTopInset();
+                    var r = el.getBoundingClientRect();
+                    var dy = tall
+                        ? r.top - (inset + 12)
+                        : r.top + r.height / 2 - (inset + root.innerHeight) / 2;
+                    root.scrollBy({ top: dy, left: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
                 }
                 // Wait until the smooth scroll has truly stopped before returning, so
                 // the spotlight is positioned once, against the target's FINAL rect.

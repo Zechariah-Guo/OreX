@@ -382,11 +382,12 @@ def test_avatar_url_resolution(user_id, avatar_path, app):
                 f"Expected URL to contain {expected_filename}, got: {url}"
             )
         else:
-            # NULL or empty avatar_path should yield default avatar path
-            from flask import url_for
-            default_url = url_for('static', filename='images/default-avatar.png')
-            assert 'images/default-avatar.png' in default_url, (
-                f"Expected default avatar URL, got: {default_url}"
+            # NULL or empty avatar_path: no default image (the default avatar
+            # is the initials circle), so the avatar partial renders no <img>
+            from flask import render_template
+            html = render_template('partials/profile_avatar.html', avatar_url=None)
+            assert '<img' not in html, (
+                f"Expected no avatar image without an upload, got: {html}"
             )
 
 

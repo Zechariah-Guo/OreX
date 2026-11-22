@@ -19,14 +19,13 @@ import sys
 import tempfile
 import threading
 import time
-import urllib.request
 import uuid
 from types import SimpleNamespace
 
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, 'scripts'))
+sys.path.insert(0, os.path.join(ROOT, 'scripts', 'dev'))
 import screenshot as shot  # noqa: E402  (the screenshot tool doubles as the browser driver)
 
 pytestmark = [pytest.mark.browser, pytest.mark.tutorial]
@@ -50,10 +49,6 @@ def site():
     browser_path = shot.find_browser()
     if not browser_path:
         pytest.skip('Chrome/Edge not found')
-    try:
-        urllib.request.urlopen('https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js', timeout=5).close()
-    except OSError:
-        pytest.skip('No internet access (Alpine.js is loaded from a CDN)')
 
     tmp = tempfile.mkdtemp(prefix='orex_browser_tests_')
     patcher = pytest.MonkeyPatch()
@@ -648,6 +643,11 @@ def test_account_reset_lets_the_tutorial_start_again(site):
     with site.app.app_context():
         from app.models import reset_account
         reset_account(user.id)
+        # reset_account signs other sessions out; the settings route re-issues the
+        # current one. Undo the bump here so the open browser stays signed in.
+        from app.database import get_db
+        get_db().execute('UPDATE users SET session_version = session_version - 1 WHERE id = ?', (user.id,))
+        get_db().commit()
     assert db_rows(site, 'SELECT COUNT(*) AS n FROM tutorial_progress WHERE user_id = ?', (user.id,))[0]['n'] == 0
 
     site.cdp.navigate(site.base + '/dashboard')

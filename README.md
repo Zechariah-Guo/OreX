@@ -2,7 +2,7 @@
 
 # OreX
 
-A Minecraft-themed stock market simulation built with Python and Flask. Trade ores like stocks: buy low, sell high, and grow your fortune as prices move every 20 seconds alongside a cast of bot traders.
+A gamified stock market simulation with Minecraft-inspired ores, built with Python and Flask. Trade ores like stocks: buy low, sell high, and grow your fortune as prices move every 20 seconds alongside a cast of bot traders.
 
 ![OreX Features](docs/assets/Feature-Display.png)
 
@@ -80,7 +80,7 @@ OreX/
 │   ├── static/              # CSS, JS, images, audio, tutorial data
 │   └── data/                # SQLite database (auto-created)
 ├── migrations/              # Database migrations
-├── scripts/                 # Developer utilities (screenshots, user cleanup via `drop_user.py`, password resets via `reset_password.py`)
+├── scripts/                 # dev/ (screenshots, browser checks) and admin/ (production management: password reset, data export, rename, suspend, economy reset; see scripts/README.md)
 ├── tests/                   # Pytest test suite
 └── docs/                    # Planning documents and assets
 ```
@@ -122,6 +122,8 @@ The Docker Compose setup runs the production stack locally (Nginx, Gunicorn with
 2. Run `docker compose up --build`.
 3. Open `http://localhost:8080`.
 
+The image includes `scripts/admin`, so admin tasks run inside the container, for example `docker compose exec app python /app/scripts/admin/reset_password.py <username> --random`.
+
 ### Running Tests
 
 ```bash
@@ -132,7 +134,7 @@ Some 2FA property tests are slow because they hash many passwords. Skip them wit
 
 ### Safari-Engine Check (dev only)
 
-`scripts/safari_check.py` loads the main pages in Playwright's WebKit with iPhone and iPad presets, saves screenshots to `screenshots/safari/` and prints a pass/fail table. One-time setup: `uv sync` then `uv run playwright install webkit`. Run: `uv run python scripts/safari_check.py` (add `--compare` to diff against Chrome). It is a WebKit port, not real Safari, so it cannot show safe-area insets, the iOS address bar or input zoom.
+`scripts/dev/safari_check.py` loads the main pages in Playwright's WebKit with iPhone and iPad presets, saves screenshots to `screenshots/safari/` and prints a pass/fail table. One-time setup: `uv sync` then `uv run playwright install webkit`. Run: `uv run python scripts/dev/safari_check.py` (add `--compare` to diff against Chrome). It is a WebKit port, not real Safari, so it cannot show safe-area insets, the iOS address bar or input zoom.
 
 To hand-test in a visible WebKit window, start the dev server first (it must be running), then either:
 
@@ -200,11 +202,13 @@ Game settings live in `src/app/config.py`. Key values:
 
 Deployment settings are read from environment variables. See [`.env.example`](.env.example) for `SECRET_KEY`, `OREX_TRUST_PROXY`, `SESSION_COOKIE_SECURE`, and avatar storage options.
 
+**Web Push (optional).** Players can opt in to push notifications under Settings > Notifications (stop loss and take profit fills, liquidations, the daily bonus, achievements). A push is sent only when the player has had no visible OreX page open for about a minute; otherwise the normal in-app toast is used. Push is off until the server has VAPID keys: run `python scripts/admin/generate_vapid_keys.py` once, then set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (a `mailto:` or `https://` contact) in the environment or `.env`. Browsers require https (or localhost); on iPhone and iPad the site must be installed to the Home Screen first (iOS 16.4 or later).
+
 ## Security
 
 - **Password hashing**: Passwords and 2FA backup codes are hashed with Werkzeug.
 - **Two-factor authentication**: Optional TOTP with QR code setup and backup codes.
-- **Password recovery**: An optional one-time recovery key (shown inside the registration form, which cannot be submitted until the user confirms they saved it; stored only as a hash, and only when the account is created) lets a user reset a forgotten password. The key travels in a signed, time-limited token, so nothing is stored before the form is submitted. The reset form offers a new key the same way (ticked by default) and the old key is consumed in the same transaction. It shares the login rate limiter. If a user has no key, an admin can run `python scripts/reset_password.py <username>` (prompts for the new password; add `--random` to generate a temporary one). 2FA is not affected.
+- **Password recovery**: An optional one-time recovery key (shown inside the registration form, which cannot be submitted until the user confirms they saved it; stored only as a hash, and only when the account is created) lets a user reset a forgotten password. The key travels in a signed, time-limited token, so nothing is stored before the form is submitted. The reset form offers a new key the same way (ticked by default) and the old key is consumed in the same transaction. It shares the login rate limiter. If a user has no key, an admin can run `python scripts/admin/reset_password.py <username>` (prompts for the new password; add `--random` to generate a temporary one). 2FA is not affected.
 - **CSRF protection**: All forms are protected with Flask-WTF.
 - **Rate limiting**: The login endpoint limits repeated attempts.
 - **Parameterised queries**: All database access uses bound parameters to prevent SQL injection.

@@ -46,7 +46,7 @@ def player(username):
     """
     db = get_db()
     row = db.execute(
-        "SELECT id, username, password_hash FROM users WHERE username = ?",
+        "SELECT id, username, password_hash, suspended_at FROM users WHERE username = ?",
         (username,),
     ).fetchone()
 
@@ -59,7 +59,7 @@ def player(username):
             abort(404)
         return redirect(url_for('profile.player', username=matches[0]['username']))
 
-    if row['password_hash'] == BOT_PASSWORD_HASH:
+    if row['password_hash'] == BOT_PASSWORD_HASH or row['suspended_at']:
         abort(404)
 
     if row['id'] == current_user.id:
@@ -121,7 +121,7 @@ def _render_profile(user_id, is_own_profile):
             'earned_at': next(
                 (a['earned_at'] for a in earned if a['key'] == key), None
             ),
-            'image': ADVANCEMENT_IMAGES.get(key, f'{key}.png'),
+            'image': ADVANCEMENT_IMAGES.get(key, f'{key}.webp'),
         }
         achievements.append(entry)
 
@@ -260,8 +260,12 @@ def collect_bonus_route():
     )
 
 
-def _get_current_avatar_url() -> str:
-    """Resolve the current user's avatar URL for error-state partials."""
+def _get_current_avatar_url() -> str | None:
+    """Resolve the current user's avatar URL for error-state partials.
+
+    Returns None when the user has no uploaded avatar: the default avatar is
+    the initials circle, so there is no default image to return.
+    """
     db = get_db()
     row = db.execute(
         "SELECT avatar_path FROM users WHERE id = ?",
@@ -273,4 +277,4 @@ def _get_current_avatar_url() -> str:
         storage = get_storage_backend(current_app)
         return storage.get_url(filename)
 
-    return url_for('static', filename='images/default-avatar.png')
+    return None

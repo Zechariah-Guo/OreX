@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}OreX - Minecraft Stock Market{% endblock %}
+{% block title %}OreX - Gamified Stock Market{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -64,13 +64,13 @@
 
 <div class="landing">
     <div class="landing__hero">
-        <img src="{{ url_for('static', filename='images/logo-expanded.png') }}" alt="OreX" class="landing__logo">
+        <img src="{{ url_for('static', filename='images/logo-expanded.webp') }}" alt="OreX" class="landing__logo">
         {# TEXT TEST: delete the two <p> lines below (and the .landing__subtitle / .landing__best* /
            .landing__description rules in global.css) to return to a logo-only hero. #}
         <p class="landing__subtitle">The <span class="landing__best"><span class="landing__best-b">B</span><span class="landing__best-e">E</span><span class="landing__best-s">S</span><span class="landing__best-t">T</span></span> way to Trade</p>
         <p class="landing__description">
             Trade ores like stocks. Buy low, sell high, and build your fortune
-            in this Minecraft-themed market simulation. Prices fluctuate every
+            in this gamified market simulation with Minecraft-inspired ores. Prices fluctuate every
             20 seconds based on supply, demand, and market events.
         </p>
 
@@ -155,7 +155,7 @@
             <h2 class="lp-heading" id="lp-features-title">More to play for</h2>
             <div class="lp-features__grid">
                 <div class="lp-feature">
-                    <img src="{{ url_for('static', filename='images/advancements/Millionaire.png') }}" alt="" class="lp-feature__img" width="72" height="72">
+                    <img src="{{ url_for('static', filename='images/advancements/Millionaire.webp') }}" alt="" class="lp-feature__img" width="72" height="72">
                     <h3>9 achievements</h3>
                     <p>From your first million to topping the leaderboard. Two of them unlock the Money and Gold themes.</p>
                 </div>
@@ -168,7 +168,7 @@
                     </p>
                 </div>
                 <div class="lp-feature">
-                    <img src="{{ url_for('static', filename='images/advancements/Go for Diamond!.png') }}" alt="" class="lp-feature__img" width="72" height="72">
+                    <img src="{{ url_for('static', filename='images/advancements/Go for Diamond!.webp') }}" alt="" class="lp-feature__img" width="72" height="72">
                     <h3>Climb the leaderboard</h3>
                     <p>Ranked by net worth against every other player. Check out anyone's profile and achievements.</p>
                 </div>

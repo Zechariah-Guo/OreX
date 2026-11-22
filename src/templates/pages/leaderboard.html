@@ -65,7 +65,12 @@
     });
     wrap.addEventListener('htmx:afterSwap', function (e) {
         if (e.target !== wrap) return;
+        /* the swapped-in rows start collapsed: re-open them without the
+           open animation, so a refresh never visibly closes and reopens a row */
+        wrap.classList.add('leaderboard-live--instant');
         applyState();
+        void wrap.offsetHeight;
+        wrap.classList.remove('leaderboard-live--instant');
         if (Math.abs(window.pageYOffset - scrollY) > 1) window.scrollTo(0, scrollY);
     });
 })();

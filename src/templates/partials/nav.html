@@ -3,12 +3,12 @@
         <a href="{{ url_for('pages.landing') }}" class="nav__brand">
             {% if current_user.is_authenticated %}
                 {% if is_advanced_active %}
-                    <img src="{{ url_for('static', filename='images/logo-expanded-advanced.png') }}" alt="OreX Advanced" class="nav__logo">
+                    <img src="{{ url_for('static', filename='images/logo-expanded-advanced.webp') }}" alt="OreX Advanced" class="nav__logo">
                 {% else %}
-                    <img src="{{ url_for('static', filename='images/logo-expanded.png') }}" alt="OreX" class="nav__logo">
+                    <img src="{{ url_for('static', filename='images/logo-expanded.webp') }}" alt="OreX" class="nav__logo">
                 {% endif %}
             {% else %}
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="OreX" class="nav__logo">
+                <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="OreX" class="nav__logo">
             {% endif %}
         </a>
 
@@ -57,6 +57,7 @@
                             {% endif %}
                         </button>
                     </div>
+                    <div class="nav__dropdown-clip">
                     <div class="nav__dropdown" id="nav-dropdown" aria-label="User menu">
                         <div class="nav__dropdown-icons">
                             <a href="{{ url_for('leaderboard.overview') }}" class="nav__dropdown-icon" aria-label="Leaderboard" title="Leaderboard">
@@ -92,6 +93,7 @@
                             <span class="nav__dropdown-label">Logout</span>
                         </a>
                         </div>
+                    </div>
                     </div>
                 </li>
             {% else %}

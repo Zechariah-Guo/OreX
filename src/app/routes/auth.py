@@ -105,7 +105,8 @@ def register():
         recovery_hash = hash_recovery_key(option.key) if option.key else None
         user_id = create_user(username, password, recovery_hash)
         user = User(user_id, username, current_app.config['DEFAULT_BALANCE'])
-        login_user(user)
+        # Registering on a device implies staying signed in on it
+        login_user(user, remember=True)
         update_last_login(user_id)
 
         flash('Account created successfully. Welcome to OreX!', 'success')
@@ -163,16 +164,29 @@ def login():
                 login_error='Invalid username or password.',
             )
 
+        # Suspended accounts (scripts/admin/suspend_user.py): checked after the
+        # password so the message is only shown to someone who knows it.
+        if row['suspended_at']:
+            return render_template(
+                'pages/login.html',
+                username=username,
+                login_error='This account has been suspended. Contact orexsupport@gmail.com.',
+            )
+
+        # "Stay signed in" checkbox: remember the player for 30 days when ticked
+        remember = bool(request.form.get('remember'))
+
         # Check if 2FA is enabled for this user
         tfa_status = get_2fa_status(row['id'])
         if tfa_status['enabled']:
             session['pending_2fa_user_id'] = row['id']
             session['pending_2fa_time'] = time.time()
+            session['pending_2fa_remember'] = remember
             return redirect(url_for('two_factor.challenge'))
 
         # Login successful
-        user = User(row['id'], row['username'], row['balance'])
-        login_user(user)
+        user = User(row['id'], row['username'], row['balance'], row['session_version'])
+        login_user(user, remember=remember)
         update_last_login(row['id'])
 
         # Update login streak and evaluate streak-based advancements

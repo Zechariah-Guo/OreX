@@ -28,6 +28,15 @@
                 {% endif %}
             </div>
 
+            {# Ticked on first load; after a failed attempt the submitted choice is kept. #}
+            <div class="form-group">
+                <label class="form-check" for="remember">
+                    <input type="checkbox" id="remember" name="remember" value="1" autocomplete="off"
+                           {% if request.method != 'POST' or request.form.get('remember') %}checked{% endif %}>
+                    <span class="form-check__title">Stay signed in</span>
+                </label>
+            </div>
+
             <button type="submit" class="btn btn--primary btn--full">Login</button>
         </form>
 

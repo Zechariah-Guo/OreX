@@ -10,12 +10,34 @@ import signal
 import sqlite3
 import threading
 import time
+from contextlib import contextmanager
 from datetime import datetime
+
+from flask import g
 
 logger = logging.getLogger(__name__)
 
 _engine_thread = None
 _shutdown_event = threading.Event()
+
+
+@contextmanager
+def engine_app_context(app, db):
+    """App context for engine code that reaches Flask helpers (get_db,
+    create_notification) through the advancement and notification functions.
+
+    g.db is set to the engine's own connection, so those helpers reuse it:
+    no second connection is opened, and their commits cover the engine's
+    pending writes instead of waiting on a lock held by the engine.
+    The connection is detached before the context closes so teardown
+    (close_db) never closes it.
+    """
+    with app.app_context():
+        g.db = db
+        try:
+            yield
+        finally:
+            g.pop('db', None)
 
 
 def stop_engine():
@@ -59,6 +81,7 @@ def start_engine(app):
         from app.market.algorithm import process_tick
         from app.market.shorting import process_short_positions
         from app.advancements import evaluate_tick_advancements
+        from app.push import process_push_cycle
 
         try:
             while not _shutdown_event.is_set():
@@ -85,7 +108,8 @@ def start_engine(app):
                         pass
 
                 try:
-                    process_short_positions(db)
+                    with engine_app_context(app, db):
+                        process_short_positions(db)
                 except Exception as e:
                     # Log error but keep the engine running — shorting errors
                     # must not block the main tick loop
@@ -96,7 +120,8 @@ def start_engine(app):
                         pass
 
                 try:
-                    evaluate_tick_advancements(db)
+                    with engine_app_context(app, db):
+                        evaluate_tick_advancements(db)
                 except Exception:
                     # Achievement evaluation failures must not block price updates
                     pass
@@ -110,6 +135,14 @@ def start_engine(app):
                         db.rollback()
                     except Exception:
                         pass
+
+                # Web Push: runs last so every notification this tick (and any made
+                # by requests since) is committed. Only queues sends; the network
+                # calls happen on the push sender thread. Never raises.
+                try:
+                    process_push_cycle(app, db)
+                except Exception:
+                    pass
         finally:
             db.close()
             print("[Market Engine] Database connection closed.")

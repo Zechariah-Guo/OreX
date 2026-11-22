@@ -34,6 +34,8 @@ ENV/
 # GENERATED OUTPUT
 ###############################################
 screenshots/
+# Player data exports from scripts/admin/export_user_data.py (personal data)
+orex-export-*.json
 
 ###############################################
 # LOCAL DEV DATABASE

@@ -38,9 +38,22 @@ def create_app(test_config=None):
             '(env var SECRET_KEY missing or equal to the public default).'
         )
 
+    # Dev /testing page outside debug mode (for the local Docker rehearsal only).
+    # It lets any logged-in player grant themselves achievements, themes and cash,
+    # so it must never be set on the real server.
+    if _env_flag('OREX_ENABLE_TESTING_PAGE'):
+        app.config['ENABLE_TESTING_PAGE'] = True
+    if app.config.get('ENABLE_TESTING_PAGE') and is_production:
+        app.logger.warning(
+            'OREX_ENABLE_TESTING_PAGE is on: /testing is reachable by every logged-in '
+            'player. Use this only for local testing, never on the live server.'
+        )
+
     # Session cookie Secure flag: env var wins, otherwise secure only in production.
     cookie_secure = _env_flag('SESSION_COOKIE_SECURE')
     app.config['SESSION_COOKIE_SECURE'] = is_production if cookie_secure is None else cookie_secure
+    # The remember cookie follows the same rule (so plain-http Docker testing works)
+    app.config['REMEMBER_COOKIE_SECURE'] = app.config['SESSION_COOKIE_SECURE']
 
     # Trust exactly one proxy hop (Nginx) for client IP and scheme. Off unless
     # OREX_TRUST_PROXY is set, because otherwise clients could spoof X-Forwarded-*.
@@ -73,8 +86,8 @@ def create_app(test_config=None):
     # User loader for Flask-Login
     @login_manager.user_loader
     def load_user(user_id):
-        from app.models import get_user_by_id
-        return get_user_by_id(user_id)
+        from app.models import load_session_user
+        return load_session_user(user_id)
 
     # Initialise database
     from app.database import init_db
@@ -83,6 +96,10 @@ def create_app(test_config=None):
     # Register template filters
     from app.utils.formatting import register_filters
     register_filters(app)
+
+    # Versioned static URLs (?v=<mtime>) + Cache-Control for /static
+    from app.static_cache import register_static_caching
+    register_static_caching(app)
 
     # Register avatar template filters
     from app.avatar import (
@@ -299,8 +316,8 @@ def create_app(test_config=None):
         # Content Security Policy
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data:; "
             "font-src 'self'; "
             "connect-src 'self'; "

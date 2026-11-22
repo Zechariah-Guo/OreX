@@ -21,7 +21,7 @@
     --colour-text-muted: #6b5f7a;
     --colour-border: #c4b8d9;
     --colour-nav: transparent;
-    --font-main: 'Segoe UI', sans-serif;
+    --font-main: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', Arial, sans-serif;
     --font-mono: 'Courier New', monospace;
     --radius: 8px;
     --radius-sm: 4px;
@@ -355,6 +355,63 @@ html[data-theme="dark"] .nav__brand {
     visibility: visible;
     transform: translateY(0);
     z-index: 1001;
+}
+
+/* Desktop: the menu is a drawer behind the pill. It has the pill's width, its
+   top edge sits at the pill's vertical middle (hidden behind the pill), and it
+   slides down from there. The clip wrapper keeps it from showing above the
+   pill. The pill itself never changes. */
+@media (min-width: 641px) {
+    .nav__profile-pill {
+        position: relative;
+        z-index: 2;
+        justify-content: space-between;
+        min-width: 150px;
+    }
+
+    .nav__dropdown-clip {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .nav__dropdown {
+        position: static;
+        min-width: 0;
+        /* clears the pill's lower half (half of its height) */
+        padding-top: calc(24px + var(--spacing-xs));
+        border: 2px solid var(--colour-border);
+        border-top: 0;
+        border-radius: 0 0 24px 24px;
+        box-shadow: none;
+        opacity: 1;
+        transform: translateY(-100%);
+        transition: transform 0.25s ease, visibility 0s linear 0.25s;
+        z-index: auto;
+    }
+
+    /* The last item follows the drawer's rounded bottom corners (the drawer border is 2px) */
+    .nav__dropdown-items > .nav__dropdown-item:last-child {
+        border-radius: 0 0 22px 22px;
+    }
+
+    .nav__dropdown--open {
+        transform: translateY(0);
+        pointer-events: auto;
+        transition: transform 0.25s ease, visibility 0s;
+        z-index: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .nav__dropdown,
+        .nav__dropdown--open {
+            transition: none;
+        }
+    }
 }
 
 .nav__dropdown-item {
@@ -2280,6 +2337,11 @@ input::-webkit-inner-spin-button {
         font-size: 0.7rem;
     }
 
+    .footer__notice {
+        font-size: 0.6rem;
+        line-height: 1.25;
+    }
+
     /* The visible bar may cover the footer, but never the content above it.
        Pages too short for the bar to auto-hide keep the footer at least as
        tall as the bar; long pages (html.nav-compact, set by nav.js) do not. */
@@ -2318,6 +2380,7 @@ input::-webkit-inner-spin-button {
 
     .main-nav--auth .nav__container,
     .main-nav--auth .nav__profile-group,
+    .main-nav--auth .nav__dropdown-clip,
     .main-nav--auth .nav__profile-pill {
         display: contents;
     }
@@ -2941,7 +3004,253 @@ input::-webkit-inner-spin-button {
 
 /* ===== Settings Page ===== */
 .settings-page {
+    /* Category bar column + gap + the cards' own 700px */
+    --settings-nav-w: 10rem;
+    max-width: calc(700px + var(--settings-nav-w) + var(--spacing-lg));
+    /* Where the category bar parks: just under the sticky top bar. The page
+       script writes the bar's real height to --settings-nav-h. */
+    --settings-stick: var(--settings-nav-h, 5rem);
+}
+
+@media (min-width: 900px) {
+    .settings-page {
+        --settings-nav-w: 11rem;
+    }
+}
+
+.settings-content {
     max-width: 700px;
+}
+
+.settings-section {
+    scroll-margin-top: calc(var(--settings-stick) + var(--spacing-md));
+}
+
+.settings-section__title {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--colour-border);
+}
+
+.settings-section__title:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Category bar: a sticky sidebar above the phone breakpoint (hidden on phones below) */
+.settings-layout {
+    display: grid;
+    grid-template-columns: var(--settings-nav-w) minmax(0, 700px);
+    column-gap: var(--spacing-lg);
+    align-items: start;
+}
+
+.settings-nav {
+    position: sticky;
+    top: calc(var(--settings-stick) + var(--spacing-md));
+    z-index: 20;
+}
+
+.settings-nav__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs, 0.25rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.settings-nav__link {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 var(--spacing-md);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    color: var(--colour-text-muted);
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.settings-nav__link:hover {
+    background-color: var(--colour-surface-hover);
+    color: var(--colour-text);
+    text-decoration: none;
+}
+
+.settings-nav__link[aria-current="true"] {
+    border-color: var(--colour-accent);
+    background-color: var(--colour-surface);
+    color: var(--colour-text);
+}
+
+/* Section header parts used only by the phone accordion below */
+.settings-section__summary,
+.settings-section__toggle {
+    display: none;
+}
+
+/* Phones: no category bar. Each section is a collapsible row (title, summary,
+   chevron); bodies start collapsed and the page script opens them. */
+@media (max-width: 640px) {
+    .settings-page {
+        --settings-stick: var(--nav-top-h);
+    }
+
+    .settings-layout {
+        display: block;
+    }
+
+    .settings-nav {
+        display: none;
+    }
+
+    .settings-section {
+        scroll-margin-top: calc(var(--settings-stick) + var(--spacing-sm));
+        margin-bottom: var(--spacing-sm);
+    }
+
+    /* Each head is its own card; its open content tucks under it like the avatar drawer */
+    .settings-section__header {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: var(--spacing-sm);
+        align-items: center;
+        min-height: 64px;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--colour-border);
+        border-radius: var(--radius);
+        background-color: var(--colour-surface);
+    }
+
+    .settings-section__title {
+        grid-column: 1;
+        margin: 0;
+        padding: 0;
+        border-bottom: 0;
+        font-size: 1.125rem;
+    }
+
+    .settings-section__summary {
+        display: block;
+        grid-column: 1;
+        margin: 2px 0 0;
+        color: var(--colour-text-muted);
+        font-size: 0.875rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .settings-section__toggle {
+        display: flex;
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--colour-text-muted);
+        cursor: pointer;
+    }
+
+    /* The whole row is the tap target */
+    .settings-section__toggle::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: var(--radius);
+    }
+
+    .settings-section__toggle:focus-visible {
+        outline: none;
+    }
+
+    .settings-section__toggle:focus-visible::after {
+        outline: 2px solid var(--colour-accent);
+        outline-offset: 2px;
+    }
+
+    .settings-section__toggle svg {
+        transition: transform 0.2s ease;
+    }
+
+    .settings-section__toggle[aria-expanded="true"] svg {
+        transform: rotate(180deg);
+    }
+
+    /* Body clips and animates its height (0fr to 1fr); the panel slides down from
+       behind the head, which sits above it. Same duration and easing as the navbar drawer. */
+    .settings-section__body {
+        display: grid;
+        grid-template-rows: minmax(0, 0fr);
+        margin-top: 0;
+        overflow: hidden;
+        visibility: hidden;
+        transition: grid-template-rows 0.25s ease, margin-top 0.25s ease, visibility 0s linear 0.25s;
+    }
+
+    .settings-section--open .settings-section__body {
+        grid-template-rows: minmax(0, 1fr);
+        margin-top: calc(-1 * var(--radius));
+        visibility: visible;
+        transition: grid-template-rows 0.25s ease, margin-top 0.25s ease, visibility 0s;
+    }
+
+    /* align-self: start keeps the panel at its full content height while the row
+       grows. Stretched to the row instead, translateY(-100%) was a percentage of a
+       changing height, so the cards first moved up and then back down. Now the
+       row grows by H * p and the panel moves by H * (1 - p) with the same easing,
+       so its bottom edge tracks the drawer edge exactly and the cards move as one. */
+    .settings-section__panel {
+        align-self: start;
+        min-height: 0;
+        padding: calc(var(--radius) + var(--spacing-md)) var(--spacing-md) var(--spacing-md);
+        border: 2px solid var(--colour-border);
+        border-top: 0;
+        border-radius: 0 0 var(--radius) var(--radius);
+        background-color: var(--colour-bg);
+        transform: translateY(-100%);
+        transition: transform 0.25s ease;
+    }
+
+    .settings-section--open .settings-section__panel {
+        transform: translateY(0);
+    }
+
+    .settings-section__panel > :last-child {
+        margin-bottom: 0;
+    }
+
+    /* Opened by the page itself (link, redirect, tutorial): no animation */
+    .settings-section--instant .settings-section__body,
+    .settings-section--instant .settings-section__panel {
+        transition: none;
+    }
+}
+
+@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
+    .settings-section__toggle svg,
+    .settings-section__body,
+    .settings-section--open .settings-section__body,
+    .settings-section__panel {
+        transition: none;
+    }
+}
+
+.settings-card__btn {
+    min-height: 44px;
+}
+
+.settings-card--danger h4 {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-sm);
 }
 
 .settings-card {
@@ -2968,6 +3277,192 @@ input::-webkit-inner-spin-button {
 .install-card__btn {
     margin-top: var(--spacing-md);
     min-height: 44px;
+}
+
+/* Notifications card: hidden until push.js finds Web Push support. The
+   author display rules on .btn and .toggle-switch would beat [hidden]. */
+.push-card [hidden] {
+    display: none !important;
+}
+
+.push-card__btn {
+    margin-top: var(--spacing-md);
+    min-height: 44px;
+}
+
+/* Switches here build on the shared .toggle-switch (advanced.css): accent
+   track, label on the left via order, optional small size */
+.push-card .toggle-switch {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: 44px;
+}
+
+.push-card .toggle-switch__slider {
+    order: 3;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.push-card .toggle-switch__slider {
+    background-color: color-mix(in srgb, var(--colour-text-muted) 45%, transparent);
+}
+
+.push-card .toggle-switch input[type="checkbox"]:checked + .toggle-switch__slider {
+    background-color: var(--colour-accent);
+}
+
+.push-card .toggle-switch input[type="checkbox"]:disabled + .toggle-switch__slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.push-card .toggle-switch:has(input:disabled) {
+    cursor: default;
+}
+
+.toggle-switch--sm .toggle-switch__slider {
+    width: 40px;
+    height: 22px;
+    border-radius: 22px;
+}
+
+.toggle-switch--sm .toggle-switch__slider::before {
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+}
+
+.push-card .toggle-switch--sm input[type="checkbox"]:checked + .toggle-switch__slider::before {
+    transform: translateX(18px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .push-card .toggle-switch__slider,
+    .push-card .toggle-switch__slider::before {
+        transition: none;
+    }
+}
+
+/* State 1 row: outlined accent box */
+.push-card .toggle-switch.push-card__device {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1.5px solid var(--colour-accent);
+    border-radius: 12px;
+    gap: var(--spacing-md);
+}
+
+/* Browser cannot show notifications: the switch row is shown but muted */
+.push-card .toggle-switch.push-card__device[data-unavailable] {
+    border-color: var(--colour-border);
+    cursor: not-allowed;
+}
+
+.push-card__device[data-unavailable] .push-card__device-label {
+    color: var(--colour-text-muted);
+}
+
+.push-card__device-label {
+    order: 1;
+    font-weight: 600;
+    color: var(--colour-text);
+}
+
+/* State 2 list: lightly bordered block, rows split by thin dividers */
+.push-card__list {
+    margin-top: var(--spacing-md);
+    border: 1px solid var(--colour-border);
+    border-radius: 12px;
+    padding: 0 var(--spacing-md);
+}
+
+.push-card .toggle-switch.push-card__row {
+    gap: var(--spacing-md);
+    padding: var(--spacing-xs, 0.25rem) 0;
+    border-bottom: 1px solid var(--colour-border);
+}
+
+.push-card .toggle-switch.push-card__row:last-child {
+    border-bottom: 0;
+}
+
+.push-card__icon {
+    order: 1;
+    width: 2rem;
+    height: 2rem;
+}
+
+.push-card__icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.push-card__row-label {
+    order: 2;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--colour-text);
+}
+
+/* Footer: quiet device status and the test action */
+.push-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--colour-border);
+    font-size: 0.8rem;
+    color: var(--colour-text-muted);
+}
+
+.push-card__footer-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.push-card__test {
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 0 var(--spacing-md);
+    background: transparent;
+    border: 1px solid var(--colour-border);
+    border-radius: 8px;
+    color: var(--colour-text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.push-card__test:hover:not(:disabled) {
+    color: var(--colour-text);
+    border-color: var(--colour-text-muted);
+}
+
+.push-card__test:focus-visible {
+    outline: 2px solid var(--colour-accent);
+    outline-offset: 2px;
+}
+
+.push-card__test:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.push-card__note {
+    margin-top: var(--spacing-sm);
+    font-size: 0.85rem;
+    color: var(--colour-text-muted);
+}
+
+.push-card__status {
+    margin-top: var(--spacing-sm);
+    min-height: 1.2em;
+    font-size: 0.85rem;
+    color: var(--colour-text-muted);
 }
 
 .settings-divider {
@@ -3139,6 +3634,33 @@ td.leaderboard-table__rank {
 
 .static-list li {
     margin-bottom: var(--spacing-xs);
+}
+
+/* --- Legal pages (Privacy, Terms) and credits --- */
+.legal-note {
+    background-color: var(--colour-surface);
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.legal-updated {
+    color: var(--colour-text-muted);
+    font-size: 0.9rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.static-section p {
+    margin-bottom: var(--spacing-sm);
+    overflow-wrap: anywhere;
+}
+
+.auth-card__agree {
+    text-align: center;
+    margin-top: var(--spacing-md);
+    color: var(--colour-text-muted);
+    font-size: 0.85rem;
 }
 
 /* --- Market Mechanics Grid --- */
@@ -3465,6 +3987,12 @@ td.leaderboard-table__rank {
 
 .footer__copy {
     font-size: 0.8rem;
+}
+
+.footer__notice {
+    font-size: 0.65rem;
+    max-width: 38rem;
+    text-wrap: balance;
 }
 
 /* ===== Accessibility & Focus States ===== */
@@ -4209,11 +4737,6 @@ a:not([class]):active {
     display: none;
 }
 
-@keyframes leaderboardReveal {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: none; }
-}
-
 @media (max-width: 960px) {
     .history-table-wrapper,
     .leaderboard-table-wrapper {
@@ -4456,18 +4979,37 @@ a:not([class]):active {
         transform: rotate(180deg);
     }
 
-    /* details: hidden until the row is expanded */
+    /* details: collapsed to zero height until the row is expanded, then the
+       second line grows open (and shrinks back on collapse). The cap is just
+       above the real height (label line + value line + padding, about 3.1rem)
+       so opening and closing both start moving straight away. visibility keeps
+       collapsed values out of the accessibility tree and tab order. */
     .leaderboard-table td.leaderboard-table__detail {
         order: 5;
-        display: none;
+        display: block;
         flex: 1 1 6.5rem;
-        padding: 2px 4px 12px;
+        max-height: 0;
+        padding: 0 4px;
+        overflow: hidden;
+        opacity: 0;
+        visibility: hidden;
         font-size: 0.9rem;
+        transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease,
+                    visibility 0s linear 0.25s;
+    }
+
+    /* rows re-opened after the 20s refresh appear open straight away */
+    .leaderboard-live--instant td.leaderboard-table__detail {
+        transition: none !important;
     }
 
     .leaderboard-table tr.is-expanded td.leaderboard-table__detail {
-        display: block;
-        animation: leaderboardReveal 0.18s ease-out;
+        max-height: 3.5rem;
+        padding: 2px 4px 12px;
+        opacity: 1;
+        visibility: visible;
+        transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease 0.05s,
+                    visibility 0s;
     }
 
     .leaderboard-table td.leaderboard-table__detail::before {
@@ -4487,8 +5029,9 @@ a:not([class]):active {
             transition: none;
         }
 
+        .leaderboard-table td.leaderboard-table__detail,
         .leaderboard-table tr.is-expanded td.leaderboard-table__detail {
-            animation: none;
+            transition: none;
         }
     }
 }

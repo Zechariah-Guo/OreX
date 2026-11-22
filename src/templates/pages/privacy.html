@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Privacy Policy - OreX{% endblock %}
+
+{% block content %}
+<div class="static-page">
+    <h1>Privacy Policy</h1>
+    <p class="legal-updated">Last updated: {{ last_updated }}</p>
+
+    <div class="legal-note">
+        <p>
+            OreX is a hobby project run by one person, not a company. This policy is written in good faith,
+            in plain words, to explain what the game stores about you and why. It is not legal advice and
+            it is not a contract drafted by a lawyer.
+        </p>
+    </div>
+
+    {# Region assumes Oracle's Sydney home region. If another region is chosen at signup,
+       update the region named below (see the deployment plan's legal checklist). #}
+
+    <section class="static-section">
+        <h2>Who runs OreX</h2>
+        <p>
+            OreX is run by an individual as a non-commercial hobby game. There are no ads,
+            no payments and no analytics. For any privacy question, write to
+            <a href="mailto:orexsupport@gmail.com">orexsupport@gmail.com</a>.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>What we collect, and why</h2>
+        <ul class="static-list">
+            <li><strong>Username and password.</strong> Needed to sign you in. The password is never stored as typed, only as a salted hash.</li>
+            <li><strong>Two-factor authentication (optional).</strong> If you turn it on, the authenticator secret is stored encrypted and your backup codes are stored as hashes.</li>
+            <li><strong>Recovery key (optional).</strong> If you make one, only a hash of it is stored, so a forgotten password can be reset.</li>
+            <li><strong>Avatar.</strong> If you upload a picture, it is resized to a small square WebP image and stored. If you do not, a coloured circle with your initials is shown.</li>
+            <li><strong>Game data.</strong> Your balance, holdings, trades, short positions, stop loss and take profit orders, achievements, play time, login streak, peak net worth, Advanced Mode status, notifications, daily bonus progress, tutorial progress, and the dates you joined and last logged in. This is the game itself. If the operator suspends your account, a short internal note about why is kept with it.</li>
+            <li><strong>Push notifications (optional).</strong> If you turn them on, we store your browser's push address (an endpoint URL) and its encryption keys, the first 200 characters of your browser's user-agent text so you can tell your devices apart, and which notification types you want. The messages are encrypted end to end and travel through the push service of your browser maker (for example Google, Apple, Microsoft or Mozilla).</li>
+            <li><strong>Presence.</strong> While a page is open and visible it tells the server so, and the server stores a random page id and a timestamp. This is only used to decide whether to send you a push notification (we do not push if you are already looking at the game). Old entries are deleted automatically.</li>
+            <li><strong>IP address.</strong> Used in the server's memory to limit repeated login attempts and written to the web server's access logs (see below). It is not saved in the game database.</li>
+        </ul>
+    </section>
+
+    <section class="static-section">
+        <h2>Logs</h2>
+        <p>
+            The web server keeps access logs with your IP address, the time, the page requested and your
+            browser's user-agent text. These are kept for up to 14 days for security and troubleshooting,
+            then deleted. Cloudflare, which sits in front of the server, also keeps its own logs under its
+            own policy. The game's own error logs are used only for fixing bugs.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Cookies and browser storage</h2>
+        <p>
+            OreX uses a sign-in cookie. It keeps you signed in and protects forms from forgery, and it is
+            kept for 30 days if you choose Stay signed in (or have just created your account). Your browser also
+            stores your theme, your market card order and some temporary tutorial and notification state on
+            your device. None of it is used for tracking, so there is no cookie banner.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Where your data is kept</h2>
+        <p>
+            Data is stored on servers we control, hosted with Oracle Cloud in Australia (the Sydney
+            region). Uploaded avatars may be kept in Oracle Object Storage in the same region. The
+            domain and secure connection (HTTPS) are handled through
+            Cloudflare, so your requests pass through Cloudflare on their way to the server.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Who we share data with</h2>
+        <p>
+            Nobody buys or sells your data. It is only handled by the services needed to run the game:
+            the hosting provider (Oracle Cloud), Cloudflare (as above), and the push service of your
+            browser maker if you turn on push notifications. The game loads all of its own scripts and
+            styles from its own server, so no third-party content network sees your visits.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>What other players can see</h2>
+        <p>
+            Other players can see your username and avatar. Only other signed-in players can see the
+            leaderboard and profile pages. The leaderboard shows your rank,
+            balance, holdings value, short equity, total value and whether you use Advanced Mode. Your
+            profile page shows your avatar, the date you joined, your play time, peak net worth, total
+            number of trades, login streak and your achievements.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>How long we keep it</h2>
+        <p>
+            We keep your account data until you delete your account. <strong>Settings &gt; Delete Account</strong>
+            permanently removes your user record, holdings, trades, short positions, notifications,
+            achievements, tutorial progress, backup codes, recovery key, push subscriptions, push settings,
+            presence entries and your avatar file. It cannot be undone.
+        </p>
+        <p>
+            <strong>Settings &gt; Reset Account</strong> restores your starting balance and clears holdings, short
+            positions, stop loss and take profit orders, your inbox, push subscriptions, tutorial progress and
+            Advanced Mode, restarts the daily bonus cycle and signs out your other devices. Your trade history is
+            kept but archived. Your account, avatar, achievements, unlocked themes, peak net worth, play time and
+            streak stay.
+        </p>
+        <p>
+            The operator can also reset the whole game, for example at the start of a season. That gives every
+            player the same result as Reset Account and puts ore prices back to their start values.
+        </p>
+        <p>
+            If the operator suspends your account, you cannot sign in and you are hidden from the leaderboard and
+            profiles. Nothing is deleted, and a suspension can be lifted.
+        </p>
+        <p>
+            A nightly backup of the database is kept for up to 14 days, so data from a deleted account can remain
+            in a backup until it expires.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Your choices and rights</h2>
+        <p>
+            To get a copy of your data, email <a href="mailto:orexsupport@gmail.com">orexsupport@gmail.com</a>
+            (include your username). You get a file with your account&rsquo;s data; secrets such as your password
+            are not included. To correct something, email the same address. The operator can change your
+            username, remove your avatar or reset your password, and can turn off two-factor authentication if you
+            have lost access to it.
+        </p>
+        <p>
+            In Settings you can change your password, turn two-factor authentication and push notifications on
+            or off, sign out your other devices, reset your account and delete your account.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Children</h2>
+        <p>
+            You must be at least 13 to use OreX. If you are under 18, you need a parent&rsquo;s or guardian&rsquo;s
+            permission. If you think a younger child has signed up, email us and we will delete the account.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Security</h2>
+        <p>
+            Passwords, backup codes and recovery keys are stored only as salted hashes, and the two-factor
+            secret is encrypted. Sign-in cookies cannot be read by page scripts and are marked secure
+            (HTTPS only) on the live site. Forms are protected against forged requests,
+            repeated login attempts are limited, and changing your password signs out your other devices.
+            No system is perfectly secure, so please use a password you do not use elsewhere.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Changes to this policy</h2>
+        <p>
+            This policy may change as OreX changes. The &ldquo;last updated&rdquo; date at the top shows the
+            latest version.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Contact</h2>
+        <p>
+            <a href="mailto:orexsupport@gmail.com">orexsupport@gmail.com</a>. See also the
+            <a href="{{ url_for('pages.terms') }}">Terms of Use</a>.
+        </p>
+        <p>NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</p>
+    </section>
+</div>
+{% endblock %}

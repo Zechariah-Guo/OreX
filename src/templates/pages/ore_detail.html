@@ -480,7 +480,7 @@ function switchTradeTab(tab) {
 </script>
 {% endif %}
 {% if chart_data %}
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="{{ url_for('static', filename='vendor/apexcharts/4.7.0/apexcharts.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 {% if is_advanced_active %}
 <script id="rs-config" type="application/json">{{ ore.id | tojson }}</script>

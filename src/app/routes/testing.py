@@ -14,14 +14,20 @@ from app.advancements import ADVANCEMENT_KEYS, ADVANCEMENT_METADATA, get_user_ad
 testing_bp = Blueprint('testing', __name__)
 
 
+def _dev_tools_enabled():
+    """Debug mode, or OREX_ENABLE_TESTING_PAGE=1 (local Docker testing)."""
+    return current_app.debug or bool(current_app.config.get('ENABLE_TESTING_PAGE'))
+
+
 @testing_bp.before_request
 def _dev_page_debug_only():
-    """The whole dev page (every /testing* route) exists only in debug mode.
+    """The whole dev page (every /testing* route) exists only in debug mode,
+    or when OREX_ENABLE_TESTING_PAGE=1 is set for local Docker testing.
 
     Blueprint-level so new routes added here are gated automatically. Runs
-    before login_required, so outside debug even anonymous users get a plain 404.
+    before login_required, so when disabled even anonymous users get a plain 404.
     """
-    if not current_app.debug:
+    if not _dev_tools_enabled():
         abort(404)
 
 
@@ -72,7 +78,7 @@ def testing_page():
         bonus_cycle_day=bonus_cycle_day,
         last_bonus_date=last_bonus_date,
         free_cash=free_cash,
-        cash_tools_enabled=current_app.debug,
+        cash_tools_enabled=_dev_tools_enabled(),
         cash_grant_amount=DEV_CASH_GRANT,
     )
 
@@ -85,7 +91,7 @@ DEV_CASH_GRANT = 100_000
 
 
 def _require_debug():
-    if not current_app.debug:
+    if not _dev_tools_enabled():
         abort(404)
 
 

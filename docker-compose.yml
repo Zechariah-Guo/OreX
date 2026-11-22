@@ -9,6 +9,11 @@ services:
       - orex-data:/app/src/data
       - orex-avatars:/app/src/static/uploads/avatars
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   nginx:
     build:
@@ -21,6 +26,11 @@ services:
     depends_on:
       - app
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   orex-data:

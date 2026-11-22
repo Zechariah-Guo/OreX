@@ -69,7 +69,7 @@ Oracle is strict during registration to block bot farms. Follow these steps:
 
 1. Go to [Oracle Free Tier Sign Up](https://signup.oraclecloud.com/)
 2. Use a **real physical credit/debit card** — Oracle does a temporary $1 auth charge and reverses it. Prepaid/virtual cards will get your account flagged.
-3. **Choose your Home Region** carefully — Always Free resources can only deploy here and it **cannot be changed later**. Pick something geographically close to your players.
+3. **Choose your Home Region** carefully — Always Free resources can only deploy here and it **cannot be changed later**. Pick something geographically close to your players. The plan is **Australia East (Sydney)**: the privacy policy (`src/templates/pages/privacy.html`, "Where your data is kept") says the server and avatar storage are in the Sydney region. If you pick a different region, update that paragraph (and its Jinja comment) before going live.
 4. **"Out of Capacity" workaround**: If you hit this error when creating an ARM instance, upgrade your account to **Pay-As-You-Go (PAYG)** in the console. You won't be charged for free-tier resources, but it puts you in a priority queue that unlocks hardware.
 
 ---
@@ -279,6 +279,40 @@ sudo systemctl restart nginx
 
 The maintenance page shown when Gunicorn is down (`src/static/maintenance.html`) ships with the repo, so no extra step is needed here.
 
+### 5.7 Log Retention (required by the privacy policy)
+
+The privacy policy (`src/templates/pages/privacy.html`) promises that web server logs (IP address, time, page, browser) are kept **for up to 14 days**. Ubuntu's defaults do not guarantee that, so set it explicitly:
+
+```bash
+# Nginx access/error logs: rotate daily, keep 14 days
+sudo nano /etc/logrotate.d/nginx
+#   inside the /var/log/nginx/*.log { ... } block make sure these lines are present:
+#     daily
+#     rotate 14
+sudo logrotate --debug /etc/logrotate.d/nginx   # dry run: check for errors
+
+# App logs (journald, from the orex systemd service): keep at most 14 days
+sudo nano /etc/systemd/journald.conf
+#   under [Journal] set:
+#     MaxRetentionSec=14day
+sudo systemctl restart systemd-journald
+```
+
+If you change either value, update the "up to 14 days" sentence in the privacy policy to match.
+
+### 5.8 Legal Pages Checklist Before Going Live
+
+The privacy policy and terms (`/privacy`, `/terms`) describe this deployment. Re-check them if the final setup differs from this plan:
+
+- **Region:** the policy says Oracle Cloud, Sydney region (step 2). Change it if you chose another region.
+- **Cloudflare:** the policy says requests pass through Cloudflare (sections 4 and 6). Remove that line if you stop using Cloudflare.
+- **Avatar storage:** the policy says avatars may be kept in Oracle Object Storage in the same region (`STORAGE_BACKEND=oci`). If you keep local storage, that line can stay as "may"; if the bucket is in another region, say so.
+- **Log retention:** 14 days, configured in 5.7.
+- **Backups:** the policy says the nightly backup is kept for up to 14 days. Make sure the pruning cron line (Automated Backups, below) is installed.
+- **Governing law:** the terms say New South Wales, Australia.
+- **Contact:** orexsupport@gmail.com in both pages.
+- Update the "Last updated" date when you change either page (`LEGAL_LAST_UPDATED` in `src/app/routes/pages.py`).
+
 ---
 
 ## 6. Install and Configure Cloudflared
@@ -415,9 +449,29 @@ mkdir -p /home/ubuntu/backups
 crontab -e
 # Add:
 0 3 * * * sqlite3 /home/ubuntu/orex/src/data/orex.db ".backup '/home/ubuntu/backups/orex-$(date +\%Y\%m\%d).db'"
+# Prune: keep backups for 14 days only (the privacy policy says "up to 14 days")
+15 3 * * * find /home/ubuntu/backups -name 'orex-*.db' -mtime +14 -delete
 ```
 
+After restoring a backup, re-run `scripts/admin/drop_user.py` for anyone who deleted their account since that backup was taken.
+
 `sqlite3 ... ".backup"` takes a consistent snapshot while the app is running. A plain `cp` can miss recent writes because the database runs in WAL mode (recent changes sit in `orex.db-wal` until a checkpoint).
+
+### Admin scripts
+`scripts/admin/` holds the tools for the operator actions the Privacy Policy and Terms promise. They use the app's configured database (`src/data/orex.db`; in Docker `/app/src/data/orex.db` on the `orex-data` volume) and do not need the real `SECRET_KEY`. Run them on the VM from `/home/ubuntu/orex` with `venv/bin/python scripts/admin/<script>.py ...`, or in Docker with `docker compose exec app python /app/scripts/admin/<script>.py ...` (add `-T` and `--yes` where a prompt would otherwise block).
+
+| Script | What it does | VM example |
+|--------|--------------|------------|
+| `export_user_data.py` | Writes a JSON copy of everything stored about a player (no secrets) for a data access request | `venv/bin/python scripts/admin/export_user_data.py alex --output /tmp/alex.json` |
+| `rename_user.py` | Renames a player and signs them out | `venv/bin/python scripts/admin/rename_user.py oldname new_name` |
+| `remove_avatar.py` | Deletes an uploaded avatar from storage (local or Oracle bucket); the player falls back to initials | `venv/bin/python scripts/admin/remove_avatar.py alex` |
+| `suspend_user.py` / `unsuspend_user.py` | Blocks or restores sign-in; hides the player from the leaderboard and profiles; suspending also removes their push subscriptions | `venv/bin/python scripts/admin/suspend_user.py alex --reason "Offensive username"` |
+| `reset_password.py` | Sets a new password (prompt, or `--random`). Add `--disable-2fa` for a player who lost their device and backup codes: it also turns two-factor authentication off (they can turn it on again in Settings). Without the flag, 2FA is untouched | `venv/bin/python scripts/admin/reset_password.py alex --random --disable-2fa` |
+| `drop_user.py` | Permanently deletes an account | `venv/bin/python scripts/admin/drop_user.py alex` |
+| `reset_economy.py` | Resets every player, the bots and all ore prices (season reset). `--dry-run` shows counts. Stop the app and back up first | `venv/bin/python scripts/admin/reset_economy.py --dry-run` |
+| `generate_vapid_keys.py` | Makes the Web Push key pair (once) | `venv/bin/python scripts/admin/generate_vapid_keys.py` |
+
+Docker examples: `docker compose exec app python /app/scripts/admin/export_user_data.py alex --output /app/src/data/alex.json` (then `docker compose cp app:/app/src/data/alex.json .` and delete it), `docker compose exec app python /app/scripts/admin/suspend_user.py alex`, `docker compose exec -T app python /app/scripts/admin/reset_economy.py --yes`.
 
 ---
 

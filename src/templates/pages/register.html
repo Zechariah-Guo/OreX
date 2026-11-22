@@ -50,6 +50,11 @@
             {% endwith %}
         </form>
 
+        <p class="auth-card__agree">
+            By creating an account you agree to the <a href="{{ url_for('pages.terms') }}">Terms of Use</a>
+            and <a href="{{ url_for('pages.privacy') }}">Privacy Policy</a>.
+        </p>
+
         <p class="auth-card__footer">
             Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a>
         </p>

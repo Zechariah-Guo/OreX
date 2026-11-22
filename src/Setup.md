@@ -95,6 +95,17 @@ All configuration is in `src/app/config.py`:
 | TICK_INTERVAL | `20` | Seconds between market price updates |
 | RATE_LIMIT_WINDOW | `900` | Rate limit window in seconds (15 min) |
 | RATE_LIMIT_MAX | `5` | Max login attempts per window |
+| VAPID_PUBLIC_KEY | _(empty)_ | Web Push public key (environment variable). Push is off unless all three VAPID settings are set |
+| VAPID_PRIVATE_KEY | _(empty)_ | Web Push private key (environment variable, keep secret) |
+| VAPID_SUBJECT | _(empty)_ | Contact for push services, `mailto:you@example.com` or an `https://` URL |
+
+### Web Push notifications
+
+Players can opt in under Settings > Notifications. Generate the key pair once with
+`.venv\Scripts\python.exe scripts\admin\generate_vapid_keys.py`, then set the three `VAPID_*`
+variables in the environment before starting the server (`set VAPID_PUBLIC_KEY=...` in
+`cmd`, or in `.env` for Docker). Browsers only allow push on https or localhost.
+A push is sent only when the player has had no visible OreX page open for about a minute.
 
 ## Resetting the Database
 

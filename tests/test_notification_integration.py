@@ -414,8 +414,9 @@ class TestAccountResetIntegration:
             assert len(notifs) == 2
 
         # Reset account
-        with app.app_context():
-            reset_account(user_id)
+        # (through the real route: it keeps this browser signed in after the reset)
+        token = get_csrf_token(client.get('/settings/reset'))
+        client.post('/settings/reset', data={'confirmation': 'ResetUser', 'csrf_token': token})
 
         # Visit inbox — should show empty state
         response = client.get('/inbox')

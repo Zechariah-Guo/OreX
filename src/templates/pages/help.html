@@ -41,9 +41,9 @@
         {% set advanced_tutorials = tutorials | selectattr('advanced_only') | list %}
         <div class="tutorial-modes">
             {% for mode in [
-                {'key': 'standard', 'title': 'Standard Mode', 'heart': 'normal-heart.png',
+                {'key': 'standard', 'title': 'Standard Mode', 'heart': 'normal-heart.webp',
                  'blurb': 'Learn the basics of trading ores.', 'rows': standard_tutorials},
-                {'key': 'advanced', 'title': 'Advanced Mode', 'heart': 'hardcore-heart.png',
+                {'key': 'advanced', 'title': 'Advanced Mode', 'heart': 'hardcore-heart.webp',
                  'blurb': 'Master shorting, stop-losses, and more.', 'rows': advanced_tutorials}
             ] %}
             {% if mode['rows'] %}

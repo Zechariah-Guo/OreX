@@ -75,22 +75,32 @@
     pointer-events: none;   /* clicks fall through to the backdrop, which advances */
     border: 3px solid var(--colour-accent);
     border-radius: var(--radius);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35), 0 0 16px 4px var(--tutorial-glow);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.45), 0 0 10px 2px var(--tutorial-glow);
     transition:
         transform var(--tutorial-transition, 400ms) var(--tutorial-ease),
         width var(--tutorial-transition, 400ms) var(--tutorial-ease),
         height var(--tutorial-transition, 400ms) var(--tutorial-ease),
         opacity 250ms ease;
+}
+
+/* The pulse is a second, larger glow that fades in and out. Animating its opacity
+   runs on the compositor; animating box-shadow itself repainted the blurred glow
+   on every frame, which is expensive in Safari. */
+.tutorial-highlight::after {
+    content: '';
+    position: absolute;
+    inset: -3px;   /* cover the 3px border so the glow hugs the frame */
+    border-radius: inherit;
+    box-shadow: 0 0 22px 8px var(--tutorial-glow);
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity;
     animation: tutorial-pulse 2s ease-in-out infinite;
 }
 
 @keyframes tutorial-pulse {
-    0%, 100% {
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35), 0 0 10px 2px var(--tutorial-glow);
-    }
-    50% {
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55), 0 0 22px 8px var(--tutorial-glow);
-    }
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
 }
 
 /* While the page scrolls the box must follow the target exactly, not ease toward it */
@@ -360,7 +370,7 @@
 
 /* ----- Reduced motion: no pulsing or easing ----- */
 @media (prefers-reduced-motion: reduce) {
-    .tutorial-highlight {
+    .tutorial-highlight::after {
         animation: none;
     }
 

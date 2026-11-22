@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Terms of Use - OreX{% endblock %}
+
+{% block content %}
+<div class="static-page">
+    <h1>Terms of Use</h1>
+    <p class="legal-updated">Last updated: {{ last_updated }}</p>
+
+    <div class="legal-note">
+        <p>
+            OreX is a hobby project run by one person, not a company. These terms are written in good faith,
+            in plain words, so everyone knows the ground rules. They are not legal advice.
+        </p>
+    </div>
+
+    <section class="static-section">
+        <h2>Accepting these terms</h2>
+        <p>
+            By creating an account or using OreX you agree to these terms and to the
+            <a href="{{ url_for('pages.privacy') }}">Privacy Policy</a>. If you do not agree, please do not use the game.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Who can play</h2>
+        <p>
+            You must be at least 13. If you are under 18, you need a parent&rsquo;s or guardian&rsquo;s permission to play.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Accounts</h2>
+        <ul class="static-list">
+            <li>One account per person.</li>
+            <li>Keep your password safe and do not share your account.</li>
+            <li>Do not cheat, exploit bugs, use bots or scripts to play for you, or abuse other players.</li>
+            <li>The operator may reset, suspend or delete accounts that break these rules, and may rename a username or remove an avatar that breaks the rules below. A suspension can be lifted.</li>
+            <li>The operator may reset or wipe the game economy at any time, for example at the start of a season or when updating the game. A wipe resets every player&rsquo;s balance, holdings and Advanced Mode, and clears inboxes and push subscriptions. Accounts, achievements and play stats stay.</li>
+        </ul>
+    </section>
+
+    <section class="static-section">
+        <h2>Virtual money and items</h2>
+        <p>
+            Everything in OreX, including money, ores and achievements, is virtual. It has no real-world value
+            and cannot be bought, sold or exchanged for real money or anything else. Nothing on OreX is financial
+            advice. Prices are made up by the game and do not predict real markets.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Acceptable use</h2>
+        <p>
+            Do not use offensive usernames or avatars. The operator may remove or change any username or avatar
+            and may suspend accounts that keep breaking this rule.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Your avatar</h2>
+        <p>
+            You keep ownership of any avatar you upload. By uploading it you give OreX permission to store it and
+            show it in the game to other players. Only upload pictures you have the right to use.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Availability and liability</h2>
+        <p>
+            OreX is provided &ldquo;as is&rdquo;, with no warranty. It may change, go offline or end at any time.
+            To the extent the law allows, the operator is not liable for any loss from using OreX, including loss of
+            game progress. Nothing here excludes any rights you have under the Australian Consumer Law or any other
+            law that cannot be excluded.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Minecraft notice</h2>
+        <p><strong>NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</strong></p>
+        <p>
+            OreX is a fan-made hobby game. Minecraft is a trademark of Mojang Studios. See the
+            <a href="{{ url_for('pages.about') }}#credits">credits</a> for the artwork used.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Changes to these terms</h2>
+        <p>
+            These terms may change. The &ldquo;last updated&rdquo; date at the top shows the latest version. Using
+            OreX after a change means you accept the new terms.
+        </p>
+    </section>
+
+    <section class="static-section">
+        <h2>Governing law</h2>
+        <p>These terms are governed by the laws of New South Wales, Australia.</p>
+    </section>
+
+    <section class="static-section">
+        <h2>Contact</h2>
+        <p><a href="mailto:orexsupport@gmail.com">orexsupport@gmail.com</a></p>
+    </section>
+</div>
+{% endblock %}
