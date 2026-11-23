@@ -142,15 +142,6 @@
         </div>
     </section>
 
-    <section class="static-section" id="credits">
-        <h2>Credits and attributions</h2>
-        <p><strong>NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</strong></p>
-        <ul class="static-list">
-            <li>Minecraft textures and renders (the ores, the bot and mob heads, and the hearts) are the property of Mojang Studios. They come from the <a href="https://minecraft.wiki" rel="noopener noreferrer">Minecraft Wiki</a> and are used under Mojang&rsquo;s usage guidelines for non-commercial fan projects.</li>
-            <li>Icons are from Google&rsquo;s Material Icons and Material Symbols, used under the Apache License 2.0.</li>
-            <li>See also the <a href="{{ url_for('pages.privacy') }}">Privacy Policy</a> and <a href="{{ url_for('pages.terms') }}">Terms of Use</a>.</li>
-        </ul>
-    </section>
 
     <section class="static-section">
         <h2>Changelog</h2>
@@ -166,9 +157,8 @@
                 <p class="changelog-card__subtitle">Planned for future updates. Subject to change.</p>
 
                 <ul class="changelog-card__list">
-                    <li><strong>Mobile support</strong> — A layout built for phones</li>
-                    <li><strong>Installable PWA</strong> — Trade anywhere, access your account easier, and receive push notifications</li>
-                    <li><strong>Account Recovery</strong> — Reset a forgotten password with an optional recovery key</li>
+                    <li class="changelog-card__more">Custom gamemodes</li>
+                    <li class="changelog-card__more">Versus mode with ranking system</li>
                     <li class="changelog-card__more">...and more</li>
                 </ul>
             </div>
@@ -177,42 +167,47 @@
             <div class="changelog-card changelog-card--latest">
                 <div class="changelog-card__header">
                     <span class="changelog-card__badge">1.0</span>
-                    <h3 class="changelog-card__title">The Release Update</h3>
+                    <h3 class="changelog-card__title">Release</h3>
                 </div>
-                <p class="changelog-card__subtitle">Guided onboarding, public profiles, and a clearer view of your money.</p>
+                <p class="changelog-card__subtitle">Guided onboarding, public profiles, mobile support, and more.</p>
 
                 <div class="changelog-card__group">
                     <h4 class="changelog-card__group-title">Onboarding &amp; Guidance</h4>
                     <ul class="changelog-card__list">
                         <li><strong>Interactive tutorials</strong> — Step-by-step spotlight walkthroughs for beginners and for Advanced Mode</li>
                         <li><strong>Replay from Help</strong> — Restart any tutorial you have access to, or resume one you left midway</li>
-                        <li><strong>New landing page</strong> — A live ore ticker and screenshots for visitors who haven't signed in</li>
+                        <li><strong>New landing page</strong> — A more enticing visitor experience with a live ore ticker, screenshots, and feature listings</li>
                     </ul>
                 </div>
 
+
                 <div class="changelog-card__group">
-                    <h4 class="changelog-card__group-title">Profiles &amp; Community</h4>
+                    <h4 class="changelog-card__group-title">Mobile &amp; App</h4>
+                    <ul class="changelog-card__list">
+                        <li><strong>Phone layout</strong> — A top bar and bottom tab bar, plus card layouts for Portfolio, History and the Leaderboard</li>
+                        <li><strong>Installable app</strong> — Install OreX to your device from Settings</li>
+                        <li><strong>Push notifications</strong> — Get inbox alerts on your device, with settings to control them</li>
+                        <li><strong>Redesigned inbox</strong> — A message list with select mode and a full-screen detail view</li>
+                    </ul>
+                </div>
+
+
+                <div class="changelog-card__group">
+                    <h4 class="changelog-card__group-title">Accounts &amp; Community</h4>
                     <ul class="changelog-card__list">
                         <li><strong>Public player profiles</strong> — Click any player on the leaderboard to see their stats and advancements</li>
-                        <li><strong>Bonus countdown</strong> — See exactly when your next welcome bonus unlocks</li>
+                        <li><strong>Forgot password</strong> — Reset a forgotten password with an optional one-time recovery key</li>
                     </ul>
                 </div>
 
-                <div class="changelog-card__group">
-                    <h4 class="changelog-card__group-title">Finances &amp; Trading</h4>
-                    <ul class="changelog-card__list">
-                        <li><strong>Capital Breakdown</strong> — See cash, holdings, and short collateral at a glance, with short exposure and cash flow</li>
-                        <li><strong>Portfolio summary</strong> — A summary header and tabs for holdings and shorts</li>
-                        <li><strong>Fairer margin calls</strong> — A short's collateral factor is fixed when it opens, so topping up your vault no longer shifts it</li>
-                    </ul>
-                </div>
-
+                
                 <div class="changelog-card__group">
                     <h4 class="changelog-card__group-title">Quality of Life</h4>
                     <ul class="changelog-card__list">
-                        <li><strong>Smarter notifications</strong> — Inbox messages now link to the page they refer to</li>
-                        <li><strong>Smoother updates</strong> — Live pages refresh without flicker</li>
-                        <li><strong>Chart fixes</strong> — Switching time ranges is reliable and axis labels are no longer cut off</li>
+                        <li><strong>UI improvements</strong> — Rearranged primary tabs, cleaner animations</li>
+                        <li><strong>UX improvements</strong> — Daily bonus countdowns, new settings and finances pages, more visualised info</li>
+                        <li><strong>Gameplay</strong> — Fairer margin calls, better bots</li>
+                        <li><strong>Bug fixes and performance improvements</strong></li>
                     </ul>
                 </div>
             </div>
@@ -321,6 +316,16 @@
             </div>
 
         </div>
+    </section>
+
+    <section class="static-section" id="credits">
+        <h2>Credits and attributions</h2>
+        <p><strong>NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</strong></p>
+        <ul class="static-list">
+            <li>Minecraft textures and renders (the ores, the bot and mob heads, and the hearts) are the property of Mojang Studios. They come from the <a href="https://minecraft.wiki" rel="noopener noreferrer">Minecraft Wiki</a> and are used under Mojang&rsquo;s usage guidelines for non-commercial fan projects.</li>
+            <li>Icons are from Google&rsquo;s Material Icons and Material Symbols, used under the Apache License 2.0.</li>
+            <li>See also the <a href="{{ url_for('pages.privacy') }}">Privacy Policy</a> and <a href="{{ url_for('pages.terms') }}">Terms of Use</a>.</li>
+        </ul>
     </section>
 </div>
 {% endblock %}
