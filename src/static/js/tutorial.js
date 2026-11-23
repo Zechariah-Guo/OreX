@@ -346,7 +346,11 @@
         list.forEach(function (s) {
             var el;
             try { el = document.querySelector(s); } catch (e) { return; }
-            if (el && el.getClientRects().length === 0) {
+            // A collapsed phone accordion body is clipped to zero height with
+            // visibility hidden but still has layout boxes, so check visibility
+            // too. The reveal listeners are idempotent.
+            if (el && (el.getClientRects().length === 0 ||
+                       getComputedStyle(el).visibility === 'hidden')) {
                 el.dispatchEvent(new CustomEvent('orex:reveal', { bubbles: true }));
             }
         });
