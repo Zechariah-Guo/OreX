@@ -482,4 +482,4 @@ def process_push_cycle(app, db):
             schedule_bonus_reminders(app, db)
         sweep_pending_pushes(db, app.config, app.config['DATABASE_PATH'], now)
     except Exception as exc:
-        logger.warning('Push cycle failed (%s)', type(exc).__name__)
+        logger.warning('Push cycle failed (%s: %s)', type(exc).__name__, exc)
