@@ -2309,7 +2309,22 @@ input::-webkit-inner-spin-button {
         /* Bar edge thickness: thicker in light mode, where the edge colour is
            faint against busy pages. Dark mode keeps the 1px line. */
         --nav-edge-w: 2px;
+        /* Lift: the bars sit above the page, so they cast a shadow onto it.
+           --nav-shadow-y is the direction (down for the top bar, up for the
+           bottom bar); they share the colour and spread. */
+        --nav-bg: var(--colour-surface);
+        --nav-shadow: rgba(40, 20, 70, 0.22);
         padding-top: var(--nav-top-h);
+    }
+
+    /* Dark: the surface is the same colour as page cards, so the bars get a
+       slightly lighter fill and a lighter edge, plus a deeper shadow. */
+    html[data-theme="dark"] body:has(.main-nav--auth) {
+        /* Derived from the active theme's surface/border, so the money and
+           gold themes keep their own hue instead of turning purple. */
+        --nav-bg: color-mix(in srgb, var(--colour-surface) 95%, white);
+        --nav-edge: color-mix(in srgb, var(--colour-border) 70%, white);
+        --nav-shadow: rgba(0, 0, 0, 0.55);
     }
 
     main {
@@ -2395,9 +2410,10 @@ input::-webkit-inner-spin-button {
         left: 0;
         right: 0;
         height: var(--nav-top-h);
-        background: var(--colour-surface);
+        background: var(--nav-bg);
         border-bottom: var(--nav-edge-w) solid var(--nav-edge);
         border-radius: 0 0 var(--nav-radius) var(--nav-radius);
+        box-shadow: 0 4px 14px var(--nav-shadow);
         z-index: 1000;
     }
 
@@ -2462,8 +2478,10 @@ input::-webkit-inner-spin-button {
         gap: 0;
         padding: calc(4px + var(--nav-radius)) 8px 4px;
         border-radius: 0 0 var(--nav-radius) var(--nav-radius);
+        background-color: var(--nav-bg);
         border: 1px solid var(--nav-edge);
         border-width: 0 0 var(--nav-edge-w);
+        box-shadow: 0 4px 14px var(--nav-shadow);
         pointer-events: auto;
         /* Slides down from behind the top bar (bar is z-index 1000) */
         z-index: 999;
@@ -2498,7 +2516,7 @@ input::-webkit-inner-spin-button {
         height: 28px;
         margin: 0 4px;
         border: 0;
-        background: var(--colour-border);
+        background: var(--nav-edge);
         align-self: center;
     }
 
@@ -2634,9 +2652,10 @@ input::-webkit-inner-spin-button {
         right: 0;
         bottom: -8px;
         z-index: -1;
-        background: var(--colour-surface);
+        background: var(--nav-bg);
         border-top: var(--nav-edge-w) solid var(--nav-edge);
         border-radius: var(--nav-radius) var(--nav-radius) 0 0;
+        box-shadow: 0 -4px 14px var(--nav-shadow);
     }
 
     html.nav-hidden .main-nav--auth .nav__links {
