@@ -29,16 +29,35 @@ BOT_NAMES = [
     'ZombieTrader', 'SkeletonMiner', 'WitchBroker', 'PiglinDealer', 'VillagerMerchant'
 ]
 
+# Staggered starting balances so the leaderboard has a ladder to climb. The
+# lowest sits just above a new player's balance plus the first daily bonus, so
+# a new player cannot reach #1 by doing nothing or collecting the bonus.
+BOT_START_BALANCES = {
+    'SteveBot': 15_000,
+    'AlexBot': 25_000,
+    'CreeperTrader': 40_000,
+    'EnderInvestor': 65_000,
+    'ZombieTrader': 100_000,
+    'SkeletonMiner': 150_000,
+    'WitchBroker': 225_000,
+    'PiglinDealer': 350_000,
+    'VillagerMerchant': 500_000,
+}
+
 
 def ensure_bots_exist(db, default_balance):
-    """Create bot user accounts if they don't already exist."""
+    """Create bot user accounts if they don't already exist.
+
+    Each new bot starts with its BOT_START_BALANCES amount, falling back to
+    default_balance for any bot not listed there.
+    """
     for name in BOT_NAMES:
         existing = db.execute("SELECT id FROM users WHERE username = ?", (name,)).fetchone()
         if not existing:
             now = datetime.now().isoformat()
             db.execute(
                 "INSERT INTO users (username, password_hash, balance, created_at) VALUES (?, ?, ?, ?)",
-                (name, 'BOT_NO_LOGIN', default_balance, now)
+                (name, 'BOT_NO_LOGIN', BOT_START_BALANCES.get(name, default_balance), now)
             )
     db.commit()
 

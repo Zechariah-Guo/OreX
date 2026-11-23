@@ -107,7 +107,7 @@ class TestMarketEngine:
         """TC: ensure_bots_exist creates exactly 9 bot accounts with 'BOT_NO_LOGIN' password hash."""
         with app.app_context():
             from app.database import get_db
-            from app.market.bots import ensure_bots_exist, BOT_NAMES
+            from app.market.bots import ensure_bots_exist, BOT_NAMES, BOT_START_BALANCES
 
             db = get_db()
 
@@ -131,7 +131,7 @@ class TestMarketEngine:
 
             for bot in bots:
                 assert bot['password_hash'] == 'BOT_NO_LOGIN'
-                assert bot['balance'] == app.config['DEFAULT_BALANCE']
+                assert bot['balance'] == BOT_START_BALANCES[bot['username']]
 
     def test_process_tick_bot_trades_insert_transaction(self, app):
         """TC: process_tick with seed producing bot trades inserts transaction for bot user."""
