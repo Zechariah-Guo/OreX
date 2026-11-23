@@ -27,6 +27,7 @@ dev = [
     "bandit==1.9.4",
     "pip-audit==2.10.0",
     "playwright==1.65.2",
+    "pytest-xdist==3.8.0",
 ]
 # Production server only (Docker / Oracle VM): `uv sync --no-dev --group prod`.
 prod = [
@@ -41,6 +42,11 @@ package = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Flask-Login 0.6.3 calls datetime.utcnow() when it sets the remember cookie (deprecated
+# since Python 3.12). Hidden until a Flask-Login release fixes it; other warnings still show.
+filterwarnings = [
+    "ignore:datetime.datetime.utcnow\\(\\) is deprecated:DeprecationWarning:flask_login",
+]
 markers = [
     "account_settings: Account settings tests",
     "advanced_integration: Advanced Mode integration tests",
@@ -60,6 +66,6 @@ markers = [
     "transaction_history: Transaction history tests",
     "finances: Finances page tests",
     "tutorial: Tutorial system integration tests",
-    "slow: Slow tests (heavy password hashing in property tests). Deselect with -m \"not slow\"",
+    "slow: Slow tests. Currently unused: conftest.py swaps in a cheap password hash, so the old hashing-heavy tests run in normal time. Deselect with -m \"not slow\"",
     "browser: Real-browser tests (headless Chrome/Edge via scripts/dev/screenshot.py); skipped if no browser or no internet. Deselect with -m \"not browser\"",
 ]

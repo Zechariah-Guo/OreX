@@ -176,7 +176,7 @@ def test_clear_leaves_real_shorts_untouched(tclient, app):
     """A real (is_demo=0) short must survive both open and clear of a demo short."""
     _sql(app,
          "INSERT INTO short_positions (user_id, ore_id, share_quantity, entry_price, "
-         "locked_collateral, is_demo) VALUES (1, 1, 5, 100.0, 750.0, 0)")
+         "locked_collateral, is_demo, open_factor) VALUES (1, 1, 5, 100.0, 750.0, 0, 1.5)")
     real_before = _sql(app, 'SELECT * FROM short_positions WHERE is_demo = 0')
     assert len(real_before) == 1
     real_id = real_before[0]['id']

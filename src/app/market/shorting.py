@@ -403,27 +403,12 @@ def _rebalance_margin(db, ores_map: dict, closed_ids: set):
 
         current_price = ores_map[ore_id]['current_price']
         shares = pos['share_quantity']
-        entry_price = pos['entry_price']
 
         # open_factor = (1 + multiplier) fixed at open and stored on the row, so
         # required = current_price × shares × open_factor. It must not be derived
         # from locked_collateral: that grows with every top-up, so deriving from it
         # compounds the factor by (price / entry) each tick.
         open_factor = pos['open_factor']
-        if open_factor is None:
-            # Legacy row never backfilled: best available estimate, derived from the
-            # vault ONCE and then stored. Re-deriving every tick would compound it
-            # exactly like the old bug (capped at 1 + the max 2.5 multiplier).
-            entry_value = entry_price * shares
-            if entry_value > 0:
-                open_factor = min(pos['locked_collateral'] / entry_value, 3.5)
-            else:
-                open_factor = 1.5
-            db.execute(
-                "UPDATE short_positions SET open_factor = ? WHERE id = ?",
-                (open_factor, pos['id'])
-            )
-
         required_collateral = round(current_price * shares * open_factor, 2)
 
         user_id = pos['user_id']

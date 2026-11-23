@@ -27,9 +27,6 @@ from app.models import (
 )
 from app.totp import hash_backup_code, verify_backup_code
 
-# Every example creates a user (password hash) and most hash backup codes.
-pytestmark = pytest.mark.slow
-
 
 # ---------------------------------------------------------------------------
 # Strategies

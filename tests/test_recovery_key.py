@@ -332,16 +332,6 @@ class TestRegistration:
         _register_page(client)
         assert _user_count(app) == 0 and _key_hashes(app) == []
 
-    def test_key_page_routes_are_gone(self, client):
-        for method, path in [
-            ('get', '/recovery-key'),
-            ('post', '/recovery-key/continue'),
-            ('post', '/recovery-key/regenerate'),
-            ('post', '/recovery-key/skip'),
-        ]:
-            assert getattr(client, method)(path).status_code in (404, 405), path
-        assert client.get('/recovery-key').status_code == 404
-        assert client.post('/recovery-key/continue', data={}).status_code in (400, 404)
 
     def test_authenticated_user_redirected_from_register(self, authenticated_client):
         resp = authenticated_client.get('/register')

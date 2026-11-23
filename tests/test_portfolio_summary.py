@@ -41,11 +41,6 @@ class TestFinancesLink:
         # It's a link, not another tab the tab-switching script would pick up
         assert row.count('<button class="trade-tabs__tab') == 2
 
-    def test_old_button_row_is_gone(self, authenticated_client, app):
-        _make_advanced(app)
-        html = authenticated_client.get('/portfolio').data.decode('utf-8')
-        assert 'portfolio-finances-link' not in html
-        assert 'View Finances' not in html
 
     def test_longs_tab_is_active_by_default(self, authenticated_client, app):
         _make_advanced(app)
@@ -80,8 +75,3 @@ class TestFinancesLink:
         html = authenticated_client.get('/portfolio?tab=shorts').data.decode('utf-8')
         assert 'portfolio-tab-shorts' not in html
 
-    def test_summary_cards_keep_original_order(self, authenticated_client):
-        html = authenticated_client.get('/portfolio').data.decode('utf-8')
-        labels = ['Cash Balance', 'Holdings Value', 'Total Portfolio', 'Profit / Loss']
-        positions = [html.index(label) for label in labels]
-        assert positions == sorted(positions)

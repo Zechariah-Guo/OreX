@@ -91,8 +91,8 @@ def test_tick_take_profit_short_close_awards_big_short_with_notification(app, ru
     # Take profit far above the price, so the first tick closes it at a profit
     conn.execute(
         """INSERT INTO short_positions (user_id, ore_id, share_quantity, entry_price,
-                                        locked_collateral, take_profit_price)
-           VALUES (?, ?, 1, 100, 100000, 1000000000)""",
+                                        locked_collateral, take_profit_price, open_factor)
+           VALUES (?, ?, 1, 100, 100000, 1000000000, 1.5)""",
         (user_id, ore_id),
     )
     conn.commit()

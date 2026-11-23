@@ -78,10 +78,6 @@ def test_dev_routes_stay_404_with_env_flag_off(tmp_path, monkeypatch):
     assert app.test_client().get('/testing').status_code == 404
 
 
-def test_real_advancements_module_unaffected():
-    from app.advancements import ADVANCEMENT_KEYS, award_advancement
-    assert ADVANCEMENT_KEYS and callable(award_advancement)
-
 
 # --- SECRET_KEY --------------------------------------------------------------
 

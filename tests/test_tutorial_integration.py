@@ -414,31 +414,5 @@ def test_help_page_when_logged_out(client):
     assert 'logged-in players' in html
 
 
-# ---------------------------------------------------------------------------
-# Front-end source contracts (cheap guards for behaviour that needs a browser to exercise)
-# ---------------------------------------------------------------------------
-
-def _read(*parts):
-    import os
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    with open(os.path.join(root, *parts), encoding='utf-8') as f:
-        return f.read()
-
-
-def test_tutorial_js_contracts():
-    source = _read('src', 'static', 'js', 'tutorial.js')
-    assert "'htmx:afterSettle'" in source                  # re-acquires targets after htmx swaps
-    assert 'X-CSRFToken' in source                         # POSTs carry the CSRF token
-    assert "alpine:init" in source and "Alpine.data('tutorial'" in source.replace('root.Alpine', 'Alpine')
-    # Escape asks for confirmation instead of ending the tutorial outright
-    escape_block = source[source.index("e.key === 'Escape'"):][:260]
-    assert 'this.skip()' in escape_block and 'confirmSkip' not in escape_block
-
-
-def test_overlay_template_contracts():
-    html = _read('src', 'templates', 'partials', 'tutorial_overlay.html')
-    for binding in ('currentStep.title', 'currentStep.description', 'x-text="stepCounter"'):
-        assert binding in html                            # card shows title, description, "Step X of Y"
-    assert 'data-tutorial-primary' in html                 # forward button receives focus
-    assert 'End Tutorial' in html and 'Continue' in html   # skip confirmation options
-    assert 'x-transition:enter' in html                    # card fades in
+# What tutorial.js and the overlay do in a browser (htmx swaps, Escape, the step
+# card, focus, the skip confirmation) is checked in test_tutorial_browser.py.

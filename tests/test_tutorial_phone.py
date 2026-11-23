@@ -42,13 +42,6 @@ def test_nav_steps_have_phone_targets():
                 assert 'selector' in step.get('phone', {}), (track['id'], step['title'])
 
 
-def test_no_step_names_the_old_leaderboard_tab():
-    """Leaderboard moved into the avatar menu; no step may call it a tab."""
-    for track in load_tracks():
-        for step in track['steps']:
-            text = (step['title'] + ' ' + step['description']).lower()
-            assert 'leaderboard tab' not in text and 'leaderboard in the nav' not in text
-
 
 # ---------------------------------------------------------------------------
 # Layout helpers (Node)

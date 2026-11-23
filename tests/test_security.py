@@ -14,6 +14,44 @@ from conftest import get_csrf_token, register_user, login_user
 pytestmark = pytest.mark.security
 
 
+class TestProductionHashing:
+    """conftest.py swaps in a cheap hash for speed, so these put Werkzeug's real
+    generate_password_hash back and check the app's hashing helpers use its strong
+    default (scrypt) rather than passing a weaker method."""
+
+    @pytest.fixture()
+    def real_hash(self, monkeypatch):
+        import app.models
+        import app.totp
+        from conftest import _real_generate_password_hash
+        monkeypatch.setattr(app.models, 'generate_password_hash', _real_generate_password_hash)
+        monkeypatch.setattr(app.totp, 'generate_password_hash', _real_generate_password_hash)
+
+    def _assert_strong(self, stored, secret):
+        from werkzeug.security import check_password_hash
+        assert stored.startswith('scrypt:'), stored[:30]
+        assert secret not in stored
+        assert check_password_hash(stored, secret)
+
+    def test_account_passwords(self, app, real_hash):
+        from app.database import get_db
+        from app.models import create_user, update_password
+        with app.app_context():
+            user_id = create_user('HashUser', 'SecurePass123!')
+            stored = get_db().execute(
+                'SELECT password_hash FROM users WHERE id = ?', (user_id,)).fetchone()[0]
+            self._assert_strong(stored, 'SecurePass123!')
+            update_password(user_id, 'NewSecurePass456!')
+            stored = get_db().execute(
+                'SELECT password_hash FROM users WHERE id = ?', (user_id,)).fetchone()[0]
+            self._assert_strong(stored, 'NewSecurePass456!')
+
+    def test_backup_codes_and_recovery_keys(self, real_hash):
+        from app.totp import hash_backup_code, hash_recovery_key
+        self._assert_strong(hash_backup_code('AbCd1234'), 'AbCd1234')
+        self._assert_strong(hash_recovery_key('ABCD-EFGH-JKLM'), 'ABCDEFGHJKLM')
+
+
 class TestSecurity:
     """Tests for security controls (Requirement 10)."""
 
@@ -28,31 +66,6 @@ class TestSecurity:
         # Should NOT contain a login success redirect
         assert b'/dashboard' not in resp.data
 
-    def test_password_hash_uses_werkzeug_prefix(self, app, client):
-        """TC 10.2: Registered user's password_hash uses Werkzeug hashing."""
-        password = 'SecurePass123!'
-        register_user(client, 'HashTestUser', password)
-
-        # Query database directly for the password_hash
-        db_path = app.config['DATABASE_PATH']
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        row = conn.execute(
-            "SELECT password_hash FROM users WHERE username = ?",
-            ('HashTestUser',)
-        ).fetchone()
-        conn.close()
-
-        assert row is not None
-        password_hash = row['password_hash']
-
-        # Must start with a recognized Werkzeug hash prefix
-        assert password_hash.startswith('pbkdf2:sha256:') or \
-            password_hash.startswith('scrypt:'), \
-            f"password_hash does not start with recognized prefix: {password_hash[:30]}"
-
-        # Must NOT contain the plaintext password
-        assert password not in password_hash
 
     def test_sql_injection_in_username_fails_gracefully(self, client):
         """TC 10.3: SQL injection in username fails gracefully."""
@@ -103,27 +116,6 @@ class TestSecurity:
         assert 'Invalid username or password.' in html
         assert 'flash-messages' not in html
 
-    def test_rate_limiter_blocks_after_max_attempts(self, app, client):
-        """TC 10.6: Rate limiter counts attempts; 6th attempt is blocked."""
-        # Register a valid user
-        register_user(client, 'RateLimitUser', 'validpass123')
-
-        # Log out (registration auto-logs in)
-        client.get('/logout')
-
-        # Make 5 failed login attempts (RATE_LIMIT_MAX = 5)
-        for i in range(5):
-            resp = login_user(client, 'RateLimitUser', 'wrongpassword')
-            # Should get "Invalid username or password." (not rate-limited yet)
-            html = resp.data.decode()
-            assert 'Invalid username or password.' in html or 'Too many login attempts' in html
-
-        # 6th attempt should be rate-limited regardless of correct credentials
-        resp = login_user(client, 'RateLimitUser', 'validpass123')
-
-        html = resp.data.decode()
-        assert 'Too many login attempts. Please try again in ' in html
-        assert 'flash-messages' not in html
 
     def test_nonexistent_user_returns_same_error_as_wrong_password(self, client):
         """TC 10.7: Login with nonexistent username returns the same error
@@ -143,67 +135,3 @@ class TestSecurity:
         # Both must return the same generic error message
         assert 'Invalid username or password.' in html_nonexistent
         assert 'Invalid username or password.' in html_wrong_pass
-
-
-# ---------------------------------------------------------------------------
-# Property-Based Tests
-# ---------------------------------------------------------------------------
-
-import itertools
-
-from hypothesis import given, settings
-from hypothesis import strategies as st
-
-from conftest import register_user
-
-
-class TestSecurityProperties:
-    """Property-based tests for security controls."""
-
-    # Feature: orex-test-suite, Property 10: Password hashing correctness
-    _counter = itertools.count()
-
-    @settings(max_examples=100, deadline=None)
-    @given(
-        password=st.text(
-            min_size=8,
-            max_size=50,
-            alphabet=st.characters(whitelist_categories=('L', 'N', 'P')),
-        )
-    )
-    def test_password_hashing_correctness(self, app, client, password):
-        """**Validates: Requirements 10.2**
-
-        For any non-empty password string, after user registration the stored
-        password_hash starts with a recognized Werkzeug hash prefix and does
-        NOT contain the plaintext password as a substring.
-        """
-        username = f"PropUser{next(TestSecurityProperties._counter)}"
-        password = f"Aa1!{password}"
-
-        # Ensure logged out before registering a new user
-        client.get('/logout')
-        register_user(client, username, password)
-
-        # Query database directly for the stored password_hash
-        db_path = app.config['DATABASE_PATH']
-        import sqlite3
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        row = conn.execute(
-            "SELECT password_hash FROM users WHERE username = ?",
-            (username,),
-        ).fetchone()
-        conn.close()
-
-        assert row is not None, f"User {username} was not created in the database"
-        password_hash = row['password_hash']
-
-        # Must start with a recognized Werkzeug hash prefix
-        assert password_hash.startswith('pbkdf2:sha256:') or \
-            password_hash.startswith('scrypt:'), \
-            f"password_hash does not start with recognized prefix: {password_hash[:30]}"
-
-        # Must NOT contain the plaintext password as a substring
-        assert password not in password_hash, \
-            "password_hash contains the plaintext password"

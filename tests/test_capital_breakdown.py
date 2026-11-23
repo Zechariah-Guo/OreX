@@ -94,8 +94,8 @@ def _add_short(app, user_id, locked_collateral):
     conn.execute(
         """INSERT INTO short_positions
            (user_id, ore_id, share_quantity, entry_price, locked_collateral,
-            cumulative_fees_paid, status)
-           VALUES (?, 8, 10, 100.0, ?, 0.0, 'active')""",
+            cumulative_fees_paid, status, open_factor)
+           VALUES (?, 8, 10, 100.0, ?, 0.0, 'active', 1.5)""",
         (user_id, locked_collateral),
     )
     conn.commit()

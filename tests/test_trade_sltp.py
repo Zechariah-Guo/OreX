@@ -488,8 +488,8 @@ def _create_short(app, user_id, ore_id=1, status='active'):
     cursor = conn.execute(
         """INSERT INTO short_positions
            (user_id, ore_id, share_quantity, entry_price, locked_collateral,
-            stop_loss_price, take_profit_price, status)
-           VALUES (?, ?, 10, 10.00, 100.0, 15.00, 5.00, ?)""",
+            stop_loss_price, take_profit_price, status, open_factor)
+           VALUES (?, ?, 10, 10.00, 100.0, 15.00, 5.00, ?, 1.5)""",
         (user_id, ore_id, status),
     )
     conn.commit()

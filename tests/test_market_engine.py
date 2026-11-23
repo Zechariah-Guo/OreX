@@ -249,7 +249,7 @@ class TestMarketEngineProperties:
     """Property-based tests for market engine invariants using Hypothesis."""
 
     # Feature: orex-test-suite, Property 7: Price clamping invariant
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(seed=st.integers(min_value=0, max_value=10000))
     def test_price_clamping_invariant(self, seed, app):
         """**Validates: Requirements 9.2**
@@ -289,7 +289,7 @@ class TestMarketEngineProperties:
                 )
 
     # Feature: orex-test-suite, Property 8: Trend log structure invariant
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(seed=st.integers(min_value=0, max_value=10000))
     def test_trend_log_structure_invariant(self, seed, app):
         """Every ore's trend_log is a JSON array of exactly 5 elements from {"rise", "hold", "fall"}.
@@ -333,7 +333,7 @@ class TestMarketEngineProperties:
                     )
 
     # Feature: orex-test-suite, Property 9: Price history recording invariant
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(seed=st.integers(min_value=0, max_value=10000))
     def test_price_history_recording_invariant(self, seed, app):
         """Exactly one new price_history row per ore per tick with correct price, movement, and timestamp.

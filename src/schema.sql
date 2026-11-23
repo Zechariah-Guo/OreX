@@ -130,8 +130,7 @@ CREATE TABLE IF NOT EXISTS short_positions (
     -- (1 + collateral multiplier) fixed at open. The margin-call phase scales
     -- the vault as price x shares x open_factor; it must NOT be derived from
     -- locked_collateral, which grows with top-ups and would compound.
-    -- NULL only on legacy rows not yet backfilled.
-    open_factor REAL DEFAULT NULL,
+    open_factor REAL NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
     FOREIGN KEY (ore_id) REFERENCES ores(id) ON DELETE RESTRICT
 );

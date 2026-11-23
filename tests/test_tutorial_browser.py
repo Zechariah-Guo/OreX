@@ -185,8 +185,15 @@ def new_user(site, tutorials='completed', advanced=False):
     cdp.navigate(site.base + '/login')
     run(site, 'sessionStorage.clear()')
     username = 'bt' + uuid.uuid4().hex[:8]
-    shot.register_user(cdp, site.base, username)
-    cdp.navigate('about:blank')   # stop the post-registration page's scripts before editing state
+    # The dashboard after registration auto-starts the tutorial. Block those calls: a
+    # POST /tutorial/start still in flight could land after the state edits below and
+    # leave the track "in progress", so a 'fresh' user would get no auto-start.
+    cdp.call('Network.setBlockedURLs', {'urls': ['*/tutorial/*']})
+    try:
+        shot.register_user(cdp, site.base, username)
+        cdp.navigate('about:blank')   # stop the post-registration page's scripts before editing state
+    finally:
+        cdp.call('Network.setBlockedURLs', {'urls': []})
 
     user_id = db_rows(site, 'SELECT id FROM users WHERE username = ?', (username,))[0]['id']
     db_rows(site, 'DELETE FROM tutorial_progress WHERE user_id = ?', (user_id,))

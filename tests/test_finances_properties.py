@@ -288,32 +288,6 @@ def test_cash_runway_ticks_equals_floor_division(free_cash, fee_burn_per_tick):
     )
 
 
-@settings(max_examples=100)
-@given(
-    free_cash=st.floats(0, 1e6, allow_nan=False, allow_infinity=False),
-    tick_fee=st.floats(0.01, 10000, allow_nan=False, allow_infinity=False),
-)
-def test_per_position_ticks_to_liquidation(free_cash, tick_fee):
-    """Property 4 (per-position): For any position with tick_fee t (> 0),
-    the per-position ticks_to_liquidation SHALL equal floor(free_cash / t).
-
-    This tests the same floor-division logic used for individual position
-    liquidation countdown.
-
-    **Validates: Requirements 4.3, 5.3**
-    """
-    # Per-position ticks_to_liquidation uses the same floor division formula
-    expected = math.floor(free_cash / tick_fee)
-
-    # Verify calculate_cash_runway returns the same result since both use
-    # the same floor(F / rate) formula
-    result = calculate_cash_runway(free_cash, tick_fee)
-
-    assert result == expected, (
-        f"Per-position ticks_to_liquidation mismatch: got {result}, expected {expected} "
-        f"(free_cash={free_cash}, tick_fee={tick_fee})"
-    )
-
 
 # ---------------------------------------------------------------------------
 # Feature: finances-page, Property 5: Runway Indicator Classification
@@ -358,18 +332,6 @@ def test_runway_indicator_classification(ticks):
         f"Bar width mismatch for ticks={ticks}: "
         f"got {bar_width}, expected {expected_width}"
     )
-
-    # --- Liquidation warning condition ---
-    # The warning text is present iff ticks < 20
-    liquidation_warning = ticks < 20
-    if ticks < 20:
-        assert liquidation_warning is True, (
-            f"Liquidation warning should be present for ticks={ticks}"
-        )
-    else:
-        assert liquidation_warning is False, (
-            f"Liquidation warning should NOT be present for ticks={ticks}"
-        )
 
 
 @settings(max_examples=100)

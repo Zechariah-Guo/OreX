@@ -59,17 +59,23 @@ def _setup_advanced_user(app, username='TestUser1', balance=10000.0):
 def _create_short_position(app, user_id, ore_id, share_quantity, entry_price,
                            locked_collateral, stop_loss_price=None,
                            take_profit_price=None, opened_at=None):
-    """Insert a short position directly into the database. Returns position ID."""
+    """Insert a short position directly into the database. Returns position ID.
+
+    open_factor is the vault's multiple of the entry value, as if opened with this vault
+    (capped at 1 + the 2.5 maximum multiplier).
+    """
     conn = _get_db_conn(app)
     if opened_at is None:
         opened_at = datetime.now().isoformat()
+    open_factor = min(locked_collateral / (entry_price * share_quantity), 3.5)
     cursor = conn.execute(
         """INSERT INTO short_positions
            (user_id, ore_id, share_quantity, entry_price, locked_collateral,
-            stop_loss_price, take_profit_price, cumulative_fees_paid, opened_at, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 0.0, ?, 'active')""",
+            stop_loss_price, take_profit_price, cumulative_fees_paid, opened_at, status,
+            open_factor)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 0.0, ?, 'active', ?)""",
         (user_id, ore_id, share_quantity, entry_price, locked_collateral,
-         stop_loss_price, take_profit_price, opened_at),
+         stop_loss_price, take_profit_price, opened_at, open_factor),
     )
     pos_id = cursor.lastrowid
     conn.commit()
@@ -952,8 +958,8 @@ class TestAccountResetWithShorts:
         conn.execute(
             """INSERT INTO short_positions
                (user_id, ore_id, share_quantity, entry_price, locked_collateral,
-                cumulative_fees_paid, opened_at, status, closed_at)
-               VALUES (?, 3, 7, 15.0, 157.5, 0.0, datetime('now', '-1 hour'), 'closed', datetime('now'))""",
+                cumulative_fees_paid, opened_at, status, closed_at, open_factor)
+               VALUES (?, 3, 7, 15.0, 157.5, 0.0, datetime('now', '-1 hour'), 'closed', datetime('now'), 1.5)""",
             (user_id,)
         )
         # Also a short_liquidated transaction

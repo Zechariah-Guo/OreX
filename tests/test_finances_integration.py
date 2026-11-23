@@ -61,10 +61,11 @@ def _insert_short_position(app, user_id, ore_id, share_quantity, entry_price,
     conn.execute(
         """INSERT INTO short_positions
            (user_id, ore_id, share_quantity, entry_price, locked_collateral,
-            stop_loss_price, take_profit_price, cumulative_fees_paid, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            stop_loss_price, take_profit_price, cumulative_fees_paid, status, open_factor)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (user_id, ore_id, share_quantity, entry_price, locked_collateral,
-         stop_loss_price, take_profit_price, cumulative_fees_paid, status),
+         stop_loss_price, take_profit_price, cumulative_fees_paid, status,
+         min(locked_collateral / (entry_price * share_quantity), 3.5)),
     )
     conn.commit()
     conn.close()

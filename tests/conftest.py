@@ -12,9 +12,24 @@ import sys
 import tempfile
 
 import pytest
+import werkzeug.security
 
 # Add src/ to the Python path so that `from app import create_app` works
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
+
+# The default scrypt hash costs ~145 ms per call, and tests hash on every
+# registration, login and backup code. Use a 1-iteration PBKDF2 hash instead
+# (~3 ms). check_password_hash reads the method from the stored hash, so
+# verification is unchanged. This must run before any app module is imported,
+# because they bind generate_password_hash with `from werkzeug.security import`.
+_real_generate_password_hash = werkzeug.security.generate_password_hash
+
+
+def _fast_generate_password_hash(password, method='pbkdf2:sha256:1', salt_length=16):
+    return _real_generate_password_hash(password, method=method, salt_length=salt_length)
+
+
+werkzeug.security.generate_password_hash = _fast_generate_password_hash
 
 
 @pytest.fixture(scope='session')
@@ -160,6 +175,78 @@ def db_reset(app, client):
     _login_attempts.clear()
 
     yield
+
+
+@pytest.fixture(scope='session')
+def live_server(app):
+    """The test app served over real HTTP on a free port, for browser tests.
+
+    It shares the session's temp database, so the autouse db_reset still gives
+    every test a clean state. Yields the base URL.
+    """
+    import threading
+    from werkzeug.serving import make_server
+
+    server = make_server('127.0.0.1', 0, app, threaded=True)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f'http://127.0.0.1:{server.server_port}'
+    server.shutdown()
+
+
+@pytest.fixture(scope='session')
+def pw_browser():
+    """Headless system Chrome (or Edge) driven by Playwright. Skips when neither is installed."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        pytest.skip('Playwright is not installed')
+    manager = sync_playwright().start()
+    browser = None
+    for channel in ('chrome', 'msedge'):
+        try:
+            browser = manager.chromium.launch(channel=channel)
+            break
+        except Exception:
+            continue
+    if browser is None:
+        manager.stop()
+        pytest.skip('Chrome/Edge not found')
+    yield browser
+    browser.close()
+    manager.stop()
+
+
+@pytest.fixture()
+def browser_context(pw_browser):
+    """A fresh browser profile (cookies, storage, service workers) for one test."""
+    context = pw_browser.new_context(viewport={'width': 1280, 'height': 800})
+    context.set_default_timeout(10_000)
+    yield context
+    context.close()
+
+
+def browser_login(page, base_url, app, username='BrowserUser', password='Password123!'):
+    """Create a player with both tutorials finished, then sign in through the real login form.
+
+    Returns the new user's id.
+    """
+    from app.database import get_db
+    from app.models import create_user
+
+    with app.app_context():
+        user_id = create_user(username, password)
+        db = get_db()
+        for track in ('beginner', 'advanced'):
+            db.execute("INSERT INTO tutorial_progress (user_id, track_id, status) VALUES (?, ?, 'completed')",
+                       (user_id, track))
+        db.commit()
+    page.goto(base_url + '/login')
+    page.fill('#username', username)
+    page.fill('#password', password)
+    page.click('button[type="submit"]')
+    page.wait_for_url('**/dashboard')
+    return user_id
 
 
 @pytest.fixture()

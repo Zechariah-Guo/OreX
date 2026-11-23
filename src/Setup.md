@@ -1,38 +1,24 @@
-# OreX
+# OreX Setup
 
-A Minecraft-themed stock market simulation built with Python and Flask. Trade ores like stocks — buy low, sell high, and build your fortune as prices fluctuate every 20 seconds.
-
-## Features
-
-- **9 tradeable ores** — Coal, Iron, Copper, Gold, Lapis Lazuli, Redstone, Emerald, Diamond, Netherite
-- **User accounts** — Register, login, and track your portfolio
-- **Live market** — Prices update every 20 seconds with trends, bot traders, and random events
-- **Trading** — Buy and sell ores with confirmation steps and atomic transactions
-- **Portfolio tracking** — View holdings, profit/loss, and total portfolio value
-- **Dashboard** — At-a-glance summary of balance, top movers, and recent activity
-- **Leaderboard** — Compete against other players and bot traders
-- **Transaction history** — Full trade history with pagination and archived transaction filtering
-- **HTMX live updates** — Market prices, dashboard, portfolio, and leaderboard auto-refresh every 20 seconds
-- **Bot traders** — 9 AI traders compete alongside you on the leaderboard
-- **Rate limiting** — Login endpoint protected against brute force attempts
+How to run OreX locally. For features, pages and security notes, see the [README](../README.md).
 
 ## Prerequisites
 
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) (installs the required Python version automatically)
 - A modern web browser
 
-No other software is required. No database server, no Docker, no cloud accounts.
+No database server or cloud account is needed. Docker is optional (see below).
 
 ## Setup
 
 1. **Clone the repository**
 
    ```
-   git clone <repository-url>
-   cd at3-major-project-Zechariah-Guo
+   git clone https://github.com/Zechariah-Guo/OreX.git
+   cd OreX
    ```
 
-2. **Install dependencies** (creates `.venv` from `uv.lock`)
+2. **Install dependencies** (creates `.venv` from `uv.lock`, including dev tools)
 
    ```
    uv sync
@@ -47,88 +33,101 @@ No other software is required. No database server, no Docker, no cloud accounts.
 
 4. **Open in browser**
 
-   Navigate to [http://localhost:4000](http://localhost:4000)
+   Go to [http://127.0.0.1:4000](http://127.0.0.1:4000)
 
-The SQLite database is created and seeded with ore data automatically on first run.
+The SQLite database is created and seeded with the 9 ores on first run.
 
-## Usage
+## Running with Docker (optional)
 
-1. Create an account on the registration page
-2. Browse the market to see all available ores and their current prices
-3. Click an ore to view its details, price chart, and place buy/sell orders
-4. Check your portfolio to track holdings and profit/loss
-5. View the leaderboard to see how you rank against other traders
-6. Visit your dashboard for a summary of your performance
+This runs the production stack locally (Nginx, Gunicorn with one worker, SQLite).
 
-## Project Structure
+1. Copy `.env.example` to `.env` and set `SECRET_KEY`. Set `SESSION_COOKIE_SECURE=0` when testing over plain http.
+2. Run `docker compose up --build`.
+3. Open [http://localhost:8080](http://localhost:8080).
+
+## Running Tests
 
 ```
-at3-major-project-Zechariah-Guo/
-├── pyproject.toml           # Python dependencies (locked in uv.lock)
-├── src/
-│   ├── app/
-│   │   ├── __init__.py      # Flask app factory
-│   │   ├── config.py        # Configuration
-│   │   ├── database.py      # SQLite connection and initialisation
-│   │   ├── models.py        # Data access functions
-│   │   ├── routes/          # Flask blueprints (auth, market, trade, portfolio, etc.)
-│   │   ├── market/          # Market engine (algorithm, bots, events, influence)
-│   │   └── utils/           # Validation and formatting helpers
-│   ├── templates/           # Jinja2 templates
-│   ├── static/              # CSS, JS, images
-│   ├── data/                # SQLite database (auto-created)
-│   ├── schema.sql           # Database schema
-│   ├── seed.sql             # Initial ore data
-│   └── run.py               # Application entry point
-└── tests/                   # Pytest test suite
+uv run pytest
 ```
+
+Skip the slow 2FA property tests with `-m "not slow"` and the real-browser tests with `-m "not browser"`.
 
 ## Configuration
 
-All configuration is in `src/app/config.py`:
+Game settings are in `src/app/config.py`:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| SECRET_KEY | `orex-local-dev-secret...` | Flask session secret key |
-| DATABASE_PATH | `data/orex.db` | SQLite database file location |
-| DEFAULT_BALANCE | `10000` | Starting balance for new users |
-| TICK_INTERVAL | `20` | Seconds between market price updates |
-| RATE_LIMIT_WINDOW | `900` | Rate limit window in seconds (15 min) |
-| RATE_LIMIT_MAX | `5` | Max login attempts per window |
-| VAPID_PUBLIC_KEY | _(empty)_ | Web Push public key (environment variable). Push is off unless all three VAPID settings are set |
-| VAPID_PRIVATE_KEY | _(empty)_ | Web Push private key (environment variable, keep secret) |
-| VAPID_SUBJECT | _(empty)_ | Contact for push services, `mailto:you@example.com` or an `https://` URL |
+| `SECRET_KEY` | `orex-local-dev-secret...` | Flask session secret. Read from the `SECRET_KEY` environment variable. The app refuses to start in production without it |
+| `DATABASE_PATH` | `src/data/orex.db` | SQLite database file |
+| `DEFAULT_BALANCE` | `10000` | Starting balance for new players |
+| `TICK_INTERVAL` | `20` | Seconds between market price updates |
+| `RATE_LIMIT_WINDOW` | `900` | Login rate limit window in seconds (15 min) |
+| `RATE_LIMIT_MAX` | `5` | Max login attempts per window |
 
-### Web Push notifications
+Deployment settings (`SECRET_KEY`, `OREX_TRUST_PROXY`, `SESSION_COOKIE_SECURE`, avatar storage, VAPID keys) are environment variables. See `.env.example`.
 
-Players can opt in under Settings > Notifications. Generate the key pair once with
-`.venv\Scripts\python.exe scripts\admin\generate_vapid_keys.py`, then set the three `VAPID_*`
-variables in the environment before starting the server (`set VAPID_PUBLIC_KEY=...` in
-`cmd`, or in `.env` for Docker). Browsers only allow push on https or localhost.
-A push is sent only when the player has had no visible OreX page open for about a minute.
+### Web Push notifications (optional)
+
+Players can opt in under Settings > Notifications. Push is off until the server has VAPID keys:
+
+1. Generate a key pair once: `uv run python scripts/admin/generate_vapid_keys.py`
+2. Set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (a `mailto:` or `https://` contact) in the environment (`set VAPID_PUBLIC_KEY=...` in `cmd`) or in `.env` for Docker.
+
+Browsers only allow push on https or localhost. A push is sent only when the player has had no visible OreX page open for about a minute.
 
 ## Resetting the Database
 
-Delete the database file and restart the server:
+Stop the server, delete the database file, and start it again:
 
 ```
 del src\data\orex.db
 cd src
-python run.py
+uv run python run.py
 ```
 
-The database will be recreated and reseeded with the 9 default ores.
+The database is recreated and reseeded with the 9 ores.
+
+## Managing Dependencies
+
+| Task | Command |
+|------|---------|
+| Add a runtime dependency | `uv add <pkg>` |
+| Add a dev-only dependency | `uv add --dev <pkg>` |
+| Upgrade one package | `uv lock --upgrade-package <pkg>` then `uv sync` |
+
+Commit both `pyproject.toml` and `uv.lock` after any change.
+
+## Project Structure
+
+```
+OreX/
+├── pyproject.toml           # Dependencies (locked in uv.lock) and pytest config
+├── Dockerfile, docker-compose.yml, docker/nginx/
+├── .env.example             # Environment variable template
+├── src/
+│   ├── run.py               # Development entry point
+│   ├── schema.sql, seed.sql # Database schema and initial ore data
+│   ├── app/                 # Flask app: config, database, models, routes/, market/, tutorial/, utils/
+│   ├── templates/           # Jinja2 pages and HTMX partials
+│   ├── static/              # CSS, JS, images, audio, vendored libraries
+│   └── data/                # SQLite database (auto-created from schema.sql; no migrations, delete it after a schema change)
+├── scripts/                 # dev/ tools and admin/ production tools (see scripts/README.md)
+├── tests/                   # Pytest test suite
+└── docs/                    # Planning documents and assets
+```
 
 ## Technology Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Python 3, Flask 3.1 |
-| Database | SQLite3 (built-in) |
+| Backend | Python 3.12+, Flask 3.1 |
+| Database | SQLite3 |
 | Templating | Jinja2 |
-| Auth | Flask-Login + Werkzeug |
+| Auth | Flask-Login, Werkzeug, PyOTP (2FA) |
 | CSRF | Flask-WTF |
-| Live updates | HTMX |
+| Frontend | Vanilla JavaScript, HTMX, Alpine.js, Cropper.js |
 | Charts | ApexCharts |
-| Styling | Plain CSS with custom properties |
 | Testing | Pytest, Hypothesis |
+| Deployment | Gunicorn, Nginx, Docker Compose |

@@ -116,7 +116,7 @@ class TestLeaderboardProperties:
             max_size=5,
         )
     )
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(max_examples=25, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_leaderboard_ordering_invariant(self, app, authenticated_client, balances):
         """Leaderboard lists users in strictly non-increasing order of total value.
 

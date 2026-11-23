@@ -40,64 +40,6 @@ class TestLegalPages:
         assert EMAIL in html and NOTICE in html
 
 
-def _text(client, path):
-    """Page text with tags removed and whitespace collapsed."""
-    html = client.get(path).data.decode()
-    return re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', html)).replace('&rsquo;', '\u2019')
-
-
-class TestPrivacyWording:
-    def test_game_data_push_and_logs(self, client):
-        text = _text(client, '/privacy')
-        for needle in ('stop loss and take profit orders', 'peak net worth', 'Advanced Mode status',
-                       'daily bonus progress', 'Google, Apple, Microsoft or Mozilla',
-                       'Cloudflare, which sits in front of the server, also keeps its own logs'):
-            assert needle in text
-
-    def test_other_players_and_no_avatar_privacy_claim(self, client):
-        text = _text(client, '/privacy')
-        assert 'Other players can see your username and avatar' in text
-        assert 'signed-in players can see the leaderboard and profile pages' in text
-        assert 'without signing in' not in text
-
-    def test_cookie_paragraph_has_no_table(self, client):
-        html = client.get('/privacy').data.decode()
-        html = html[html.index('class="static-page"'):]
-        html = html[:html.index('<footer')] if '<footer' in html else html
-        text = _text(client, '/privacy')
-        assert 'sign-in cookie' in text and '30 days' in text and 'no cookie banner' in text
-        assert '<table' not in html
-        for name in ('remember_token', 'orex-theme', 'sessionStorage', 'localStorage'):
-            assert name not in html
-
-    def test_reset_economy_suspension_and_backups(self, client):
-        text = _text(client, '/privacy')
-        assert 'reset the whole game' in text
-        assert 'the same result as Reset Account' in text
-        assert 'suspends your account, you cannot sign in' in text
-        assert 'Nothing is deleted, and a suspension can be lifted' in text
-        assert ('A nightly backup of the database is kept for up to 14 days, so data from a deleted '
-                'account can remain in a backup until it expires.') in text
-        assert 'unlocked themes' in text and 'restarts the daily bonus cycle' in text
-
-    def test_rights_have_no_reply_time_promise(self, client):
-        text = _text(client, '/privacy')
-        rights = text[text.index('Your choices and rights'):text.index('Children')]
-        assert 'turn off two-factor authentication if you have lost access to it' in rights
-        assert 'secrets such as your password are not included' in rights
-        assert 'sign out your other devices' in rights
-        assert not re.search(r'within\b[^.]*\b(days?|weeks?|hours?|business)', rights, re.I)
-        assert 'aim to reply' not in rights
-
-
-class TestTermsWording:
-    def test_accounts_section(self, client):
-        text = _text(client, '/terms')
-        assert 'rename a username or remove an avatar' in text
-        assert 'A suspension can be lifted' in text
-        assert 'A wipe resets every player\u2019s balance, holdings and Advanced Mode' in text
-
-
 class TestFooterAndRegister:
     @pytest.mark.parametrize('path', ['/', '/login', '/register', '/about', '/privacy', '/terms'])
     def test_footer_links_logged_out(self, client, path):

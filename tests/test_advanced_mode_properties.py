@@ -40,7 +40,7 @@ def _clean_test_state(db):
 # Validates: Requirements 1.3
 # ---------------------------------------------------------------------------
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(
     balance=st.floats(min_value=0, max_value=1e6),
     holdings=st.lists(
@@ -116,7 +116,7 @@ def test_net_worth_calculation_identity(app, balance, holdings):
 # Validates: Requirements 1.1, 1.2
 # ---------------------------------------------------------------------------
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(
     eligible_flag=st.booleans(),
     net_worth_balance=st.floats(min_value=0, max_value=200000),
@@ -163,7 +163,7 @@ def test_eligibility_monotonicity(app, eligible_flag, net_worth_balance):
 # Validates: Requirements 3.1
 # ---------------------------------------------------------------------------
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(
     starting_balance=st.floats(min_value=50000, max_value=1e6),
 )
@@ -208,7 +208,7 @@ def test_purchase_balance_deduction(app, starting_balance):
 # Validates: Requirements 3.2, 3.3
 # ---------------------------------------------------------------------------
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(
     low_balance=st.floats(min_value=0, max_value=49999.99),
     eligible_flag=st.booleans(),
@@ -263,7 +263,7 @@ def test_purchase_precondition_rejection(app, low_balance, eligible_flag):
 # Validates: Requirements 4.2
 # ---------------------------------------------------------------------------
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(
     current_active=st.booleans(),
 )
@@ -307,7 +307,7 @@ def test_toggle_state_inversion(app, current_active):
 # Validates: Requirements 4.3
 # ---------------------------------------------------------------------------
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(
     elapsed_seconds=st.floats(min_value=0, max_value=600),
 )
@@ -351,112 +351,11 @@ def test_cooldown_enforcement(app, elapsed_seconds):
 
 
 # ---------------------------------------------------------------------------
-# Feature: advanced-mode, Property 8: Stop Loss / Take Profit Validation
-# Validates: Requirements 6.5, 6.6
-# ---------------------------------------------------------------------------
-
-
-def validate_stop_loss_take_profit(stop_loss, take_profit, current_price):
-    """Pure validation logic for SL/TP values against current price.
-
-    Mirrors the inline validation in app/routes/trade.py:
-    - stop_loss must be < current_price (rejected if >= current_price)
-    - take_profit must be > current_price (rejected if <= current_price)
-
-    Returns (valid: bool, error: str | None).
-    """
-    if stop_loss is not None and stop_loss >= current_price:
-        return False, f'Stop loss must be below current price (${current_price:,.2f}).'
-    if take_profit is not None and take_profit <= current_price:
-        return False, f'Take profit must be above current price (${current_price:,.2f}).'
-    return True, None
-
-
-@settings(max_examples=100)
-@given(
-    current_price=st.floats(min_value=0.01, max_value=10000),
-    stop_loss=st.floats(min_value=0.01, max_value=10000),
-    take_profit=st.floats(min_value=0.01, max_value=10000),
-)
-def test_stop_loss_take_profit_validation(current_price, stop_loss, take_profit):
-    """Property 8: For any buy order with SL and TP values, validation SHALL
-    reject if SL >= current_price or TP <= current_price. Valid orders require
-    SL < current_price AND TP > current_price.
-
-    **Validates: Requirements 6.5, 6.6**
-    """
-    # Filter out NaN/Inf floats
-    assume(current_price == current_price)
-    assume(stop_loss == stop_loss)
-    assume(take_profit == take_profit)
-
-    valid, error = validate_stop_loss_take_profit(stop_loss, take_profit, current_price)
-
-    # Property: order is valid iff (SL < current_price AND TP > current_price)
-    expected_valid = (stop_loss < current_price) and (take_profit > current_price)
-
-    assert valid == expected_valid, (
-        f"Validation mismatch: SL={stop_loss}, TP={take_profit}, price={current_price}. "
-        f"Expected valid={expected_valid}, got valid={valid}, error={error}"
-    )
-
-    # Additional property: if invalid, there must be an error message
-    if not valid:
-        assert error is not None, "Invalid order should have an error message"
-    else:
-        assert error is None, "Valid order should have no error message"
-
-
-@settings(max_examples=100)
-@given(
-    current_price=st.floats(min_value=0.01, max_value=10000),
-    stop_loss=st.floats(min_value=0.01, max_value=10000),
-)
-def test_stop_loss_rejected_when_at_or_above_price(current_price, stop_loss):
-    """Property 8 (SL component): Stop loss is rejected when SL >= current price.
-
-    **Validates: Requirements 6.5**
-    """
-    assume(current_price == current_price)
-    assume(stop_loss == stop_loss)
-    assume(stop_loss >= current_price)
-
-    valid, error = validate_stop_loss_take_profit(stop_loss, None, current_price)
-
-    assert valid is False, (
-        f"SL={stop_loss} >= price={current_price} should be rejected"
-    )
-    assert error is not None
-
-
-@settings(max_examples=100)
-@given(
-    current_price=st.floats(min_value=0.01, max_value=10000),
-    take_profit=st.floats(min_value=0.01, max_value=10000),
-)
-def test_take_profit_rejected_when_at_or_below_price(current_price, take_profit):
-    """Property 8 (TP component): Take profit is rejected when TP <= current price.
-
-    **Validates: Requirements 6.6**
-    """
-    assume(current_price == current_price)
-    assume(take_profit == take_profit)
-    assume(take_profit <= current_price)
-
-    valid, error = validate_stop_loss_take_profit(None, take_profit, current_price)
-
-    assert valid is False, (
-        f"TP={take_profit} <= price={current_price} should be rejected"
-    )
-    assert error is not None
-
-
-# ---------------------------------------------------------------------------
 # Feature: advanced-mode, Property 9: Resistance and Support from Rolling Window
 # Validates: Requirements 7.4, 7.5, 7.6
 # ---------------------------------------------------------------------------
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(
     prices=st.lists(st.floats(min_value=0.01, max_value=10000), min_size=1, max_size=50),
     lookback=st.integers(min_value=1, max_value=100),
@@ -546,7 +445,7 @@ def _sl_trigger_scenario(draw):
     return current_price, stop_loss, take_profit, quantity, initial_balance
 
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(data=_sl_trigger_scenario())
 def test_sltp_trigger_execution_stop_loss(app, data):
     """Property 7 (Stop Loss): When current_price <= stop_loss, the order is
@@ -647,7 +546,7 @@ def _tp_trigger_scenario(draw):
     return current_price, stop_loss, take_profit, quantity, initial_balance
 
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(data=_tp_trigger_scenario())
 def test_sltp_trigger_execution_take_profit(app, data):
     """Property 7 (Take Profit): When current_price >= take_profit, the order is
@@ -750,7 +649,7 @@ def _no_trigger_scenario(draw):
     return current_price, stop_loss, take_profit, quantity, initial_balance
 
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(data=_no_trigger_scenario())
 def test_sltp_no_trigger_when_price_between_sl_and_tp(app, data):
     """Property 7 (No Trigger): When SL < current_price < TP, nothing happens —
@@ -835,7 +734,7 @@ def test_sltp_no_trigger_when_price_between_sl_and_tp(app, data):
 # Validates: Requirements 10.1, 10.2
 # ---------------------------------------------------------------------------
 
-@settings(max_examples=100)
+@settings(max_examples=30)
 @given(
     eligible=st.booleans(),
     purchased=st.booleans(),

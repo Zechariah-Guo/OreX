@@ -7,7 +7,6 @@ for property-based testing with minimum 100 iterations per property.
 import re
 import string
 
-import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -106,7 +105,6 @@ def test_backup_code_generation_format(count):
 # Validates: Requirements 3.3, 9.4
 # ---------------------------------------------------------------------------
 
-@pytest.mark.slow
 @settings(max_examples=100, deadline=None)
 @given(code=alphanumeric_code_strategy)
 def test_backup_code_hashing_non_reversible(code):
@@ -130,8 +128,8 @@ def test_backup_code_hashing_non_reversible(code):
 # Validates: Requirements 9.1
 # ---------------------------------------------------------------------------
 
-@pytest.mark.slow
-@settings(max_examples=100, deadline=None)
+# Each example derives a key with PBKDF2 (~0.1 s), so keep the count low.
+@settings(max_examples=15, deadline=None)
 @given(
     secret=base32_secret_strategy,
     app_secret_key=secret_key_strategy,

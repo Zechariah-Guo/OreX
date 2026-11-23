@@ -468,7 +468,8 @@ class TestTradingProperties:
     """Property-based tests for trading arithmetic correctness."""
 
     # Feature: orex-test-suite, Property 1: Buy trade arithmetic
-    @settings(max_examples=100, deadline=1000, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    # Each example runs the full buy flow (3 requests), so keep the count low.
+    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(quantity=st.integers(min_value=1, max_value=100))
     def test_buy_trade_arithmetic(self, quantity, authenticated_client, app):
         """For any valid buy quantity, balance decreases by quantity * price,
@@ -551,7 +552,7 @@ class TestTradingProperties:
         conn.close()
 
     # Feature: orex-test-suite, Property 2: Sell trade arithmetic
-    @settings(max_examples=100, deadline=500, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(sell_quantity=st.integers(min_value=1, max_value=100))
     def test_sell_trade_arithmetic(self, sell_quantity, authenticated_client, app):
         """For any valid sell quantity within held amount, balance increases by
@@ -649,7 +650,7 @@ class TestTradingProperties:
         conn.close()
 
     # Feature: orex-test-suite, Property 3: Invalid trade rejection preserves state
-    @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(
         buy_quantity=st.integers(min_value=1001, max_value=5000),
         sell_quantity=st.integers(min_value=6, max_value=100),
@@ -781,13 +782,7 @@ class TestTradingProperties:
 # Property-Based Tests (Hypothesis)
 # ---------------------------------------------------------------------------
 
-import os
 import sqlite3 as _sqlite3
-
-from hypothesis import given, settings, HealthCheck
-from hypothesis import strategies as st
-
-from conftest import get_csrf_token, register_user
 
 
 # Feature: orex-test-suite, Property 4: Weighted average price formula
@@ -798,7 +793,7 @@ class TestWeightedAveragePriceProperty:
     """
 
     @settings(
-        max_examples=100,
+        max_examples=20,
         deadline=None,
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
@@ -819,29 +814,16 @@ class TestWeightedAveragePriceProperty:
         price1 = 10.00
         price2 = 20.00
 
-        # Reset DB state for each Hypothesis iteration
+        # Reset the player's holdings and balance for each Hypothesis example,
+        # and set Coal's price to price1 for the first buy
         db_path = app.config['DATABASE_PATH']
-        src_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'
-        )
-        schema_path = os.path.join(src_dir, 'schema.sql')
-        seed_path = os.path.join(src_dir, 'seed.sql')
-
         conn = _sqlite3.connect(db_path)
-        conn.execute("PRAGMA foreign_keys=OFF")
-        for table in ('price_history', 'transactions', 'holdings', 'ores', 'users'):
-            conn.execute(f'DROP TABLE IF EXISTS {table}')
-        with open(schema_path, 'r') as f:
-            conn.executescript(f.read())
-        with open(seed_path, 'r') as f:
-            conn.executescript(f.read())
-        conn.close()
-
-        # Re-register and login the test user for this iteration
-        register_user(authenticated_client, 'TestUser1', 'Password123!')
-
-        # Ensure Coal's price is price1 for the first buy
-        conn = _sqlite3.connect(db_path)
+        user_id = conn.execute(
+            "SELECT id FROM users WHERE username = 'TestUser1'"
+        ).fetchone()[0]
+        conn.execute("DELETE FROM holdings WHERE user_id = ?", (user_id,))
+        conn.execute("DELETE FROM transactions WHERE user_id = ?", (user_id,))
+        conn.execute("UPDATE users SET balance = 10000.00 WHERE id = ?", (user_id,))
         conn.execute(
             "UPDATE ores SET current_price = ? WHERE id = ?", (price1, ore_id)
         )

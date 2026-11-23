@@ -417,15 +417,6 @@ class TestAwayBeacon:
         assert authenticated_client.get('/inbox/poll?visible=1&c=pageA').get_json()['csrf']
         assert 'csrf' not in authenticated_client.get('/inbox/poll?visible=0&c=pageA').get_json()
 
-    def test_page_script_sends_one_beacon_per_hide(self):
-        js = open(os.path.join(SRC_DIR, 'static', 'js', 'notifications.js'), encoding='utf-8').read()
-        assert 'navigator.sendBeacon' in js and "'/push/away'" in js
-        assert 'keepalive: true' in js
-        assert "form.append('csrf_token'" in js
-        assert "addEventListener('pagehide', sendAway)" in js
-        assert 'if (awaySent)' in js and js.count('awaySent = false') >= 2
-        assert "sessionStorage.getItem('orexClientId')" in js
-
 
 # --- Sending -----------------------------------------------------------------------------
 
@@ -729,19 +720,7 @@ class TestBonusScheduling:
 # --- Static pieces ------------------------------------------------------------------------------------
 
 class TestServiceWorkerAndPage:
-
-    def test_service_worker_has_push_handlers_without_extra_respond_with(self, client):
-        source = client.get('/sw.js').data.decode('utf-8')
-        assert "addEventListener('push'" in source
-        assert "addEventListener('notificationclick'" in source
-        assert "addEventListener('pushsubscriptionchange'" in source
-        assert 'self.registration.showNotification' in source
-        assert 'clients.openWindow' in source
-        assert '/static/images/pwa/icon-192x192.png' in source
-        assert source.count('event.respondWith(') == 2
-        assert "CACHE_VERSION = 'v7'" in source
-        assert 'renotify = true' in source
-        assert "data.title || 'OreX'" in source
+    # What sw.js, push.js and notifications.js do in a browser is checked in test_push_browser.py
 
     def test_settings_card_sits_under_install_card_and_is_hidden(self, vapid, authenticated_client):
         html = authenticated_client.get('/settings').data.decode('utf-8')
@@ -783,22 +762,6 @@ class TestServiceWorkerAndPage:
         assert 'push-footer-state' in prefs and 'push-test-status' in prefs
         assert 'push-footer-devices' not in prefs  # the device count is part of the one status line
         assert 'btn btn--secondary push-card__btn' not in card_html
-
-    def test_permission_is_only_requested_inside_the_enable_click(self):
-        js = open(os.path.join(SRC_DIR, 'static', 'js', 'push.js'), encoding='utf-8').read()
-        assert js.count('requestPermission(') == 1
-        assert js.count('pushManager.subscribe(') >= 1
-        change = js.index("deviceSwitch.addEventListener('change'")
-        assert js.index('requestPermission(') > change
-        # the helper is defined once and called only from the change handler
-        assert js.count('subscribeDevice()') == 2
-        assert js.index('return subscribeDevice()') > change
-
-    def test_poll_reports_visibility(self):
-        js = open(os.path.join(SRC_DIR, 'static', 'js', 'notifications.js'), encoding='utf-8').read()
-        assert "/inbox/poll?visible=" in js
-        assert "document.visibilityState === 'visible'" in js
-        assert "addEventListener('visibilitychange'" in js
 
 
 class TestDeviceStatusAndSelfHeal:
@@ -891,18 +854,6 @@ class TestDeviceStatusAndSelfHeal:
         resp = authenticated_client.post('/push/test', json={})
         assert resp.status_code == 400 and not resp.is_json
 
-    def test_page_script_self_heals_and_reports_the_server_state(self):
-        js = open(os.path.join(SRC_DIR, 'static', 'js', 'push.js'), encoding='utf-8').read()
-        assert 'applicationServerKey' in js and 'sameKey(' in js
-        assert "sessionStorage.getItem('orex-push-healed')" in js
-        assert "'/push/status'" in js
-        assert "'Notifications are on for ' + devices + ' devices'" in js
-        assert "'Notifications are on for this device'" in js
-        assert 'On for this device only' not in js
-        assert 'Reload the page and try again' in js
-        assert 'Could not turn on notifications. Try again.' in js and "say('Saved')" in js
-        assert js.count('requestPermission(') == 1
-
 
 def push_route_limit():
     from app.routes.push import MAX_SUBSCRIPTIONS_PER_USER
@@ -973,36 +924,3 @@ class TestKeyScript:
         assert len(public_key) == 87 and len(private_key) == 43
 
 
-class TestPreferenceMigration:
-
-    def test_sltp_off_becomes_both_off_and_rerun_is_harmless(self, tmp_path):
-        from flask import Flask
-        from app.database import init_db
-
-        path = str(tmp_path / 'old.db')
-        schema = open(os.path.join(SRC_DIR, 'schema.sql'), encoding='utf-8').read()
-        conn = sqlite3.connect(path)
-        conn.executescript(schema)
-        conn.execute('DROP TABLE push_settings')
-        conn.execute(
-            'CREATE TABLE push_settings (user_id INTEGER PRIMARY KEY, notify_sltp INTEGER NOT NULL DEFAULT 1, '
-            'notify_liquidation INTEGER NOT NULL DEFAULT 1, notify_bonus INTEGER NOT NULL DEFAULT 1, '
-            'notify_achievement INTEGER NOT NULL DEFAULT 1, last_visible_at REAL NOT NULL DEFAULT 0, '
-            'last_test_at REAL NOT NULL DEFAULT 0)')
-        for uid, name in ((1, 'a'), (2, 'b')):
-            conn.execute("INSERT INTO users (id, username, password_hash) VALUES (?, ?, 'x')", (uid, name))
-        conn.execute('INSERT INTO push_settings (user_id, notify_sltp, notify_bonus) VALUES (1, 0, 0)')
-        conn.execute('INSERT INTO push_settings (user_id, notify_sltp) VALUES (2, 1)')
-        conn.commit()
-        conn.close()
-
-        app = Flask(__name__)
-        app.config['DATABASE_PATH'] = path
-        init_db(app)
-        init_db(app)  # idempotent
-
-        conn = sqlite3.connect(path)
-        conn.row_factory = sqlite3.Row
-        assert push.get_preferences(conn, 1) == {'take_profit': False, 'stop_loss': False, 'liquidation': True, 'bonus': False, 'achievement': True}
-        assert push.get_preferences(conn, 2) == {group: True for group in push.GROUPS}
-        conn.close()

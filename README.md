@@ -78,8 +78,7 @@ OreX/
 │   │   ├── pages/           # Full page templates
 │   │   └── partials/        # HTMX fragments and shared components
 │   ├── static/              # CSS, JS, images, audio, tutorial data
-│   └── data/                # SQLite database (auto-created)
-├── migrations/              # Database migrations
+│   └── data/                # SQLite database (auto-created from schema.sql; no migrations, delete it after a schema change)
 ├── scripts/                 # dev/ (screenshots, browser checks) and admin/ (production management: password reset, data export, rename, suspend, economy reset; see scripts/README.md)
 ├── tests/                   # Pytest test suite
 └── docs/                    # Planning documents and assets

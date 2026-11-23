@@ -167,27 +167,6 @@ class TestSuspension:
         unsuspend_user.main(['Target'], app=app)
         assert client.get('/player/Target').status_code == 200
 
-    def test_column_added_to_existing_database(self):
-        """init_db adds suspended_at to a database created before the column existed."""
-        from app.database import init_db
-        fd, path = tempfile.mkstemp(suffix='.db', prefix='orex_old_')
-        os.close(fd)
-        try:
-            conn = sqlite3.connect(path)
-            conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT NOT NULL UNIQUE, "
-                         "password_hash TEXT NOT NULL, session_version INTEGER NOT NULL DEFAULT 0)")
-            conn.commit()
-            conn.close()
-            fake_app = SimpleNamespace(config={'DATABASE_PATH': path}, teardown_appcontext=lambda f: None)
-            init_db(fake_app)
-            init_db(fake_app)  # idempotent
-            conn = sqlite3.connect(path)
-            columns = {r[1] for r in conn.execute('PRAGMA table_info(users)')}
-            conn.close()
-            assert {'suspended_at', 'suspended_reason'} <= columns
-        finally:
-            os.unlink(path)
-
 
 # ---------------------------------------------------------------------------
 # rename_user
@@ -344,8 +323,8 @@ def _fill_user(app, name):
         conn.execute("INSERT INTO stop_loss_take_profit (holding_id, stop_loss) VALUES (?, 8)", (holding,))
         conn.execute("INSERT INTO transactions (user_id, ore_id, type, quantity, price_at_trade, total_value) "
                      "VALUES (?, 1, 'buy', 5, 10, 50)", (uid,))
-        conn.execute("INSERT INTO short_positions (user_id, ore_id, share_quantity, entry_price, locked_collateral) "
-                     "VALUES (?, 2, 3, 25, 100)", (uid,))
+        conn.execute("INSERT INTO short_positions (user_id, ore_id, share_quantity, entry_price, locked_collateral, "
+                     "open_factor) VALUES (?, 2, 3, 25, 100, 1.5)", (uid,))
         conn.execute("INSERT INTO advancements (user_id, advancement_key) VALUES (?, 'test_key')", (uid,))
         conn.execute("INSERT INTO notifications (user_id, category, message) VALUES (?, 'bonus', 'hello there')", (uid,))
         conn.execute("INSERT INTO tutorial_progress (user_id, track_id, status) VALUES (?, 'beginner', 'completed')", (uid,))
@@ -501,8 +480,8 @@ def _economy_state(app):
             conn.execute("INSERT INTO stop_loss_take_profit (holding_id, stop_loss) VALUES (?, 5)", (holding,))
             conn.execute("INSERT INTO transactions (user_id, ore_id, type, quantity, price_at_trade, total_value) "
                          "VALUES (?, 1, 'buy', 4, 10, 40)", (uid,))
-            conn.execute("INSERT INTO short_positions (user_id, ore_id, share_quantity, entry_price, locked_collateral) "
-                         "VALUES (?, 2, 1, 25, 40)", (uid,))
+            conn.execute("INSERT INTO short_positions (user_id, ore_id, share_quantity, entry_price, locked_collateral, "
+                         "open_factor) VALUES (?, 2, 1, 25, 40, 1.6)", (uid,))
         conn.execute("INSERT INTO advancements (user_id, advancement_key) VALUES (?, 'test_key')", (player,))
         conn.execute("INSERT INTO notifications (user_id, category, message) VALUES (?, 'bonus', 'hi')", (player,))
         conn.execute("INSERT INTO tutorial_progress (user_id, track_id, status) VALUES (?, 'beginner', 'completed')", (player,))

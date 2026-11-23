@@ -50,6 +50,9 @@
         </p>
     </section>
 
+    {# IMPORTANT: keep this plain prose. No cookie table and no internal key names
+       (remember_token, orex-theme, localStorage...). The "no cookie banner" claim only holds
+       while nothing here is used for tracking. #}
     <section class="static-section">
         <h2>Cookies and browser storage</h2>
         <p>
@@ -80,6 +83,8 @@
         </p>
     </section>
 
+    {# IMPORTANT: must match what the leaderboard and profile pages actually show. Do not claim
+       anything is visible "without signing in": both pages require a login. #}
     <section class="static-section">
         <h2>What other players can see</h2>
         <p>
@@ -91,6 +96,9 @@
         </p>
     </section>
 
+    {# IMPORTANT: the Delete/Reset lists must match delete_account() and reset_account() in
+       app/models.py, the whole-game reset must match scripts' reset_economy, suspension must match
+       the suspend script, and the 14-day backup line must match the real backup retention. #}
     <section class="static-section">
         <h2>How long we keep it</h2>
         <p>
@@ -120,6 +128,8 @@
         </p>
     </section>
 
+    {# IMPORTANT: never promise a reply time here ("within N days", "we aim to reply"). One person
+       runs OreX and cannot guarantee one. Each operator action listed must exist as an admin script. #}
     <section class="static-section">
         <h2>Your choices and rights</h2>
         <p>

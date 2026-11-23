@@ -88,8 +88,9 @@ class TestPortfolioCards:
         _make_advanced(app)
         conn = _db(app)
         conn.execute('INSERT INTO short_positions (user_id, ore_id, share_quantity, entry_price, locked_collateral,'
-                     ' stop_loss_price, take_profit_price, cumulative_fees_paid) VALUES (?,?,?,?,?,?,?,?)',
-                     (_user_id(app), 1, 4, 12.0, 72.0, 15.0, None, 0.5))
+                     ' stop_loss_price, take_profit_price, cumulative_fees_paid, open_factor)'
+                     ' VALUES (?,?,?,?,?,?,?,?,?)',
+                     (_user_id(app), 1, 4, 12.0, 72.0, 15.0, None, 0.5, 1.5))
         conn.commit()
         conn.close()
         html = authenticated_client.get('/portfolio?tab=shorts').data.decode()
@@ -139,8 +140,8 @@ class TestPortfolioOreIcons:
     def test_shorts_have_an_icon_before_the_name(self, app, authenticated_client):
         _make_advanced(app)
         conn = _db(app)
-        conn.execute('INSERT INTO short_positions (user_id, ore_id, share_quantity, entry_price, locked_collateral) '
-                     'VALUES (?,?,?,?,?)', (_user_id(app), 1, 4, 12.0, 72.0))
+        conn.execute('INSERT INTO short_positions (user_id, ore_id, share_quantity, entry_price, locked_collateral, '
+                     'open_factor) VALUES (?,?,?,?,?,?)', (_user_id(app), 1, 4, 12.0, 72.0, 1.5))
         conn.commit()
         conn.close()
         html = authenticated_client.get('/portfolio?tab=shorts').data.decode()

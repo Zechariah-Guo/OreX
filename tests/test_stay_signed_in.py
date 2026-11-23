@@ -316,28 +316,3 @@ class TestSessionVersion:
 
 # --- Existing databases -----------------------------------------------------------------
 
-class TestSchemaUpgrade:
-
-    def test_old_database_gets_the_column_once(self, tmp_path):
-        schema = open(os.path.join(SRC_DIR, 'schema.sql'), encoding='utf-8').read()
-        old_schema = schema.replace(',\n    session_version INTEGER NOT NULL DEFAULT 0', '')
-        assert old_schema != schema
-        db_path = str(tmp_path / 'old.db')
-        conn = sqlite3.connect(db_path)
-        conn.executescript(old_schema)
-        conn.execute("INSERT INTO users (username, password_hash) VALUES ('Old', 'x')")
-        conn.commit()
-        assert 'session_version' not in {r[1] for r in conn.execute('PRAGMA table_info(users)')}
-        conn.close()
-
-        fake = Flask('upgrade-test')
-        fake.config['DATABASE_PATH'] = db_path
-        init_db(fake)
-        init_db(fake)                                      # second run changes nothing
-
-        conn = sqlite3.connect(db_path)
-        cols = [r[1] for r in conn.execute('PRAGMA table_info(users)')]
-        version = conn.execute("SELECT session_version FROM users WHERE username = 'Old'").fetchone()[0]
-        conn.close()
-        assert cols.count('session_version') == 1
-        assert version == 0
