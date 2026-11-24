@@ -19,6 +19,7 @@ import pytest
 from flask import Flask
 
 from app.database import init_db
+from app.database import get_instance_id
 from app.models import load_session_user
 from conftest import get_csrf_token, register_user
 from test_2fa_login_integration import _setup_user_with_2fa
@@ -298,20 +299,25 @@ class TestSessionVersion:
         register_user(app.test_client(), 'RkUser', PASSWORD)
         uid = _user(app)[0]
         with app.app_context():
-            assert load_session_user(f'{uid}:0').username == 'RkUser'
-            assert load_session_user(str(uid)).username == 'RkUser'     # cookie from before versions
-            assert load_session_user(f'{uid}:1') is None
-            assert load_session_user(f'{uid + 1}:0') is None
-            for junk in ('', 'abc', f'{uid}:x', ':', '1:2:3'):
+            iid = get_instance_id()
+            assert iid
+            assert load_session_user(f'{uid}:0:{iid}').username == 'RkUser'
+            assert load_session_user(f'{uid}:0') is None                # cookie from before instance ids
+            assert load_session_user(str(uid)) is None
+            assert load_session_user(f'{uid}:0:other') is None          # cookie from another database
+            assert load_session_user(f'{uid}:1:{iid}') is None
+            assert load_session_user(f'{uid + 1}:0:{iid}') is None
+            for junk in ('', 'abc', f'{uid}:x:{iid}', ':', '1:2:3', f'{uid}:0:{iid}:x'):
                 assert load_session_user(junk) is None
         conn = sqlite3.connect(app.config['DATABASE_PATH'])
         conn.execute('UPDATE users SET session_version = 3 WHERE id = ?', (uid,))
         conn.commit()
         conn.close()
         with app.app_context():
-            assert load_session_user(str(uid)) is None                   # plain id only while version is 0
-            assert load_session_user(f'{uid}:3').session_version == 3
-            assert load_session_user(f'{uid}:3').get_id() == f'{uid}:3'
+            iid = get_instance_id()
+            assert load_session_user(f'{uid}:0:{iid}') is None
+            assert load_session_user(f'{uid}:3:{iid}').session_version == 3
+            assert load_session_user(f'{uid}:3:{iid}').get_id() == f'{uid}:3:{iid}'
 
 
 # --- Existing databases -----------------------------------------------------------------

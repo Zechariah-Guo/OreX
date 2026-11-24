@@ -4,6 +4,7 @@ All database queries live here. Functions accept and return
 sqlite3.Row objects or dictionaries.
 """
 
+import hmac
 import logging
 from datetime import datetime
 
@@ -11,7 +12,7 @@ from flask import current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app.database import get_db
+from app.database import get_db, get_instance_id
 from app.storage import get_storage_backend
 
 logger = logging.getLogger(__name__)
@@ -30,26 +31,33 @@ class User(UserMixin):
         self.suspended_at = suspended_at
 
     def get_id(self):
-        """Session/remember-cookie identity: '<id>:<session_version>'.
+        """Session/remember-cookie identity: '<id>:<session_version>:<instance_id>'.
 
         Raising the stored session_version (password change, reset, ...) makes
-        every cookie issued before it fail the check in the user loader.
+        every cookie issued before it fail the check in the user loader. The
+        instance id ties the cookie to this database, so a cookie from a wiped
+        or different database never resolves to whoever now holds the same id.
         """
-        return f'{self.id}:{self.session_version}'
+        return f'{self.id}:{self.session_version}:{get_instance_id()}'
 
 
 def load_session_user(session_id):
     """Resolve a Flask-Login session id to a User, or None.
 
-    '<id>:<version>' must match the stored session_version. A plain '<id>'
-    (cookie issued before versions existed) is accepted only while the stored
-    version is still 0.
+    '<id>:<version>:<instance_id>' must match the stored session_version and
+    this database's instance id. Older formats (without the instance id) are
+    rejected.
     """
-    raw_id, sep, raw_version = str(session_id).partition(':')
+    parts = str(session_id).split(':')
+    if len(parts) != 3:
+        return None
     try:
-        user_id = int(raw_id)
-        version = int(raw_version) if sep else 0
+        user_id = int(parts[0])
+        version = int(parts[1])
     except ValueError:
+        return None
+    instance_id = get_instance_id()
+    if not instance_id or not hmac.compare_digest(parts[2], instance_id):
         return None
     user = get_user_by_id(user_id)
     if user is None or user.session_version != version or user.suspended_at:

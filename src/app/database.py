@@ -1,4 +1,5 @@
 import os
+import secrets
 import sqlite3
 
 from flask import g, current_app
@@ -21,6 +22,12 @@ def close_db(e=None):
         db.close()
 
 
+def get_instance_id():
+    """Random token identifying this database (see app_meta in schema.sql)."""
+    row = get_db().execute("SELECT value FROM app_meta WHERE key = 'instance_id'").fetchone()
+    return row['value'] if row else ''
+
+
 def init_db(app):
     """Create tables if missing and seed data if ores table is empty."""
     # Ensure the data directory exists
@@ -39,6 +46,10 @@ def init_db(app):
     # recreated. There are no migrations.
     with open(schema_path, 'r') as f:
         db.executescript(f.read())
+
+    db.execute("INSERT OR IGNORE INTO app_meta (key, value) VALUES ('instance_id', ?)",
+               (secrets.token_hex(8),))
+    db.commit()
 
     # Seed data if ores table is empty
     count = db.execute("SELECT COUNT(*) FROM ores").fetchone()[0]

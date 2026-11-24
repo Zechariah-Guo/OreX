@@ -1,5 +1,13 @@
 -- OreX Database Schema
 
+-- Per-database values. 'instance_id' is a random token written by init_db when the
+-- database is first created. Login cookies carry it, so cookies from a wiped or different
+-- database are rejected even when user ids and SECRET_KEY match.
+CREATE TABLE IF NOT EXISTS app_meta (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
