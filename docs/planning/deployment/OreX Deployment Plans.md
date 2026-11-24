@@ -35,7 +35,7 @@ Complete deployment guide for hosting OreX on Oracle Cloud Free Tier with Cloudf
 │                          └── /* → proxy to localhost :5000   │
 │                                                              │
 │  Gunicorn :4000 — OreX (Flask)                               │
-│  Port :5000 — RedstoneRegister (separate project)            │
+│  Gunicorn :5000 — RedstoneRegister (Flask, separate repo)    │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -157,6 +157,62 @@ export UV_PROJECT_ENVIRONMENT=venv
 uv sync --locked --no-dev --group prod --python 3.12
 ```
 
+### 5.3b Swap File (1 GB VM safety net)
+
+Both apps together use well under 300 MB (OreX measured about 47 MiB in Docker), but a swap file stops the kernel killing a process during a spike such as `apt upgrade`.
+
+```bash
+sudo fallocate -l 1G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+### 5.3c Clone and Set Up RedstoneRegister
+
+The repo is public, so no deploy key is needed. The app code lives in `src/`; dependencies are managed by uv (`pyproject.toml` + `uv.lock`).
+
+```bash
+cd /home/ubuntu
+git clone https://github.com/Zechariah-Guo/Redstone-Register.git redstone-register
+cd redstone-register
+export UV_PROJECT_ENVIRONMENT=venv
+uv sync --locked --no-dev --group prod --python 3.12
+```
+
+The app needs no `.env` file and no secret key (it has no sessions or forms). Its only setting, `REDSTONE_TRUST_PROXY=1`, is set in the systemd unit below so `request.is_secure` works behind the tunnel and the app sends its HSTS header.
+
+Systemd service (port 5000):
+
+```bash
+sudo tee /etc/systemd/system/redstoneregister.service > /dev/null << 'EOF'
+[Unit]
+Description=Redstone Register Flask Application
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/redstone-register/src
+Environment="PATH=/home/ubuntu/redstone-register/venv/bin"
+Environment="REDSTONE_TRUST_PROXY=1"
+ExecStart=/home/ubuntu/redstone-register/venv/bin/gunicorn main:app --bind 127.0.0.1:5000 --workers 1 --timeout 60
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable redstoneregister
+sudo systemctl start redstoneregister
+curl -I http://127.0.0.1:5000/catalogue
+```
+
+The SQLite database (`src/database/data_source.db`) is committed to the repo and is read-only catalogue data, so it needs no backup job. `git pull` restores it.
+
 ### 5.4 Environment Configuration
 
 ```bash
@@ -255,12 +311,19 @@ server {
     listen 80;
     server_name redstoneregister.mochizou.works;
 
+    set_real_ip_from 127.0.0.1;
+    real_ip_header CF-Connecting-IP;
+
+    # No separate /static/ block on purpose: Flask adds the Service-Worker-Allowed
+    # and security headers to static files (see apply_security_headers in main.py),
+    # and Nginx serving them directly would drop those headers and break the PWA.
     location / {
         proxy_pass http://127.0.0.1:5000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        # Behind the tunnel $scheme is always "http"; use the scheme Cloudflare saw
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
         proxy_read_timeout 120s;
         proxy_buffering on;
     }
@@ -402,9 +465,11 @@ This is a security advantage — your VM has zero publicly exposed ports.
 
 1. Visit `https://orex.mochizou.works` — should show OreX running with full HTTPS
 2. Check Cloudflare dashboard → **Traffic** to confirm requests are flowing
-3. On the VM, confirm both services:
+3. Visit `https://redstoneregister.mochizou.works/catalogue` — the catalogue should load, and the browser should offer to install the PWA
+4. On the VM, confirm all services:
    ```bash
    sudo systemctl status orex
+   sudo systemctl status redstoneregister
    sudo systemctl status cloudflared
    ```
 
@@ -430,6 +495,15 @@ cd /home/ubuntu/orex
 git pull
 UV_PROJECT_ENVIRONMENT=venv uv sync --locked --no-dev --group prod
 sudo systemctl restart orex
+```
+
+RedstoneRegister:
+
+```bash
+cd /home/ubuntu/redstone-register
+git pull
+UV_PROJECT_ENVIRONMENT=venv uv sync --locked --no-dev --group prod
+sudo systemctl restart redstoneregister
 ```
 
 ---
@@ -487,7 +561,8 @@ Docker examples: `docker compose exec app python /app/scripts/admin/export_user_
 | Maintenance page showing | Gunicorn is down — `sudo systemctl restart orex` |
 | Database permission error | `sudo chown -R ubuntu:ubuntu /home/ubuntu/orex/src/data` |
 | Domain not resolving | Verify nameservers were updated on name.com, wait for propagation |
-| Second project not working | Ensure port 5000 service is running and Nginx site is enabled |
+| RedstoneRegister not working | `sudo systemctl status redstoneregister`, `sudo journalctl -u redstoneregister -n 50`, confirm the Nginx site is enabled |
+| RedstoneRegister can't open its database | The service `WorkingDirectory` must be `/home/ubuntu/redstone-register/src`; check the file exists at `src/database/data_source.db` |
 
 ---
 
@@ -498,6 +573,9 @@ Docker examples: `docker compose exec app python /app/scripts/admin/export_user_
 sudo systemctl status orex
 sudo systemctl restart orex
 sudo journalctl -u orex -f
+sudo systemctl status redstoneregister
+sudo systemctl restart redstoneregister
+sudo journalctl -u redstoneregister -f
 
 # Nginx management
 sudo systemctl status nginx
