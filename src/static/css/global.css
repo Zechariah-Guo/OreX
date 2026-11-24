@@ -50,6 +50,47 @@ html[data-theme="dark"] .main-nav--scrolled {
     background-color: rgba(36, 21, 51, 0.9);
 }
 
+/* Price chart (ApexCharts): follow the theme tokens so axes, grid and tooltip stay readable in dark themes */
+/* ApexCharts 4.x draws the tooltip dot as a "●" glyph in ::before (26px font), which
+   sits off-centre. Hide the glyph and draw a real circle in the series colour instead. */
+.apexcharts-tooltip-marker {
+    width: 8px !important;
+    height: 8px !important;
+    margin-right: 6px !important;
+    border-radius: 50%;
+    background-color: currentColor;
+    align-self: center;
+}
+.apexcharts-tooltip-marker::before {
+    content: none !important;
+}
+html[data-theme="dark"] .apexcharts-xaxis-label,
+html[data-theme="dark"] .apexcharts-yaxis-label,
+html[data-theme="dark"] .apexcharts-text-nodata {
+    fill: var(--colour-text-muted) !important;
+}
+html[data-theme="dark"] .apexcharts-gridline,
+html[data-theme="dark"] .apexcharts-xaxis-tick,
+html[data-theme="dark"] .apexcharts-xcrosshairs,
+html[data-theme="dark"] .apexcharts-ycrosshairs {
+    stroke: var(--colour-border) !important;
+}
+html[data-theme="dark"] .apexcharts-tooltip.apexcharts-theme-light {
+    background: var(--colour-surface);
+    border-color: var(--colour-border);
+    color: var(--colour-text);
+}
+html[data-theme="dark"] .apexcharts-tooltip.apexcharts-theme-light .apexcharts-tooltip-title {
+    background: var(--colour-surface-hover);
+    border-bottom-color: var(--colour-border);
+    color: var(--colour-text);
+}
+html[data-theme="dark"] .apexcharts-tooltip-text,
+html[data-theme="dark"] .apexcharts-tooltip-text-y-label,
+html[data-theme="dark"] .apexcharts-tooltip-text-y-value {
+    color: var(--colour-text);
+}
+
 /* Base Typography */
 html {
     font-size: 16px;
@@ -934,6 +975,40 @@ html[data-theme="dark"] .nav__brand {
     height: 24px;
     margin: 10px 0 0;
     cursor: pointer;
+}
+
+/* Custom checkbox: native ones ignore border-radius, so draw our own box and tick
+   to match .form-input (same border, radius and background). */
+.form-check input[type="checkbox"],
+.inbox__check-input {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--colour-border);
+    border-radius: var(--radius);
+    background-color: var(--colour-bg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 70%;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.form-check input[type="checkbox"]:checked,
+.inbox__check-input:checked {
+    background-color: var(--colour-accent);
+    border-color: var(--colour-accent);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.form-check input[type="checkbox"]:focus-visible,
+.inbox__check-input:focus-visible {
+    outline: 2px solid var(--colour-accent);
+    outline-offset: 2px;
+}
+
+.form-check input[type="checkbox"]:disabled,
+.inbox__check-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .form-check__title {

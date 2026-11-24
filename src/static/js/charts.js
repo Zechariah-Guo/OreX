@@ -162,6 +162,8 @@
                         hour: 'HH:mm'
                     }
                 },
+                // The tooltip card already shows the time; hide the duplicate bottom pill
+                tooltip: { enabled: false },
                 axisBorder: { color: '#c4b8d9' },
                 axisTicks: { color: '#c4b8d9' }
             },
