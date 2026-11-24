@@ -17,7 +17,7 @@
                        minlength="3" maxlength="20"
                        pattern="[a-zA-Z0-9_]+"
                        value="{{ username | default('', true) }}"
-                       placeholder="3-20 characters, letters, numbers, underscores">
+                       placeholder="3-20 characters. No spaces or symbols.">
                 {% if username_error %}
                 <p class="form-error" role="alert">{{ username_error }}</p>
                 {% endif %}
