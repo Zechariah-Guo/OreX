@@ -365,12 +365,9 @@ If you change either value, update the "up to 14 days" sentence in the privacy p
 
 ### 5.7b Swap Placeholder Links to Redstone Register
 
-OreX links to Redstone Register in two places. Both currently point at the GitHub repo (`https://github.com/Zechariah-Guo/Redstone-Register`) as a placeholder. Before going live, replace them with the real address, `https://redstoneregister.mochizou.works`:
+OreX links to Redstone Register from the "Related" section of the About page (`src/templates/pages/about.html`). The link currently points at the GitHub repo (`https://github.com/Zechariah-Guo/Redstone-Register`) as a placeholder. Before going live, replace it with the real address, `https://redstoneregister.mochizou.works`.
 
-- `src/templates/partials/footer.html` (footer link, every page)
-- `src/templates/pages/about.html` (Credits and attributions list)
-
-Both lines have a `PLACEHOLDER URL` Jinja comment above them. Find them with `git grep "PLACEHOLDER URL" src/templates`, and remove the comment once swapped.
+The line has a `PLACEHOLDER URL` Jinja comment above it. Find it with `git grep "PLACEHOLDER URL" src/templates`, and remove the comment once swapped. Redstone Register has a matching "Try OreX" link in the Related Resources section of its About page (`src/templates/about.html` in that repo). It points at `https://github.com/Zechariah-Guo/OreX` for now and needs the same swap to `https://orex.mochizou.works`, with the same `PLACEHOLDER URL` comment.
 
 The links are plain navigation links, so the Content Security Policy needs no change. If Redstone Register's hostname differs from the plan, update here and in section 4.4 and 6.4.
 
