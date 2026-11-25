@@ -363,6 +363,17 @@ sudo systemctl restart systemd-journald
 
 If you change either value, update the "up to 14 days" sentence in the privacy policy to match.
 
+### 5.7b Swap Placeholder Links to Redstone Register
+
+OreX links to Redstone Register in two places. Both currently point at the GitHub repo (`https://github.com/Zechariah-Guo/Redstone-Register`) as a placeholder. Before going live, replace them with the real address, `https://redstoneregister.mochizou.works`:
+
+- `src/templates/partials/footer.html` (footer link, every page)
+- `src/templates/pages/about.html` (Credits and attributions list)
+
+Both lines have a `PLACEHOLDER URL` Jinja comment above them. Find them with `git grep "PLACEHOLDER URL" src/templates`, and remove the comment once swapped.
+
+The links are plain navigation links, so the Content Security Policy needs no change. If Redstone Register's hostname differs from the plan, update here and in section 4.4 and 6.4.
+
 ### 5.8 Legal Pages Checklist Before Going Live
 
 The privacy policy and terms (`/privacy`, `/terms`) describe this deployment. Re-check them if the final setup differs from this plan:
