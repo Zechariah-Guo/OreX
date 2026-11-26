@@ -144,15 +144,23 @@ def reset():
             flash('Username confirmation does not match. Account was not reset.', 'error')
             return redirect(url_for('settings.reset'))
 
-        # Evaluate post-mortem (tragedy) achievement before reset clears data
+        # Capture net worth before the reset wipes holdings and balance.
+        net_worth = None
         try:
-            db = get_db()
             net_worth = get_net_worth(current_user.id)
-            evaluate_post_mortem(db, current_user.id, net_worth)
         except Exception:
-            logger.exception("Failed to evaluate post-mortem advancements for user %s", current_user.id)
+            logger.exception("Failed to read net worth before reset for user %s", current_user.id)
 
         reset_account(current_user.id)
+
+        # Award post-mortem (tragedy) AFTER the reset: reset_account deletes the
+        # user's notifications, which would otherwise erase the advancement notification.
+        if net_worth is not None:
+            try:
+                evaluate_post_mortem(get_db(), current_user.id, net_worth)
+            except Exception:
+                logger.exception("Failed to evaluate post-mortem advancements for user %s", current_user.id)
+
         _keep_this_session_signed_in()
         flash('Account has been reset. Your balance has been restored and holdings cleared.', 'liquidation')
         return redirect(url_for('dashboard.overview'))

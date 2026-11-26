@@ -70,6 +70,40 @@ class TestPostMortemBeforeReset:
         db2.close()
 
 
+class TestPostMortemNotificationSurvivesReset:
+    """The reset route awards tragedy after the reset so its notification is not wiped."""
+
+    def test_reset_route_keeps_tragedy_notification(self, app, client):
+        register_user(client, "tragedy_route", "Password123!")
+
+        db = _get_db(app)
+        user_id = _get_user_id(db, "tragedy_route")
+        db.execute("UPDATE users SET balance = 5000.0 WHERE id = ?", (user_id,))
+        db.commit()
+
+        from conftest import get_csrf_token
+
+        token = get_csrf_token(client.get("/settings/reset"))
+        resp = client.post(
+            "/settings/reset",
+            data={"confirmation": "tragedy_route", "csrf_token": token},
+        )
+        assert resp.status_code == 302
+
+        adv = db.execute(
+            "SELECT 1 FROM advancements WHERE user_id = ? AND advancement_key = 'tragedy'",
+            (user_id,),
+        ).fetchone()
+        notif = db.execute(
+            "SELECT 1 FROM notifications WHERE user_id = ? AND category = 'advancement'",
+            (user_id,),
+        ).fetchone()
+        db.close()
+
+        assert adv is not None
+        assert notif is not None, "tragedy notification must exist after the reset"
+
+
 class TestGoForDiamondTie:
     """Req 6.3: All users tied at max net worth receive best_of_the_rest."""
 
