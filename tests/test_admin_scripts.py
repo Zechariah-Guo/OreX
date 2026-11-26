@@ -532,7 +532,7 @@ class TestResetEconomy:
             assert after['play_time'] == 50 and after['login_streak'] == 3
             assert conn.execute('SELECT COUNT(*) FROM advancements WHERE user_id = ? AND advancement_key = ?', (player, 'test_key')).fetchone()[0] == 1
             # Cleared
-            for table in ('holdings', 'short_positions', 'notifications', 'tutorial_progress', 'push_subscriptions'):
+            for table in ('holdings', 'short_positions', 'notifications'):
                 assert conn.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0] == 0, table
             assert conn.execute('SELECT COUNT(*) FROM stop_loss_take_profit').fetchone()[0] == 0
             # Player history is archived, not deleted; bot history is gone

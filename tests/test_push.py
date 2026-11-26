@@ -655,12 +655,12 @@ class TestAccountCleanup:
             delete_account(uid)
         assert subscription_count(app) == 0
 
-    def test_reset_account_removes_subscriptions(self, app, vapid, authenticated_client):
+    def test_reset_account_keeps_subscriptions(self, app, vapid, authenticated_client):
         uid = user_id(app, 'TestUser1')
         subscribe(authenticated_client)
         with app.app_context():
             reset_account(uid)
-        assert subscription_count(app) == 0
+        assert subscription_count(app) == 1
 
 
 # --- Daily bonus scheduling -----------------------------------------------------------------------
@@ -786,17 +786,12 @@ class TestDeviceStatusAndSelfHeal:
         resp = client.get('/push/status')
         assert resp.status_code == 302 and '/login' in resp.headers['Location']
 
-    @pytest.mark.parametrize('cause', ['reset', 'gone', 'pruned', 'moved'])
+    @pytest.mark.parametrize('cause', ['gone', 'pruned', 'moved'])
     def test_repost_restores_a_missing_row_and_reports_devices(
             self, app, vapid, authenticated_client, cause, webpush_mock, clock):
         uid = user_id(app, 'TestUser1')
         subscribe(authenticated_client, ENDPOINT_A)
-        if cause == 'reset':
-            with app.app_context():
-                reset_account(uid)
-            # a reset signs every session out (session_version); the player signs in again
-            login_user(authenticated_client, 'TestUser1', 'Password123!')
-        elif cause == 'gone':
+        if cause == 'gone':
             make_notification(app, uid)
             webpush_mock.side_effect = pywebpush.WebPushException('gone', response=mock.Mock(status_code=410))
             sweep(app, clock.now)

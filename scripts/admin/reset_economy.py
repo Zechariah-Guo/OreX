@@ -2,9 +2,9 @@
 
 Every real player gets exactly what Settings > Reset Account gives them (it calls
 the same reset_account function): starting balance, holdings, stop loss / take
-profit orders and short positions cleared, inbox, push subscriptions and tutorial
-progress cleared, Advanced Mode state and daily bonus cycle reset, trade history
-archived. Every player is signed out (reset_account raises session_version).
+profit orders and short positions cleared, inbox cleared, Advanced Mode state and
+daily bonus cycle reset, trade history archived. Every player is signed out
+(reset_account raises session_version).
 
 Also: ore prices go back to base_price with a fresh trend log, price history is
 cleared, and each bot is returned to what a new database has (starting balance, no
@@ -12,7 +12,8 @@ holdings, no shorts, no trades).
 
 Kept, as with a player's own reset: accounts, usernames, passwords, 2FA, backup
 codes, recovery keys, avatars, achievements, play time, login streak, unlocked
-themes, peak net worth, join date, suspensions.
+themes, peak net worth, join date, suspensions, tutorial progress, push
+subscriptions and push settings.
 
 Stop the app first (or accept that the running market engine keeps a little state
 in memory), and take a database backup. This cannot be undone.
@@ -48,7 +49,6 @@ def economy_counts(db):
         'active_shorts': _count(db, "SELECT COUNT(*) FROM short_positions WHERE status = 'active'"),
         'transactions_to_archive': _count(db, "SELECT COUNT(*) FROM transactions WHERE archived = 0"),
         'notifications': _count(db, "SELECT COUNT(*) FROM notifications"),
-        'push_subscriptions': _count(db, "SELECT COUNT(*) FROM push_subscriptions"),
         'ores_to_reset': _count(db, "SELECT COUNT(*) FROM ores"),
         'price_history_rows': _count(db, "SELECT COUNT(*) FROM price_history"),
     }

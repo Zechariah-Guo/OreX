@@ -473,8 +473,8 @@ def reset_account(user_id):
     db.execute("DELETE FROM holdings WHERE user_id = ?", (user_id,))
     db.execute("UPDATE transactions SET archived = 1 WHERE user_id = ? AND archived = 0", (user_id,))
     db.execute("DELETE FROM notifications WHERE user_id = ?", (user_id,))
-    db.execute("DELETE FROM push_subscriptions WHERE user_id = ?", (user_id,))
-    db.execute("DELETE FROM tutorial_progress WHERE user_id = ?", (user_id,))
+    # NOTE: push_subscriptions are NOT cleared — they belong to the device, not game progress
+    # NOTE: tutorial_progress is NOT cleared — a reset player is not sent through the tutorials again
     db.commit()
 
 

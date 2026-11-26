@@ -641,7 +641,7 @@ def test_advanced_tutorial_starts_once(site):
     assert tutorial_absent(site)
 
 
-def test_account_reset_lets_the_tutorial_start_again(site):
+def test_account_reset_does_not_start_the_tutorial_again(site):
     user = new_user(site, 'completed')
     site.cdp.navigate(site.base + '/dashboard')
     idle(site, 2)
@@ -655,10 +655,11 @@ def test_account_reset_lets_the_tutorial_start_again(site):
         from app.database import get_db
         get_db().execute('UPDATE users SET session_version = session_version - 1 WHERE id = ?', (user.id,))
         get_db().commit()
-    assert db_rows(site, 'SELECT COUNT(*) AS n FROM tutorial_progress WHERE user_id = ?', (user.id,))[0]['n'] == 0
+    assert db_rows(site, 'SELECT COUNT(*) AS n FROM tutorial_progress WHERE user_id = ?', (user.id,))[0]['n'] > 0
 
     site.cdp.navigate(site.base + '/dashboard')
-    wait_step(site, 'Fixture Welcome')
+    idle(site, 2)
+    assert tutorial_absent(site)
 
 
 def test_help_page_replay_restarts_the_tutorial(site):

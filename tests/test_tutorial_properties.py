@@ -342,11 +342,10 @@ def _progress_count(conn, user_id):
         'SELECT COUNT(*) FROM tutorial_progress WHERE user_id = ?', (user_id,)).fetchone()[0]
 
 
-# Feature: tutorial-system, Property 13: after account reset, zero tutorial records remain for that player
-# Validates: Requirements 11.3
+# Feature: tutorial-system, Property 13: account reset keeps every player's tutorial records
 @settings(max_examples=100)
 @given(mine=track_ids, theirs=track_ids)
-def test_property_13_reset_clears_tutorial_records(mine, theirs):
+def test_property_13_reset_keeps_tutorial_records(mine, theirs):
     from app.models import reset_account
     conn = _make_db([1, 2])
     _seed_progress(conn, 1, mine)
@@ -355,8 +354,8 @@ def test_property_13_reset_clears_tutorial_records(mine, theirs):
     mock_app.config = {'DEFAULT_BALANCE': 10000}
     with patch('app.models.get_db', return_value=conn), patch('app.models.current_app', mock_app):
         reset_account(1)
-    assert _progress_count(conn, 1) == 0
-    assert _progress_count(conn, 2) == len(theirs)   # other players are untouched
+    assert _progress_count(conn, 1) == len(mine)
+    assert _progress_count(conn, 2) == len(theirs)
     conn.close()
 
 

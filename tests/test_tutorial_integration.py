@@ -340,16 +340,16 @@ def test_resume_and_replay_flow(tclient, app):
     assert attrs['active-track'] == 'beginner' and attrs['active-step'] == '0'
 
 
-def test_account_reset_clears_progress_and_retriggers(tclient, app):
-    # 13.4
+def test_account_reset_keeps_progress_and_does_not_retrigger(tclient, app):
     set_status(app, 'beginner', 'completed')
     set_status(app, 'advanced', 'dismissed')
     assert page_context(tclient, app)['tutorial_auto_track'] is None
 
     response = tclient.post('/settings/reset', data={'confirmation': USERNAME})
     assert response.status_code == 302
-    assert sql(app, 'SELECT COUNT(*) AS n FROM tutorial_progress WHERE user_id = 1')[0]['n'] == 0
-    assert page_context(tclient, app)['tutorial_auto_track'] == 'beginner'
+    assert get_status(app, 'beginner')[0] == 'completed'
+    assert get_status(app, 'advanced')[0] == 'dismissed'
+    assert page_context(tclient, app)['tutorial_auto_track'] is None
 
 
 # ---------------------------------------------------------------------------
