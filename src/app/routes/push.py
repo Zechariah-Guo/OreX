@@ -48,6 +48,9 @@ def config():
     }
     if current_user.is_authenticated:
         body['csrf'] = generate_csrf()
+        # push.js remembers which account owns this browser's subscription, so a
+        # subscription left by another account is dropped instead of re-registered
+        body['account'] = str(current_user.id)
     return _no_store(jsonify(body))
 
 

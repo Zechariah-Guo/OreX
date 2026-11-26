@@ -546,7 +546,8 @@ function confirmToggleSubmit() {
         {# Notifications: always shown. It starts with the switch disabled and push.js enables it when the browser supports Web Push, or explains why not. No label text in comments. #}
         <div class="settings-card push-card" id="push-card"
              data-configured="{{ 'true' if push_configured else 'false' }}"
-             data-public-key="{{ push_public_key if push_configured else '' }}">
+             data-public-key="{{ push_public_key if push_configured else '' }}"
+             data-account="{{ current_user.id }}">
             <h3>🔔 Notifications</h3>
             <p class="settings-card__description">The first switch turns notifications on for this device only. The category switches below apply to all of your devices.</p>
             <p class="settings-card__description" id="push-unconfigured" {% if push_configured %}hidden{% endif %}>Notifications are not configured on this server.</p>

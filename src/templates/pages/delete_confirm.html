@@ -16,7 +16,8 @@
             <p>This action cannot be undone. You will not be able to recover this account.</p>
         </div>
 
-        <form method="POST" action="{{ url_for('settings.delete') }}" class="settings-form">
+        <form method="POST" action="{{ url_for('settings.delete') }}" class="settings-form"
+              data-push-drop-on-submit data-username="{{ current_user.username }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="form-group">

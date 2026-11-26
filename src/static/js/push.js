@@ -51,20 +51,55 @@
         return true;
     }
 
+    // The account that turned notifications on in this browser (its user id as a
+    // string). A subscription can outlive its account's session (expired, signed
+    // out from another device, deleted); the owner stops the self-heal from
+    // handing it to whoever signs in next.
+    var OWNER_KEY = 'orex-push-owner';
+    function getOwner() {
+        try { return localStorage.getItem(OWNER_KEY) || ''; } catch (e) { return ''; }
+    }
+    function setOwner(account) {
+        try { if (account) { localStorage.setItem(OWNER_KEY, account); } } catch (e) {}
+    }
+    function clearOwner() {
+        try { localStorage.removeItem(OWNER_KEY); } catch (e) {}
+    }
+
+    // Whether this browser's subscription belongs to the signed-in account. With
+    // no owner recorded, the server decides: it is ours only if it has the row.
+    function ownedBy(sub, account) {
+        var owner = getOwner();
+        if (owner) { return Promise.resolve(owner === account); }
+        return fetch('/push/status?endpoint=' + encodeURIComponent(sub.endpoint), { credentials: 'same-origin' })
+            .then(parse)
+            .then(function (r) { return !!(r.ok && r.json && r.json.subscribed === true); });
+    }
+
     // Self-heal: make sure the server has a row for this browser's existing
     // subscription (idempotent upsert). A subscription made with another VAPID
-    // key is replaced first; no prompt, permission is already granted.
-    // Resolves to the fetch Response of /push/subscribe.
-    function registerExisting(sub, publicKey) {
-        var bytes = keyToBytes(publicKey);
-        var current = sameKey(sub, bytes) ? Promise.resolve(sub) :
-            sub.unsubscribe().then(function () {
-                return navigator.serviceWorker.ready;
-            }).then(function (reg) {
-                return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes });
+    // key is replaced first; no prompt, permission is already granted. A
+    // subscription another account left behind is dropped instead.
+    // Resolves to the fetch Response of /push/subscribe (or /push/status when dropped).
+    function registerExisting(sub, publicKey, account) {
+        return ownedBy(sub, account).then(function (mine) {
+            if (!mine) {
+                return sub.unsubscribe().catch(function () {}).then(function () {
+                    clearOwner();
+                    return fetch('/push/status', { credentials: 'same-origin' });
+                });
+            }
+            setOwner(account);
+            var bytes = keyToBytes(publicKey);
+            var current = sameKey(sub, bytes) ? Promise.resolve(sub) :
+                sub.unsubscribe().then(function () {
+                    return navigator.serviceWorker.ready;
+                }).then(function (reg) {
+                    return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes });
+                });
+            return current.then(function (active) {
+                return postJson('/push/subscribe', active.toJSON());
             });
-        return current.then(function (active) {
-            return postJson('/push/subscribe', active.toJSON());
         });
     }
 
@@ -87,9 +122,9 @@
             return fetch('/push/config', { credentials: 'same-origin' }).then(parse).then(function (r) {
                 var config = r.json;
                 // Signed out (no csrf) or not configured: try again on a later page
-                if (!config || !config.configured || !config.csrf || !config.key) { return null; }
+                if (!config || !config.configured || !config.csrf || !config.key || !config.account) { return null; }
                 sessionStorage.setItem('orex-push-healed', '1');
-                return registerExisting(sub, config.key);
+                return registerExisting(sub, config.key, config.account);
             });
         }).catch(function () {});
     });
@@ -109,10 +144,36 @@
             var cleanup = currentSubscription().then(function (sub) {
                 if (!sub) { return null; }
                 // Both at once: a failed server call must not skip the local unsubscribe
+                clearOwner();
                 return Promise.all([
                     postJson('/push/unsubscribe', { endpoint: sub.endpoint }).catch(function () {}),
                     sub.unsubscribe().catch(function () {})
                 ]);
+            }).catch(function () {});
+            var timeout = new Promise(function (resolve) { setTimeout(resolve, 1500); });
+            Promise.race([cleanup, timeout]).then(go, go);
+        });
+
+        // Deleting the account: the server row goes with the account, but the
+        // browser would keep its subscription and the self-heal would attach it to
+        // the next account that signs in here. Drop it locally before submitting.
+        // Only when the typed username matches, so a rejected attempt keeps it.
+        document.addEventListener('submit', function (event) {
+            var form = event.target;
+            if (!form || !form.hasAttribute || !form.hasAttribute('data-push-drop-on-submit') ||
+                    event.defaultPrevented || form.dataset.pushDropped) {
+                return;
+            }
+            var input = form.querySelector('[name="confirmation"]');
+            if (!input || input.value.trim() !== form.dataset.username) {
+                return;
+            }
+            event.preventDefault();
+            form.dataset.pushDropped = '1';
+            var go = function () { form.submit(); };
+            clearOwner();
+            var cleanup = currentSubscription().then(function (sub) {
+                return sub ? sub.unsubscribe() : null;
             }).catch(function () {});
             var timeout = new Promise(function (resolve) { setTimeout(resolve, 1500); });
             Promise.race([cleanup, timeout]).then(go, go);
@@ -137,6 +198,7 @@
         var unconfiguredEl = document.getElementById('push-unconfigured');
         var switches = card.querySelectorAll('[data-push-group]');
         var publicKey = card.getAttribute('data-public-key') || '';
+        var account = card.getAttribute('data-account') || '';
         var configured = card.getAttribute('data-configured') === 'true';
         var subscribed = false;   // true only when the server confirms this device
         var devices = null;       // devices with notifications on for the account (server count)
@@ -197,7 +259,7 @@
         function refresh() {
             checkFailed = false;
             return currentSubscription().then(function (sub) {
-                var request = sub ? registerExisting(sub, publicKey) : fetch('/push/status', { credentials: 'same-origin' });
+                var request = sub ? registerExisting(sub, publicKey, account) : fetch('/push/status', { credentials: 'same-origin' });
                 return request.then(parse).then(function (r) {
                     if (!r.ok || !r.json) { throw new Error('status'); }
                     subscribed = !!sub && r.json.subscribed === true;
@@ -227,6 +289,7 @@
                     if (!resp.ok) {
                         return sub.unsubscribe().then(function () { throw new Error('save'); });
                     }
+                    setOwner(account);
                 });
             });
         }
@@ -249,7 +312,8 @@
                     if (!sub) { return null; }
                     return postJson('/push/unsubscribe', { endpoint: sub.endpoint })
                         .catch(function () {})
-                        .then(function () { return sub.unsubscribe(); });
+                        .then(function () { return sub.unsubscribe(); })
+                        .then(function (result) { clearOwner(); return result; });
                 });
             }
             busy = true;

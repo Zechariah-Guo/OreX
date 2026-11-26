@@ -146,17 +146,22 @@ class TestSelfHeal:
     """The server row can vanish while the browser keeps its subscription (account
     reset, pruned after a rejected push). Settings must notice and register it again."""
 
-    def _browser_has_subscription(self, page, live_server, endpoint, key_b64):
+    def _browser_has_subscription(self, page, live_server, endpoint, key_b64, owner=None):
         page.goto(live_server + '/about')
         page.evaluate(
-            "([endpoint, key]) => localStorage.setItem('fakePush', "
-            "JSON.stringify({permission: 'granted', endpoint, key}))",
-            [endpoint, key_b64])
+            "([endpoint, key, owner]) => { localStorage.setItem('fakePush', "
+            "JSON.stringify({permission: 'granted', endpoint, key}));"
+            " if (owner) { localStorage.setItem('orex-push-owner', owner); }"
+            " else { localStorage.removeItem('orex-push-owner'); } }",
+            [endpoint, key_b64, owner])
+
+    def _browser_endpoint(self, page):
+        return page.evaluate("(JSON.parse(localStorage.getItem('fakePush')) || {}).endpoint || null")
 
     def test_missing_server_row_is_restored_on_settings_load(self, app, live_server, vapid, page):
         user_id = browser_login(page, live_server, app)
         endpoint = 'https://push.example.test/send/kept-by-the-browser'
-        self._browser_has_subscription(page, live_server, endpoint, vapid)
+        self._browser_has_subscription(page, live_server, endpoint, vapid, owner=str(user_id))
         assert _rows(app, 'SELECT 1 FROM push_subscriptions') == []
 
         _open_settings(page, live_server)
@@ -170,13 +175,99 @@ class TestSelfHeal:
         user_id = browser_login(page, live_server, app)
         old_endpoint = 'https://push.example.test/send/old-key'
         _, other_key = _public_key()
-        self._browser_has_subscription(page, live_server, old_endpoint, other_key)
+        self._browser_has_subscription(page, live_server, old_endpoint, other_key, owner=str(user_id))
 
         _open_settings(page, live_server)
         assert page.is_checked('#push-device-switch')
         rows = _rows(app, 'SELECT endpoint FROM push_subscriptions WHERE user_id = ?', (user_id,))
         assert len(rows) == 1 and rows[0]['endpoint'] != old_endpoint
         assert page.evaluate("JSON.parse(localStorage.getItem('fakePush')).key") == vapid
+
+    @pytest.mark.parametrize('where', ['settings', 'other page'])
+    def test_subscription_left_by_another_account_is_dropped(self, app, live_server, vapid, page, where):
+        user_id = browser_login(page, live_server, app)
+        self._browser_has_subscription(page, live_server, 'https://push.example.test/send/someone-else',
+                                       vapid, owner=str(user_id + 1000))
+        if where == 'settings':
+            _open_settings(page, live_server)
+            assert not page.is_checked('#push-device-switch')
+        else:
+            page.evaluate("sessionStorage.removeItem('orex-push-healed')")
+            page.goto(live_server + '/dashboard')
+            page.wait_for_function("!(JSON.parse(localStorage.getItem('fakePush')) || {}).endpoint")
+        assert self._browser_endpoint(page) is None
+        assert page.evaluate("localStorage.getItem('orex-push-owner')") is None
+        assert _rows(app, 'SELECT 1 FROM push_subscriptions') == []
+
+    def test_unowned_subscription_is_kept_only_if_the_server_has_it_for_this_account(
+            self, app, live_server, vapid, page):
+        user_id = browser_login(page, live_server, app)
+        endpoint = 'https://push.example.test/send/from-before-owners'
+        self._browser_has_subscription(page, live_server, endpoint, vapid)
+        conn = sqlite3.connect(app.config['DATABASE_PATH'])
+        conn.execute("INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (?, ?, 'k', 'a')",
+                     (user_id, endpoint))
+        conn.commit()
+        conn.close()
+        _open_settings(page, live_server)
+        assert page.is_checked('#push-device-switch')
+        assert page.evaluate("localStorage.getItem('orex-push-owner')") == str(user_id)
+
+        # Same unowned subscription, but the server has no row for it: dropped
+        self._browser_has_subscription(page, live_server, endpoint + '-2', vapid)
+        _open_settings(page, live_server)
+        assert not page.is_checked('#push-device-switch')
+        assert self._browser_endpoint(page) is None
+
+    def test_session_ending_without_logout_does_not_pass_notifications_on(
+            self, app, live_server, vapid, page, browser_context):
+        browser_login(page, live_server, app)
+        _open_settings(page, live_server)
+        page.evaluate("document.getElementById('push-device-switch').click()")
+        page.wait_for_selector('#push-prefs:not([hidden])')
+
+        browser_context.clear_cookies()            # session expired: no logout click
+        page.evaluate("sessionStorage.clear()")
+        new_id = browser_login(page, live_server, app, username='NextPlayer')
+        _open_settings(page, live_server)
+        assert not page.is_checked('#push-device-switch')
+        assert _rows(app, 'SELECT 1 FROM push_subscriptions WHERE user_id = ?', (new_id,)) == []
+
+
+class TestDeleteAccount:
+    """Deleting the account drops this browser's subscription, so the next account
+    that signs in on the device does not inherit notifications."""
+
+    def _browser_endpoint(self, page):
+        return page.evaluate("(JSON.parse(localStorage.getItem('fakePush')) || {}).endpoint || null")
+
+    def _submit_delete(self, page, live_server, typed):
+        page.goto(live_server + '/settings/delete')
+        page.fill('#confirmation', typed)
+        with page.expect_navigation():
+            page.click('button[type="submit"]')
+
+    def test_next_account_on_the_device_starts_with_notifications_off(self, app, live_server, vapid, page):
+        browser_login(page, live_server, app)
+        _open_settings(page, live_server)
+        page.evaluate("document.getElementById('push-device-switch').click()")
+        page.wait_for_selector('#push-prefs:not([hidden])')
+        assert self._browser_endpoint(page)
+
+        # A rejected confirmation keeps the account and this device's subscription
+        self._submit_delete(page, live_server, 'not-my-name')
+        assert self._browser_endpoint(page)
+        assert len(_rows(app, 'SELECT 1 FROM push_subscriptions')) == 1
+
+        self._submit_delete(page, live_server, 'BrowserUser')
+        assert page.url.rstrip('/') == live_server
+        assert self._browser_endpoint(page) is None
+        assert _rows(app, 'SELECT 1 FROM push_subscriptions') == []
+
+        new_id = browser_login(page, live_server, app, username='NextPlayer')
+        _open_settings(page, live_server)
+        assert not page.is_checked('#push-device-switch')
+        assert _rows(app, 'SELECT 1 FROM push_subscriptions WHERE user_id = ?', (new_id,)) == []
 
 
 class TestPresence:
