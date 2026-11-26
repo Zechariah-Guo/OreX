@@ -158,7 +158,7 @@ def db_reset(app, client):
     conn.execute("PRAGMA foreign_keys=OFF")
 
     # Drop tables in reverse FK order
-    for table in ('notification_pushes', 'push_subscriptions', 'push_settings', 'push_presence', 'notifications', 'tutorial_progress', 'short_positions', 'stop_loss_take_profit', 'price_history', 'transactions', 'holdings', 'backup_codes', 'recovery_keys', 'ores', 'users'):
+    for table in ('notification_pushes', 'push_subscriptions', 'push_settings', 'push_presence', 'notifications', 'advancements', 'tutorial_progress', 'short_positions', 'stop_loss_take_profit', 'price_history', 'transactions', 'holdings', 'backup_codes', 'recovery_keys', 'ores', 'users'):
         conn.execute(f'DROP TABLE IF EXISTS {table}')
 
     # Re-create schema
